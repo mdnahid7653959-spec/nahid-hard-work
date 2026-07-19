@@ -113,7 +113,7 @@ export default function SellerNewConsignment() {
     enabled: !!sellerProfile?.id,
   });
 
-  // Fetch warehouses
+  // Fetch warehouses (auto-select the default one — user cannot change)
   const { data: warehouses = [] } = useQuery({
     queryKey: ["warehouses"],
     queryFn: async () => {
@@ -126,6 +126,12 @@ export default function SellerNewConsignment() {
       return data as Warehouse[];
     },
   });
+
+  // Auto-lock warehouse to the first active one (Dartup Main House)
+  const lockedWarehouse = warehouses[0];
+  if (lockedWarehouse && selectedWarehouse !== lockedWarehouse.id) {
+    setTimeout(() => setSelectedWarehouse(lockedWarehouse.id), 0);
+  }
 
   // Create consignment mutation
   const createConsignment = useMutation({
@@ -288,29 +294,24 @@ export default function SellerNewConsignment() {
                 />
               </div>
 
-              {/* Warehouse Selection */}
+              {/* Warehouse (locked) */}
               <div className="space-y-2">
                 <Label>Warehouse *</Label>
-                <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select warehouse" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {warehouses.map((warehouse) => (
-                      <SelectItem key={warehouse.id} value={warehouse.id}>
-                        <div>
-                          <span className="font-medium">{warehouse.name}</span>
-                          {warehouse.address && (
-                            <span className="text-muted-foreground ml-2">
-                              ({warehouse.address.city || warehouse.address.area})
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-2 text-sm">
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {lockedWarehouse?.name || "Dartup Main House"}
+                    </span>
+                    {lockedWarehouse?.address && (
+                      <span className="text-xs text-muted-foreground">
+                        {lockedWarehouse.address.city || lockedWarehouse.address.area}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">Default</span>
+                </div>
               </div>
+
 
               {/* Submit */}
               <div className="flex gap-4 pt-4">
