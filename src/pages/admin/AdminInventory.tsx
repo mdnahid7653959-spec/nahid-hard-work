@@ -332,11 +332,17 @@ export default function AdminInventory() {
                       <TableCell>
                         <Input
                           type="number"
-                          value={product.stock_quantity}
-                          onChange={(e) => updateStock(product.id, Number(e.target.value))}
+                          min={0}
+                          defaultValue={product.stock_quantity}
+                          key={`stock-${product.id}-${product.stock_quantity}`}
+                          onBlur={(e) => commitStock(product, Number(e.target.value))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                          }}
                           className="w-20"
                         />
                       </TableCell>
+
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
