@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
   Save, ArrowLeft, Loader2, Package, Image as ImageIcon, 
-  DollarSign, Truck, Search, RotateCcw, Layers, Tag,
+  DollarSign, Truck, Search, RotateCcw, Layers, Tag, Plus,
   Info, Sparkles, Shield, Globe, Palette, Scale, Ruler, Video
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
