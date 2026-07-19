@@ -512,14 +512,28 @@ export default function SellerProductForm() {
               </p>
             </div>
           </div>
-          <Button type="submit" disabled={saving} className="gap-2 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90">
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            {saving ? "Saving..." : "Submit for Review"}
-          </Button>
+          {(() => {
+            const tabOrder = ["basic", "category", "pricing", "media", "specs", "shipping", "seo", "return"];
+            const currentIdx = tabOrder.indexOf(activeTab);
+            const isLast = currentIdx === tabOrder.length - 1;
+            if (isLast) {
+              return (
+                <Button type="submit" disabled={saving} className="gap-2 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {saving ? "Saving..." : "Submit for Review"}
+                </Button>
+              );
+            }
+            return (
+              <Button
+                type="button"
+                onClick={() => setActiveTab(tabOrder[currentIdx + 1])}
+                className="gap-2 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
+              >
+                Next: {tabOrder[currentIdx + 1].charAt(0).toUpperCase() + tabOrder[currentIdx + 1].slice(1)}
+              </Button>
+            );
+          })()}
         </div>
 
         {/* Info Alert */}
