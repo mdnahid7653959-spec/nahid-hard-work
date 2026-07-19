@@ -148,14 +148,14 @@ export function Header() {
 
       {/* Main header */}
       <div className="bg-primary text-primary-foreground">
-        <div className="container py-2.5 sm:py-3">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        <div className="container py-1.5 sm:py-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button className="lg:hidden p-1.5 hover:bg-white/10 rounded-md transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
 
             <Link to="/" className="flex items-center gap-2 shrink-0">
-              <img alt="Darzo.com" className="h-8 sm:h-9 w-auto object-contain rounded-lg" src={logoUrl} />
+              <img alt="Darzo.com" className="h-6 sm:h-7 w-auto object-contain rounded-md" src={logoUrl} />
             </Link>
 
             {/* Categories dropdown for desktop */}
@@ -210,21 +210,21 @@ export function Header() {
               <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:flex">
                 <div className="relative w-full flex">
                   <Input type="search" placeholder="Search for products, brands and more..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    className="rounded-r-none border-0 bg-white text-foreground placeholder:text-muted-foreground h-10 text-sm pr-20 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                  <Button type="submit" className="rounded-l-none h-10 px-5 bg-warning hover:bg-warning/90 text-warning-foreground font-semibold text-sm">
-                    <Search className="h-4 w-4 mr-1.5" /> Search
+                    className="rounded-r-none border-0 bg-white text-foreground placeholder:text-muted-foreground h-8 text-xs pr-16 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                  <Button type="submit" className="rounded-l-none h-8 px-3 bg-warning hover:bg-warning/90 text-warning-foreground font-medium text-xs">
+                    <Search className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </form>
             )}
 
             {/* Actions */}
-            <div className="flex items-center gap-1 sm:gap-1.5 ml-auto">
+            <div className="flex items-center gap-0.5 sm:gap-1 ml-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                    <span className="text-[9px] sm:text-[10px] leading-tight font-medium">
+                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md">
+                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">
                       {user ? profile?.full_name?.split(' ')[0] || 'Account' : 'Account'}
                     </span>
                   </Button>
@@ -262,26 +262,26 @@ export function Header() {
               </DropdownMenu>
 
               <Link to="/messages">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg relative">
-                  <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                  <span className="text-[9px] sm:text-[10px] leading-tight font-medium">Messages</span>
-                  {hasUnreadMessages && <span className="absolute top-0.5 right-1 h-2.5 w-2.5 rounded-full bg-green-400 border-2 border-primary animate-pulse" />}
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md relative">
+                  <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">Messages</span>
+                  {hasUnreadMessages && <span className="absolute top-0 right-0.5 h-2 w-2 rounded-full bg-green-400 border border-primary animate-pulse" />}
                 </Button>
               </Link>
 
               <Link to="/wishlist">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg relative">
-                  <Heart className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                  <span className="text-[9px] sm:text-[10px] leading-tight font-medium">Wishlist</span>
-                  {wishlistCount > 0 && <span className="absolute -top-0.5 right-0 h-4 w-4 rounded-full bg-warning text-[9px] font-bold text-warning-foreground flex items-center justify-center">{wishlistCount > 99 ? "99+" : wishlistCount}</span>}
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md relative">
+                  <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">Wishlist</span>
+                  {wishlistCount > 0 && <span className="absolute -top-0.5 right-0 h-3.5 w-3.5 rounded-full bg-warning text-[8px] font-bold text-warning-foreground flex items-center justify-center">{wishlistCount > 99 ? "99+" : wishlistCount}</span>}
                 </Button>
               </Link>
 
               <Link to="/cart" className="hidden sm:block">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg relative">
-                  <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                  <span className="text-[9px] sm:text-[10px] leading-tight font-medium">Cart</span>
-                  {cartCount > 0 && <span className="absolute -top-0.5 right-0 h-4 w-4 rounded-full bg-warning text-[9px] font-bold text-warning-foreground flex items-center justify-center">{cartCount > 99 ? "99+" : cartCount}</span>}
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md relative">
+                  <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">Cart</span>
+                  {cartCount > 0 && <span className="absolute -top-0.5 right-0 h-3.5 w-3.5 rounded-full bg-warning text-[8px] font-bold text-warning-foreground flex items-center justify-center">{cartCount > 99 ? "99+" : cartCount}</span>}
                 </Button>
               </Link>
             </div>
@@ -289,12 +289,12 @@ export function Header() {
 
           {/* Mobile search */}
           {showSearch && (
-            <form onSubmit={handleSearch} className="mt-2.5 md:hidden">
+            <form onSubmit={handleSearch} className="mt-1.5 md:hidden">
               <div className="relative w-full flex">
                 <Input type="search" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  className="rounded-r-none border-0 bg-white text-foreground pr-10 h-10 focus-visible:ring-0" />
-                <Button type="submit" className="rounded-l-none h-10 bg-warning hover:bg-warning/90" size="icon">
-                  <Search className="h-4 w-4" />
+                  className="rounded-r-none border-0 bg-white text-foreground text-xs pr-8 h-8 focus-visible:ring-0" />
+                <Button type="submit" className="rounded-l-none h-8 w-9 bg-warning hover:bg-warning/90" size="icon">
+                  <Search className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </form>
