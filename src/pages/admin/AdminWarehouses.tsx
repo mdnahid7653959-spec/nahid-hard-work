@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,12 +70,11 @@ export default function AdminWarehouses() {
   const { data: warehouses = [], isLoading } = useQuery({
     queryKey: ["admin-warehouses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await adminDb.select<Warehouse>("warehouses", {
+        orderBy: { col: "created_at", ascending: false },
+      });
       if (error) throw error;
-      return data as Warehouse[];
+      return (data ?? []) as Warehouse[];
     },
   });
 
@@ -110,13 +109,10 @@ export default function AdminWarehouses() {
         is_active: form.is_active,
       };
       if (editing) {
-        const { error } = await supabase
-          .from("warehouses")
-          .update(payload)
-          .eq("id", editing.id);
+        const { error } = await adminDb.update("warehouses", payload, { id: editing.id });
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("warehouses").insert([payload]);
+        const { error } = await adminDb.insert("warehouses", payload);
         if (error) throw error;
       }
     },
@@ -132,7 +128,7 @@ export default function AdminWarehouses() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("warehouses").delete().eq("id", id);
+      const { error } = await adminDb.remove("warehouses", { id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -147,10 +143,7 @@ export default function AdminWarehouses() {
 
   const toggleActive = useMutation({
     mutationFn: async (w: Warehouse) => {
-      const { error } = await supabase
-        .from("warehouses")
-        .update({ is_active: !w.is_active })
-        .eq("id", w.id);
+      const { error } = await adminDb.update("warehouses", { is_active: !w.is_active }, { id: w.id });
       if (error) throw error;
     },
     onSuccess: () => {
