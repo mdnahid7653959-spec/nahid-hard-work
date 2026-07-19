@@ -258,20 +258,8 @@ export function HeroBanner() {
             </div>
           </div>}
 
-        {/* Quick links grid */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {quickLinks.map(link => <Link key={link.title} to={link.href} className={`group relative overflow-hidden bg-gradient-to-br ${link.color} rounded-xl sm:rounded-2xl p-2.5 sm:p-4 text-white press-scale transition-all shadow-md`}>
-              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              <div className="relative flex flex-col items-center text-center">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/20 flex items-center justify-center mb-1.5 sm:mb-2">
-                  <link.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                <h3 className="font-bold text-[10px] sm:text-xs leading-tight truncate w-full">{link.title}</h3>
-                <p className="text-[8px] sm:text-[10px] opacity-80 mt-0.5">{link.subtitle}</p>
-              </div>
-            </Link>)}
-        </div>
+
+
       </div>
 
       {/* Right sidebar - Promo cards (Desktop XL only) */}
