@@ -128,7 +128,11 @@ serve(async (req) => {
       let q = supabase.from(table).select(columns, count ? { count: "exact" } : undefined);
       q = applyFilters(q, filters);
       if (orderBy?.col) q = q.order(orderBy.col, { ascending: orderBy.ascending !== false });
-      if (typeof limit === "number") q = q.limit(limit);
+      if (body.range && typeof body.range.from === "number" && typeof body.range.to === "number") {
+        q = q.range(body.range.from, body.range.to);
+      } else if (typeof limit === "number") {
+        q = q.limit(limit);
+      }
       const { data, error, count: rowCount } = await q;
       if (error) return json({ error: error.message }, 400);
       return json({ data, count: rowCount ?? null });

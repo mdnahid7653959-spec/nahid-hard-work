@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,13 +99,19 @@ export default function AdminConsignments() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
 
-  // Fetch consignments
+  // Fetch consignments (via admin-db to bypass RLS for custom admin session)
   const { data: consignmentsData, isLoading, refetch } = useQuery({
     queryKey: ["admin-consignments", search, statusFilter, currentPage, pageSize],
     queryFn: async () => {
-      let query = supabase
-        .from("consignments")
-        .select(`
+      const filters: { col: string; op?: any; value: any }[] = [];
+      if (statusFilter !== "all") filters.push({ col: "status", op: "eq", value: statusFilter });
+      if (search) filters.push({ col: "consignment_number", op: "ilike", value: `%${search}%` });
+
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, count, error } = await adminDb.select<Consignment>("consignments", {
+        columns: `
           id,
           consignment_number,
           quantity,
@@ -115,25 +122,15 @@ export default function AdminConsignments() {
           seller:sellers(id, shop_name, contact_email),
           product:products(id, name, sku),
           warehouse:warehouses(id, name)
-        `, { count: "exact" })
-        .order("created_at", { ascending: false });
+        `,
+        filters,
+        orderBy: { col: "created_at", ascending: false },
+        range: { from, to },
+        count: true,
+      } as any);
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
-
-      if (search) {
-        query = query.or(`consignment_number.ilike.%${search}%`);
-      }
-
-      const from = (currentPage - 1) * pageSize;
-      const to = from + pageSize - 1;
-      query = query.range(from, to);
-
-      const { data, error, count } = await query;
       if (error) throw error;
-
-      return { consignments: data as unknown as Consignment[], total: count || 0 };
+      return { consignments: (data as unknown as Consignment[]) || [], total: count || 0 };
     },
   });
 
@@ -183,10 +180,7 @@ export default function AdminConsignments() {
         updates.received_at = new Date().toISOString();
       }
 
-      const { error } = await supabase
-        .from("consignments")
-        .update(updates as never)
-        .eq("id", id);
+      const { error } = await adminDb.update("consignments", updates, { id });
 
       if (error) throw error;
     },
