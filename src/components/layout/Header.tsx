@@ -145,29 +145,6 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full shadow-lg" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      {/* Top utility bar - desktop only */}
-      {topBar.visible !== false && (
-        <div className="hidden lg:block bg-primary/95 border-b border-white/10">
-          <div className="container flex items-center justify-between py-1 text-xs text-white/70">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer">
-                <Truck className="h-3 w-3" /> {topBar.text}
-              </span>
-              <span className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer">
-                <HelpCircle className="h-3 w-3" /> Help Center
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link to="/seller/register" className="hover:text-white transition-colors flex items-center gap-1">
-                <Store className="h-3 w-3" /> Sell on Darzo
-              </Link>
-              <Link to="/track-order" className="hover:text-white transition-colors flex items-center gap-1">
-                <Package className="h-3 w-3" /> Track Order
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main header */}
       <div className="bg-primary text-primary-foreground">
