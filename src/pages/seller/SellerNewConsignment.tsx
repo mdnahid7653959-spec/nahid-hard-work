@@ -301,22 +301,34 @@ export default function SellerNewConsignment() {
                 />
               </div>
 
-              {/* Warehouse (locked) */}
+              {/* Warehouse selector — seller picks the nearest one */}
               <div className="space-y-2">
-                <Label>Warehouse *</Label>
-                <div className="flex items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-2 text-sm">
-                  <div className="flex flex-col">
-                    <span className="font-medium">
-                      {lockedWarehouse?.name || "Dartup Main House"}
-                    </span>
-                    {lockedWarehouse?.address && (
-                      <span className="text-xs text-muted-foreground">
-                        {lockedWarehouse.address.city || lockedWarehouse.address.area}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">Default</span>
-                </div>
+                <Label htmlFor="warehouse">Warehouse *</Label>
+                <Select
+                  value={selectedWarehouse}
+                  onValueChange={setSelectedWarehouse}
+                >
+                  <SelectTrigger id="warehouse">
+                    <SelectValue placeholder="Select nearest warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{w.name}</span>
+                          {(w.address as any)?.city || (w as any).city ? (
+                            <span className="text-xs text-muted-foreground">
+                              {(w as any).city || (w.address as any)?.city}
+                            </span>
+                          ) : null}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose the warehouse nearest to you for faster delivery.
+                </p>
               </div>
 
 
