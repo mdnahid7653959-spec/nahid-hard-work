@@ -170,7 +170,7 @@ export default function ProductFormPage() {
       .from("products")
       .select("*, product_images(*)")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       toast({
@@ -179,7 +179,11 @@ export default function ProductFormPage() {
         description: "Failed to fetch product"
       });
       navigate("/admin/products");
+    } else if (!data) {
+      toast({ variant: "destructive", title: "Not found", description: "Product not found" });
+      navigate("/admin/products");
     } else if (data) {
+
       setForm({
         name: data.name || "",
         slug: data.slug || "",
