@@ -726,7 +726,45 @@ export default function SellerProductForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Brand</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold">Brand</Label>
+                      <Dialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-primary">
+                            <Plus className="h-3.5 w-3.5 mr-1" /> New Brand
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Create New Brand</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-2 py-2">
+                            <Label htmlFor="new_brand_name">Brand Name</Label>
+                            <Input
+                              id="new_brand_name"
+                              value={newBrandName}
+                              onChange={(e) => setNewBrandName(e.target.value)}
+                              placeholder="e.g., Darzo Originals"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleCreateBrand();
+                                }
+                              }}
+                            />
+                          </div>
+                          <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setBrandDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button type="button" onClick={handleCreateBrand} disabled={creatingBrand}>
+                              {creatingBrand && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                              Create
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                     <Select
                       value={form.brand_id}
                       onValueChange={(value) => setForm({ ...form, brand_id: value })}
@@ -743,7 +781,7 @@ export default function SellerProductForm() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Select if product belongs to a specific brand
+                      Can't find your brand? Click "New Brand" to add it.
                     </p>
                   </div>
                 </div>
