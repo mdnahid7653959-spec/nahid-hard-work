@@ -35,6 +35,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdminCacheInvalidation } from "@/hooks/useRealtimeSync";
+import { AdminProductPreviewDialog } from "@/components/admin/AdminProductPreviewDialog";
 
 interface Product {
   id: string;
@@ -58,6 +59,7 @@ export default function AdminProducts() {
   const [activeTab, setActiveTab] = useState("all");
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; productId: string; action: "reject" | "ban" }>({ open: false, productId: "", action: "reject" });
   const [rejectReason, setRejectReason] = useState("");
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const { toast } = useToast();
   const { admin } = useAdminAuth();
@@ -343,10 +345,8 @@ export default function AdminProducts() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/product/${product.slug}`}>
-                              <Eye className="h-4 w-4 mr-2" />View
-                            </Link>
+                          <DropdownMenuItem onClick={() => setPreviewId(product.id)}>
+                            <Eye className="h-4 w-4 mr-2" />View
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link to={`/admin/products/${product.id}`}>
@@ -431,6 +431,17 @@ export default function AdminProducts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* In-panel Product Preview */}
+      <AdminProductPreviewDialog
+        productId={previewId}
+        open={!!previewId}
+        onOpenChange={(o) => !o && setPreviewId(null)}
+        actionLoading={actionLoading}
+        onApprove={async (id) => { await handleApprove(id); setPreviewId(null); }}
+        onReject={(id) => { setPreviewId(null); setRejectDialog({ open: true, productId: id, action: "reject" }); }}
+        onBan={(id) => { setPreviewId(null); setRejectDialog({ open: true, productId: id, action: "ban" }); }}
+      />
     </AdminLayout>
   );
 }
