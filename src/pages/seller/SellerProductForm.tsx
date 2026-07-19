@@ -533,7 +533,20 @@ export default function SellerProductForm() {
 
   return (
     <SellerLayout title={isEdit ? "Edit Product" : "Add New Product"}>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          const target = e.target as HTMLElement;
+          if (
+            e.key === "Enter" &&
+            activeTab !== "return" &&
+            target.tagName !== "TEXTAREA"
+          ) {
+            e.preventDefault();
+          }
+        }}
+        className="space-y-6"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-primary/5 to-transparent p-4 rounded-xl border">
           <div className="flex items-center gap-3">
