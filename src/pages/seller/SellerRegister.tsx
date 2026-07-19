@@ -693,7 +693,39 @@ export default function SellerRegister() {
                       <Button type="button" variant="outline" onClick={() => setActiveTab("business")}>
                         Previous
                       </Button>
-                      <Button type="button" onClick={() => setActiveTab("payment")}>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          if (form.idDocumentType === "nid") {
+                            if (!form.nidNumber.trim()) {
+                              toast({
+                                title: "NID number required",
+                                description: "Please enter your National ID number to continue.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                          } else {
+                            if (!form.birthCertNumber.trim()) {
+                              toast({
+                                title: "Birth certificate number required",
+                                description: "Please enter your birth certificate number to continue.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            if (!birthCertImage) {
+                              toast({
+                                title: "Birth certificate photo required",
+                                description: "Please upload a photo of your birth certificate to continue.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                          }
+                          setActiveTab("payment");
+                        }}
+                      >
                         Next: Payment
                       </Button>
                     </div>
