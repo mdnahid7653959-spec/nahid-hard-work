@@ -226,8 +226,8 @@ export default function SellerConsignments() {
           </Select>
         </div>
 
-        {/* Table */}
-        <div className="border rounded-lg overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
@@ -306,6 +306,60 @@ export default function SellerConsignments() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : consignmentsData?.consignments.length === 0 ? (
+            <div className="border rounded-lg py-10 flex flex-col items-center gap-2">
+              <Package className="h-10 w-10 text-muted-foreground" />
+              <p className="text-muted-foreground text-sm">No consignments found</p>
+              <Link to="/seller/consignments/new">
+                <Button variant="outline" size="sm">
+                  Create your first consignment
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            consignmentsData?.consignments.map((consignment) => (
+              <div key={consignment.id} className="border rounded-lg p-3 flex gap-3">
+                <img
+                  src={getProductImage(consignment.product)}
+                  alt={consignment.product?.name || "Product"}
+                  className="w-14 h-14 object-cover rounded flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-sm line-clamp-1 flex-1">
+                      {consignment.product?.name || "Unknown Product"}
+                    </p>
+                    <Badge variant={statusConfig[consignment.status].variant} className="flex-shrink-0 text-[10px]">
+                      {statusConfig[consignment.status].label}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] font-mono text-muted-foreground truncate">
+                    {consignment.consignment_number}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Qty: <span className="font-semibold text-foreground">{consignment.quantity}</span></span>
+                    <span className="truncate ml-2">{consignment.warehouse?.name || "N/A"}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {format(new Date(consignment.created_at), "dd MMM yyyy")}
+                  </p>
+                  {consignment.rejection_reason && (
+                    <p className="text-[10px] text-destructive line-clamp-2">
+                      {consignment.rejection_reason}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Pagination */}
