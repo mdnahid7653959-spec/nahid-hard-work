@@ -266,10 +266,16 @@ export default function AdminInventory() {
               <Label>Global Low Stock Threshold:</Label>
               <Input
                 type="number"
+                min={1}
                 value={globalLowStockThreshold}
                 onChange={(e) => setGlobalLowStockThreshold(Number(e.target.value))}
+                onBlur={(e) => {
+                  const n = Number(e.target.value);
+                  if (Number.isFinite(n) && n > 0) saveThreshold(n);
+                }}
                 className="w-24"
               />
+
               <span className="text-sm text-muted-foreground">Products with stock below this will be flagged</span>
             </div>
           </CardContent>
