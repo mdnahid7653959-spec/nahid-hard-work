@@ -570,15 +570,6 @@ export default function SellerProductForm() {
               <span className="hidden sm:inline">Specifications</span>
               <span className="sm:hidden">Specs</span>
             </TabsTrigger>
-            <TabsTrigger value="shipping" className="flex-1 min-w-[100px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Truck className="h-4 w-4" />
-              <span className="hidden sm:inline">Shipping</span>
-              <span className="sm:hidden">Ship</span>
-            </TabsTrigger>
-            <TabsTrigger value="seo" className="flex-1 min-w-[100px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Search className="h-4 w-4" />
-              SEO
-            </TabsTrigger>
             <TabsTrigger value="return" className="flex-1 min-w-[100px] gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <RotateCcw className="h-4 w-4" />
               <span className="hidden sm:inline">Return</span>
