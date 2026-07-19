@@ -100,17 +100,22 @@ export default function SellerRegister() {
   const uploadFile = async (file: File, path: string): Promise<string | null> => {
     const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `${path}/${fileName}`;
+    const filePath = `${path}/${user?.id ?? "anon"}/${fileName}`;
 
     const { error } = await supabase.storage.from("product-media").upload(filePath, file);
     if (error) {
       console.error("Upload error:", error);
-      return null;
+      toast({
+        title: "Upload failed",
+        description: `${file.name}: ${error.message}`,
+        variant: "destructive",
+      });
+      throw error;
     }
-
-    const { data } = supabase.storage.from("product-media").getPublicUrl(filePath);
-    return data.publicUrl;
+    // Store the object path; consumers generate a signed URL to view it.
+    return filePath;
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
