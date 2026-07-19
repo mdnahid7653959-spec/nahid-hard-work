@@ -587,62 +587,82 @@ export default function AdminSellers() {
                 </div>
 
                 {/* Documents */}
-                <div>
-                  <Label className="mb-3 block">Identity Documents</Label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {selectedSeller.nid_front_image && (
-                      <a
-                        href={selectedSeller.nid_front_image}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        <div className="border rounded-lg p-2 hover:bg-muted transition-colors">
-                          <img
-                            src={selectedSeller.nid_front_image}
-                            alt="NID Front"
-                            className="w-full h-24 object-cover rounded"
-                          />
-                          <p className="text-xs text-center mt-2">NID Front</p>
-                        </div>
-                      </a>
+                <div className="space-y-4">
+                  <Label className="block">Identity Documents</Label>
+
+                  {/* Identity numbers */}
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Document Type</p>
+                      <p className="text-sm bg-muted p-2 rounded capitalize">
+                        {selectedSeller.id_document_type?.replace("_", " ") || "Not specified"}
+                      </p>
+                    </div>
+                    {selectedSeller.id_document_type === "birth_certificate" ? (
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Birth Certificate Number</p>
+                        <p className="text-sm bg-muted p-2 rounded">
+                          {selectedSeller.birth_certificate_number || "Not provided"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">NID Number</p>
+                        <p className="text-sm bg-muted p-2 rounded">
+                          {selectedSeller.nid_number || "Not provided"}
+                        </p>
+                      </div>
                     )}
-                    {selectedSeller.nid_back_image && (
-                      <a
-                        href={selectedSeller.nid_back_image}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        <div className="border rounded-lg p-2 hover:bg-muted transition-colors">
-                          <img
-                            src={selectedSeller.nid_back_image}
-                            alt="NID Back"
-                            className="w-full h-24 object-cover rounded"
-                          />
-                          <p className="text-xs text-center mt-2">NID Back</p>
-                        </div>
-                      </a>
-                    )}
-                    {selectedSeller.trade_license_image && (
-                      <a
-                        href={selectedSeller.trade_license_image}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        <div className="border rounded-lg p-2 hover:bg-muted transition-colors">
-                          <img
-                            src={selectedSeller.trade_license_image}
-                            alt="Trade License"
-                            className="w-full h-24 object-cover rounded"
-                          />
-                          <p className="text-xs text-center mt-2">Trade License</p>
-                        </div>
-                      </a>
-                    )}
+                    <div className="space-y-1 md:col-span-2">
+                      <p className="text-xs text-muted-foreground">Trade License Number</p>
+                      <p className="text-sm bg-muted p-2 rounded">
+                        {selectedSeller.trade_license_number || "Not provided (optional for individual sellers)"}
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Document images */}
+                  {(selectedSeller.nid_front_image ||
+                    selectedSeller.nid_back_image ||
+                    selectedSeller.birth_certificate_image ||
+                    selectedSeller.trade_license_image) ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { url: selectedSeller.nid_front_image, label: "NID Front" },
+                        { url: selectedSeller.nid_back_image, label: "NID Back" },
+                        { url: selectedSeller.birth_certificate_image, label: "Birth Certificate" },
+                        { url: selectedSeller.trade_license_image, label: "Trade License" },
+                      ]
+                        .filter((d) => d.url)
+                        .map((d) => (
+                          <a
+                            key={d.label}
+                            href={d.url as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <div className="border rounded-lg p-2 hover:bg-muted transition-colors">
+                              <img
+                                src={d.url as string}
+                                alt={d.label}
+                                className="w-full h-28 object-cover rounded"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                                }}
+                              />
+                              <p className="text-xs text-center mt-2">{d.label}</p>
+                            </div>
+                          </a>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground bg-muted/50 border border-dashed rounded-lg p-4 text-center">
+                      No document images uploaded by this seller.
+                    </div>
+                  )}
                 </div>
+
 
                 {/* Payment Info */}
                 <div className="grid md:grid-cols-2 gap-4">
