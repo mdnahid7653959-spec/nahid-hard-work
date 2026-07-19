@@ -345,10 +345,8 @@ export default function AdminProducts() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/product/${product.slug}`}>
-                              <Eye className="h-4 w-4 mr-2" />View
-                            </Link>
+                          <DropdownMenuItem onClick={() => setPreviewId(product.id)}>
+                            <Eye className="h-4 w-4 mr-2" />View
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link to={`/admin/products/${product.id}`}>
