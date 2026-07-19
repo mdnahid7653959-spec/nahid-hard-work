@@ -176,7 +176,7 @@ var get_my_profile_default = defineTool5({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "wqbrciwoybqbgbxnizgt";
+var projectRef = "guydrwfavsqgenttsubl";
 var mcp_default = defineMcp({
   name: "ecom-genesis-mcp",
   title: "Darzo Marketplace MCP",
