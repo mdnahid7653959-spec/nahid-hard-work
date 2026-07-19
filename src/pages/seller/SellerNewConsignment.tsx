@@ -113,7 +113,7 @@ export default function SellerNewConsignment() {
     enabled: !!sellerProfile?.id,
   });
 
-  // Fetch warehouses
+  // Fetch warehouses (auto-select the default one — user cannot change)
   const { data: warehouses = [] } = useQuery({
     queryKey: ["warehouses"],
     queryFn: async () => {
@@ -126,6 +126,12 @@ export default function SellerNewConsignment() {
       return data as Warehouse[];
     },
   });
+
+  // Auto-lock warehouse to the first active one (Dartup Main House)
+  const lockedWarehouse = warehouses[0];
+  if (lockedWarehouse && selectedWarehouse !== lockedWarehouse.id) {
+    setTimeout(() => setSelectedWarehouse(lockedWarehouse.id), 0);
+  }
 
   // Create consignment mutation
   const createConsignment = useMutation({
