@@ -195,12 +195,15 @@ export function SmartSearchBar({
             type="submit"
             aria-label="Search"
             className={cn(
-              "h-8 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold",
-              "hover:bg-primary/90 active:scale-95 transition-all shadow-sm shrink-0"
+              "grid place-items-center rounded-xl bg-primary text-primary-foreground shrink-0",
+              "hover:bg-primary/90 active:scale-95 transition-all shadow-sm",
+              variant === "desktop" ? "h-8 px-3 text-xs font-semibold gap-1.5" : "h-8 w-8"
             )}
           >
-            Search
+            <Search className="h-4 w-4" />
+            {variant === "desktop" && <span>Search</span>}
           </button>
+
         </div>
       </form>
 
