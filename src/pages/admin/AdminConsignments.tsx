@@ -47,6 +47,7 @@ import {
   X,
   Eye,
   PackageCheck,
+  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -252,11 +253,25 @@ export default function AdminConsignments() {
     <AdminLayout title="Consignments">
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold">Consignment Management</h1>
-          <p className="text-muted-foreground">
-            Review and manage seller consignment requests
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Consignment Management</h1>
+            <p className="text-muted-foreground">
+              Review and manage seller consignment requests
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              refetch();
+              toast({ title: "Syncing...", description: "Fetching latest consignments" });
+            }}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Sync
+          </Button>
         </div>
 
         {/* Stats */}
