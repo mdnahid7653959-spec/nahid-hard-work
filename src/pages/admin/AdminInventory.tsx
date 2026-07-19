@@ -45,7 +45,31 @@ export default function AdminInventory() {
 
   useEffect(() => {
     fetchData();
+    loadThreshold();
   }, []);
+
+  const loadThreshold = async () => {
+    const { data } = await adminDb.select<{ key: string; value: any }>("site_settings", {
+      filters: [{ col: "key", op: "eq", value: "low_stock_threshold" }],
+      limit: 1,
+    });
+    const v = data?.[0]?.value;
+    const n = typeof v === "number" ? v : Number(v);
+    if (Number.isFinite(n) && n > 0) setGlobalLowStockThreshold(n);
+  };
+
+  const saveThreshold = async (value: number) => {
+    const { error } = await adminDb.upsert("site_settings", {
+      key: "low_stock_threshold",
+      value,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to save threshold" });
+    } else {
+      toast({ title: "Saved", description: "Threshold updated" });
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -86,37 +110,76 @@ export default function AdminInventory() {
     outOfStock: products.filter(p => p.stock_quantity === 0).length
   };
 
-  const updateStock = async (productId: string, newQuantity: number) => {
-    const { error } = await adminDb.update("products", { stock_quantity: newQuantity }, { id: productId });
+  const commitStock = async (product: Product, newQuantity: number) => {
+    if (!Number.isFinite(newQuantity) || newQuantity < 0) {
+      toast({ variant: "destructive", title: "Invalid", description: "Stock must be a non-negative number" });
+      fetchData();
+      return;
+    }
+    if (newQuantity === product.stock_quantity) return;
+
+    const previous = product.stock_quantity;
+    const { error } = await adminDb.update("products", { stock_quantity: newQuantity }, { id: product.id });
     if (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to update stock" });
-    } else {
-      toast({ title: "Success", description: "Stock updated successfully" });
       fetchData();
+      return;
     }
+
+    // Write audit trail
+    await adminDb.insert("inventory_logs", {
+      product_id: product.id,
+      previous_quantity: previous,
+      new_quantity: newQuantity,
+      quantity_change: newQuantity - previous,
+      change_type: newQuantity > previous ? "restock" : "adjustment",
+      notes: "Manual update from admin inventory page",
+    });
+
+    toast({ title: "Success", description: "Stock updated" });
+    fetchData();
   };
 
   const createAlert = async () => {
     if (!selectedProduct) return;
-    const { error } = await adminDb.insert("inventory_alerts", {
-      product_id: selectedProduct.id,
-      alert_type: "low_stock",
-      threshold: alertThreshold,
-      is_active: true,
-    });
-    if (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to create alert" });
+    // Upsert-style: if an alert already exists for this product, update it instead of creating a duplicate
+    const existing = alerts.find(a => a.product_id === selectedProduct.id);
+    if (existing) {
+      const { error } = await adminDb.update("inventory_alerts", {
+        alert_type: "low_stock",
+        threshold: alertThreshold,
+        is_active: true,
+      }, { id: existing.id });
+      if (error) {
+        toast({ variant: "destructive", title: "Error", description: "Failed to update alert" });
+        return;
+      }
+      toast({ title: "Success", description: "Alert updated" });
     } else {
-      toast({ title: "Success", description: "Alert created successfully" });
-      setAlertDialogOpen(false);
-      fetchData();
+      const { error } = await adminDb.insert("inventory_alerts", {
+        product_id: selectedProduct.id,
+        alert_type: "low_stock",
+        threshold: alertThreshold,
+        is_active: true,
+      });
+      if (error) {
+        toast({ variant: "destructive", title: "Error", description: "Failed to create alert" });
+        return;
+      }
+      toast({ title: "Success", description: "Alert created" });
     }
+    setAlertDialogOpen(false);
+    fetchData();
   };
 
   const toggleAlert = async (alertId: string, isActive: boolean) => {
-    await adminDb.update("inventory_alerts", { is_active: !isActive }, { id: alertId });
+    const { error } = await adminDb.update("inventory_alerts", { is_active: !isActive }, { id: alertId });
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to toggle alert" });
+    }
     fetchData();
   };
+
 
   if (loading) {
     return (
@@ -203,10 +266,16 @@ export default function AdminInventory() {
               <Label>Global Low Stock Threshold:</Label>
               <Input
                 type="number"
+                min={1}
                 value={globalLowStockThreshold}
                 onChange={(e) => setGlobalLowStockThreshold(Number(e.target.value))}
+                onBlur={(e) => {
+                  const n = Number(e.target.value);
+                  if (Number.isFinite(n) && n > 0) saveThreshold(n);
+                }}
                 className="w-24"
               />
+
               <span className="text-sm text-muted-foreground">Products with stock below this will be flagged</span>
             </div>
           </CardContent>
@@ -269,11 +338,17 @@ export default function AdminInventory() {
                       <TableCell>
                         <Input
                           type="number"
-                          value={product.stock_quantity}
-                          onChange={(e) => updateStock(product.id, Number(e.target.value))}
+                          min={0}
+                          defaultValue={product.stock_quantity}
+                          key={`stock-${product.id}-${product.stock_quantity}`}
+                          onBlur={(e) => commitStock(product, Number(e.target.value))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                          }}
                           className="w-20"
                         />
                       </TableCell>
+
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>

@@ -86,6 +86,7 @@ export default function AdminProducts() {
   };
 
   useEffect(() => {
+    if (!admin?.id) return;
     fetchProducts();
 
     const channel = supabase
@@ -96,7 +97,8 @@ export default function AdminProducts() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [admin?.id]);
+
 
   const handleRefresh = async () => {
     setRefreshing(true);
