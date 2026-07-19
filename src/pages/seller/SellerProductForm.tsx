@@ -513,7 +513,7 @@ export default function SellerProductForm() {
             </div>
           </div>
           {(() => {
-            const tabOrder = ["basic", "category", "pricing", "media", "specs", "shipping", "seo", "return"];
+            const tabOrder = ["basic", "category", "pricing", "media", "specs", "return"];
             const currentIdx = tabOrder.indexOf(activeTab);
             const isLast = currentIdx === tabOrder.length - 1;
             if (isLast) {
