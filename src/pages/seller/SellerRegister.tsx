@@ -164,6 +164,20 @@ export default function SellerRegister() {
       }
     }
 
+    // Trade License: required for partnership / private_limited / limited / other non-individual
+    if (form.businessType && form.businessType !== "individual") {
+      if (!form.tradeLicenseNumber.trim() || !tradeLicenseImage) {
+        toast({
+          title: "Trade License Required",
+          description: "Partnership / Limited companies must provide a Trade License number and upload the document.",
+          variant: "destructive",
+        });
+        setActiveTab("business");
+        return;
+      }
+    }
+
+
     setLoading(true);
 
     try {
