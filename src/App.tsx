@@ -145,7 +145,9 @@ const App = () => (
                           {/* Public Routes - Lazy loaded */}
                           <Route path="/forgot-password" element={<ForgotPassword />} />
                           <Route path="/reset-password" element={<ResetPassword />} />
-                          <Route path="/products" element={<Products />} />
+                         <Route path="/products" element={<Products />} />
+                         <Route path="/search" element={<SearchPage />} />
+
                           <Route path="/product/:slug" element={<ProductDetail />} />
                           <Route path="/product/cj/:id" element={<CJProductDetail />} />
                           <Route path="/products/cj" element={<CJProducts />} />
