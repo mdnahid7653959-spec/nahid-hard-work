@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Admins/sellers manage consignments" ON public.consignments;
