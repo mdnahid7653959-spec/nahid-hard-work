@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,14 +129,17 @@ export default function SellerNewConsignment() {
 
   // Auto-lock warehouse to the first active one (Dartup Main House)
   const lockedWarehouse = warehouses[0];
-  if (lockedWarehouse && selectedWarehouse !== lockedWarehouse.id) {
-    setTimeout(() => setSelectedWarehouse(lockedWarehouse.id), 0);
-  }
+  useEffect(() => {
+    if (lockedWarehouse && selectedWarehouse !== lockedWarehouse.id) {
+      setSelectedWarehouse(lockedWarehouse.id);
+    }
+  }, [lockedWarehouse, selectedWarehouse]);
 
   // Create consignment mutation
   const createConsignment = useMutation({
     mutationFn: async () => {
-      if (!seller?.id || !selectedProduct || !selectedWarehouse || !quantity) {
+      const warehouseId = selectedWarehouse || lockedWarehouse?.id;
+      if (!seller?.id || !selectedProduct || !warehouseId || !quantity) {
         throw new Error("Please fill all required fields");
       }
 
@@ -144,7 +147,7 @@ export default function SellerNewConsignment() {
         consignment_number: `CON-${Date.now()}`,
         seller_id: seller.id,
         product_id: selectedProduct.id,
-        warehouse_id: selectedWarehouse,
+        warehouse_id: warehouseId,
         quantity: parseInt(quantity),
       }]);
 
@@ -174,9 +177,13 @@ export default function SellerNewConsignment() {
       toast({ title: "Error", description: "Please select a product", variant: "destructive" });
       return;
     }
-    if (!selectedWarehouse) {
-      toast({ title: "Error", description: "Please select a warehouse", variant: "destructive" });
+    const warehouseId = selectedWarehouse || lockedWarehouse?.id;
+    if (!warehouseId) {
+      toast({ title: "Error", description: "Warehouse is loading, please wait a moment", variant: "destructive" });
       return;
+    }
+    if (!selectedWarehouse && lockedWarehouse) {
+      setSelectedWarehouse(lockedWarehouse.id);
     }
     if (!quantity || parseInt(quantity) <= 0) {
       toast({ title: "Error", description: "Please enter a valid quantity", variant: "destructive" });
