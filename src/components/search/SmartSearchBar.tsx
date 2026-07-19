@@ -173,8 +173,12 @@ export function SmartSearchBar({
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
-            className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border-0"
+            className={cn(
+              "flex-1 min-w-0 bg-transparent text-foreground placeholder:text-muted-foreground/70 outline-none border-0 leading-none",
+              variant === "desktop" ? "text-sm" : "text-[13px]"
+            )}
           />
+
           {isFetching && hasQuery && (
             <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" aria-hidden />
           )}
