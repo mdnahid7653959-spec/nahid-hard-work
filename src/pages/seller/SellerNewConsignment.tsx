@@ -138,7 +138,8 @@ export default function SellerNewConsignment() {
   // Create consignment mutation
   const createConsignment = useMutation({
     mutationFn: async () => {
-      if (!seller?.id || !selectedProduct || !selectedWarehouse || !quantity) {
+      const warehouseId = selectedWarehouse || lockedWarehouse?.id;
+      if (!seller?.id || !selectedProduct || !warehouseId || !quantity) {
         throw new Error("Please fill all required fields");
       }
 
@@ -146,7 +147,7 @@ export default function SellerNewConsignment() {
         consignment_number: `CON-${Date.now()}`,
         seller_id: seller.id,
         product_id: selectedProduct.id,
-        warehouse_id: selectedWarehouse,
+        warehouse_id: warehouseId,
         quantity: parseInt(quantity),
       }]);
 
