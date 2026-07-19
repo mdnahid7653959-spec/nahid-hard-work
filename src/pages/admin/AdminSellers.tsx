@@ -667,23 +667,24 @@ export default function AdminSellers() {
                     selectedSeller.trade_license_image) ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
-                        { url: selectedSeller.nid_front_image, label: "NID Front" },
-                        { url: selectedSeller.nid_back_image, label: "NID Back" },
-                        { url: selectedSeller.birth_certificate_image, label: "Birth Certificate" },
-                        { url: selectedSeller.trade_license_image, label: "Trade License" },
+                        { key: "nid_front_image", label: "NID Front" },
+                        { key: "nid_back_image", label: "NID Back" },
+                        { key: "birth_certificate_image", label: "Birth Certificate" },
+                        { key: "trade_license_image", label: "Trade License" },
                       ]
+                        .map((d) => ({ ...d, url: resolvedImages[d.key] }))
                         .filter((d) => d.url)
                         .map((d) => (
                           <a
                             key={d.label}
-                            href={d.url as string}
+                            href={d.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block"
                           >
                             <div className="border rounded-lg p-2 hover:bg-muted transition-colors">
                               <img
-                                src={d.url as string}
+                                src={d.url}
                                 alt={d.label}
                                 className="w-full h-28 object-cover rounded"
                                 onError={(e) => {
@@ -695,6 +696,7 @@ export default function AdminSellers() {
                           </a>
                         ))}
                     </div>
+
                   ) : (
                     <div className="text-sm text-muted-foreground bg-muted/50 border border-dashed rounded-lg p-4 text-center">
                       No document images uploaded by this seller.
