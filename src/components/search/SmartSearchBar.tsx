@@ -148,12 +148,13 @@ export function SmartSearchBar({
       >
         <div
           className={cn(
-            "group flex items-center gap-2 bg-background/95 backdrop-blur border border-border/60",
-            "rounded-2xl shadow-lg shadow-black/5 pl-3 pr-1.5 transition-all duration-200",
+            "group flex items-center bg-background/95 backdrop-blur border border-border/60",
+            "rounded-2xl shadow-lg shadow-black/5 transition-all duration-200",
             "focus-within:border-primary/60 focus-within:shadow-xl focus-within:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/20",
-            variant === "desktop" ? "h-11" : "h-10"
+            variant === "desktop" ? "h-11 gap-2 pl-3 pr-1.5" : "h-11 gap-1.5 pl-3 pr-1"
           )}
         >
+
           <Search className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
           <input
             ref={inputRef}
