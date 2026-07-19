@@ -801,7 +801,14 @@ export default function SellerRegister() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
-                      <Label>Trade License (if applicable)</Label>
+                      <Label>
+                        Trade License{" "}
+                        {form.businessType !== "individual" ? (
+                          <span className="text-destructive">* (Required for {form.businessType.replace("_", " ")})</span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">(optional for individuals)</span>
+                        )}
+                      </Label>
                       <div className="border-2 border-dashed rounded-lg p-6 text-center">
                         {tradeLicenseImage ? (
                           <div className="space-y-2">
