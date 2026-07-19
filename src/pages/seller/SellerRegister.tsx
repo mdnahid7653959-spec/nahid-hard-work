@@ -278,7 +278,7 @@ export default function SellerRegister() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 container py-6 md:py-12">
+      <main className="flex-1 container py-6 md:py-12 pb-32 md:pb-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <Store className="h-12 w-12 mx-auto text-primary mb-4" />
