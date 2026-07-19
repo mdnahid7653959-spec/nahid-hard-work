@@ -144,13 +144,8 @@ function SectionRenderer({
       );
 
     case "recently_viewed":
-      return (
-        <section className="w-full px-3 sm:px-4" style={sectionStyle}>
-          <div className="max-w-7xl mx-auto">
-            <Suspense fallback={null}><RecentlyViewedSection /></Suspense>
-          </div>
-        </section>
-      );
+      return null;
+
 
     case "latest_products":
       return (
