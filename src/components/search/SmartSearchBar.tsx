@@ -148,12 +148,13 @@ export function SmartSearchBar({
       >
         <div
           className={cn(
-            "group flex items-center gap-2 bg-background/95 backdrop-blur border border-border/60",
-            "rounded-2xl shadow-lg shadow-black/5 pl-3 pr-1.5 transition-all duration-200",
+            "group flex items-center bg-background/95 backdrop-blur border border-border/60",
+            "rounded-2xl shadow-lg shadow-black/5 transition-all duration-200",
             "focus-within:border-primary/60 focus-within:shadow-xl focus-within:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/20",
-            variant === "desktop" ? "h-11" : "h-10"
+            variant === "desktop" ? "h-11 gap-2 pl-3 pr-1.5" : "h-11 gap-1.5 pl-3 pr-1"
           )}
         >
+
           <Search className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
           <input
             ref={inputRef}
@@ -172,8 +173,12 @@ export function SmartSearchBar({
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
-            className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border-0"
+            className={cn(
+              "flex-1 min-w-0 bg-transparent text-foreground placeholder:text-muted-foreground/70 outline-none border-0 leading-none",
+              variant === "desktop" ? "text-sm" : "text-[13px]"
+            )}
           />
+
           {isFetching && hasQuery && (
             <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" aria-hidden />
           )}
@@ -195,14 +200,15 @@ export function SmartSearchBar({
             type="submit"
             aria-label="Search"
             className={cn(
-              "grid place-items-center rounded-xl bg-primary text-primary-foreground shrink-0",
+              "inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0",
               "hover:bg-primary/90 active:scale-95 transition-all shadow-sm",
-              variant === "desktop" ? "h-8 px-3 text-xs font-semibold gap-1.5" : "h-8 w-8"
+              variant === "desktop" ? "h-8 px-3 text-xs font-semibold gap-1.5" : "h-9 w-9"
             )}
           >
             <Search className="h-4 w-4" />
             {variant === "desktop" && <span>Search</span>}
           </button>
+
 
         </div>
       </form>
