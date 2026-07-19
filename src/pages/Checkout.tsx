@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { CreditCard, Truck, Shield, ArrowLeft, Loader2, ChevronDown, ChevronUp, CheckCircle, Globe, Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,37 @@ export default function Checkout() {
     zipCode: "",
     country: "Bangladesh"
   });
+  const [savedAddressId, setSavedAddressId] = useState<string | null>(null);
+
+  // Prefill shipping info from profile + default address so user doesn't retype
+  useEffect(() => {
+    const loadSaved = async () => {
+      if (!user) return;
+
+      const [{ data: profile }, { data: address }] = await Promise.all([
+        supabase.from("profiles").select("full_name, phone, email").eq("user_id", user.id).maybeSingle(),
+        supabase.from("addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+
+      setShippingInfo((prev) => {
+        const [first = "", ...rest] = (profile?.full_name || address?.full_name || "").split(" ");
+        return {
+          firstName: prev.firstName || first,
+          lastName: prev.lastName || rest.join(" "),
+          email: prev.email || profile?.email || user.email || "",
+          phone: prev.phone || profile?.phone || address?.phone || "",
+          address: prev.address || address?.address_line1 || "",
+          city: prev.city || address?.city || "",
+          state: prev.state || address?.state || "",
+          zipCode: prev.zipCode || address?.postal_code || "",
+          country: prev.country || address?.country || "Bangladesh",
+        };
+      });
+
+      if (address?.id) setSavedAddressId(address.id);
+    };
+    loadSaved();
+  }, [user]);
 
   // Combined items and totals
   const totalItems = regularItems.length + cjItems.length;
@@ -198,6 +229,37 @@ export default function Checkout() {
         .single();
 
       if (orderError) throw orderError;
+
+      // Persist phone + full name to profile so admin sees latest details
+      const fullNameCombined = `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim();
+      try {
+        await supabase.from("profiles").update({
+          full_name: fullNameCombined || undefined,
+          phone: shippingInfo.phone || undefined,
+          updated_at: new Date().toISOString(),
+        }).eq("user_id", user.id);
+      } catch (e) { console.warn("profile update skipped", e); }
+
+      // Save / update default address so it prefills next time
+      try {
+        const addressPayload = {
+          user_id: user.id,
+          full_name: fullNameCombined || "Customer",
+          phone: shippingInfo.phone,
+          address_line1: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.state,
+          postal_code: shippingInfo.zipCode,
+          country: shippingInfo.country || "Bangladesh",
+          is_default: true,
+        };
+        if (savedAddressId) {
+          await supabase.from("addresses").update({ ...addressPayload, updated_at: new Date().toISOString() }).eq("id", savedAddressId);
+        } else {
+          await supabase.from("addresses").insert(addressPayload);
+        }
+      } catch (e) { console.warn("address save skipped", e); }
+
 
       // Update coupon usage count if a coupon was applied
       if (appliedCoupon) {
