@@ -1,63 +1,25 @@
+## Goal
+Ekbar account create ba login korar por, same device/browser e user permanently logged in thakbe — ar login korte hobe na.
 
-# Multi-Vendor Admin Command Center — Activation & Completion Plan
+## Current State
+- `src/integrations/supabase/client.ts` e already `persistSession: true`, `autoRefreshToken: true`, `storage: localStorage` set kora ache — mane session technically browser e save hocche.
+- Kintu **email confirmation** on thakle signup er por session create hoy na, user ke email verify korar por manually login korte hoy — ei karone "account create korar por o login lage" mone hocche.
 
-Project e already ekta bishal admin panel er code ache (30+ admin pages + edge functions + migrations). Kintu backend connect na thakay kichui kaj korche na. Ei plan ta 2 phase e kaj shesh korbe: (1) existing code ke live korbo, (2) missing/weak areas gulo ke production-grade command hub e upgrade korbo.
+## Changes
 
-## Phase 1 — Backend Activation (Foundation)
+### 1. Auto-confirm email ON kora
+`supabase--configure_auth` tool diye `auto_confirm_email: true` set korbo. Er fole:
+- Signup korar songe songe session create hoye jabe
+- Email verify korar dorkar nei
+- User signup form submit korar por directly logged in state e chole jabe
 
-1. **Lovable Cloud enable** — automatic Postgres + Auth + Storage + Edge Functions provision.
-2. **Migrations run** — 40+ existing SQL migrations apply hobe (admin_credentials, products, categories, brands, orders, users, coupons, reviews, sellers, shipping, commissions, inventory, loyalty, CMS, etc.)
-3. **Edge functions deploy** — `admin-auth` (login/session/password), plus supporting functions.
-4. **Default admin seed verify** —
-   - Admin ID: `HI Admin`
-   - Password: `MegaMart@Admin#2026!`
-   - First login er por force password change.
-5. **Storage buckets** — product images, brand logos, category icons, CMS media, user avatars.
+### 2. Session persistence verify
+Already properly configured — kono code change lagbe na. localStorage e session save thake, token auto-refresh hoy, tai browser bondho kore khulleo ba refresh dileo user logged in thakbe. Only tokhon logout hobe jokhon:
+- User nije "Logout" chape
+- Browser data/cache manually clear kore
 
-## Phase 2 — Command Hub Feature Completion
+## Trade-off (jene rakha bhalo)
+Auto-confirm on kora mane keu fake email diye account khulte parbe (email verify hobe na). Marketplace er jonno eta common, kintu chaile pore email verification abar on kora jabe.
 
-Existing admin routes gulo audit kore missing wiring, real data, ebong bulk-actions add korbo:
-
-| Module | Capabilities |
-|---|---|
-| **Dashboard** | Real-time KPIs (revenue, orders, GMV, active users, top vendors), charts, alerts |
-| **Users** | List/search/filter, ban/unban, role assign, impersonate, delete, export CSV |
-| **Vendors/Sellers** | Approve/reject applications, KYC docs, commission tier, payout status, suspend |
-| **Products** | CRUD, bulk import/export, approval queue, feature toggle, stock sync, CJ dropship |
-| **Categories & Brands** | Tree editor, drag-reorder, icon upload, SEO fields |
-| **Orders** | Full lifecycle (pending → delivered → refund), invoice PDF, tracking, split-vendor orders |
-| **Inventory** | Stock alerts, low-stock threshold, warehouse view |
-| **Coupons & Marketing** | Percentage/fixed/BOGO, usage caps, campaign scheduler, push notifications |
-| **Reviews** | Moderate, flag spam, reply as admin |
-| **Shipping** | Zone/rate matrix, courier integrations, free-delivery rules |
-| **Commissions** | Per-vendor % or flat, auto-calc on order, payout ledger |
-| **Loyalty** | Points rules, tiers, redemption |
-| **Reports** | Sales, vendor performance, tax, exportable |
-| **CMS** | Banners, pages, homepage sections, theme builder |
-| **Security** | Audit log, session list, 2FA toggle, IP allow-list |
-| **Settings** | Store info, payments, taxes, CJ dropship API, email templates |
-
-## Phase 3 — Role & Permission Layer
-
-- `app_role` enum: `super_admin`, `admin`, `manager`, `support`, `vendor`.
-- `user_roles` table (separate — never on profiles).
-- `has_role()` security-definer function powers RLS on every admin-facing table.
-- Granular per-module permissions matrix editable from Admin → Security → Roles.
-
-## Phase 4 — Polish
-
-- Global command palette (⌘K) for jump-to-anything.
-- Consistent orange/white theme match with storefront.
-- Mobile-responsive admin (works on tablet + phone).
-- Toast + audit-log on every destructive action.
-
-## Technical Notes
-
-- Roles table pattern (per platform standard) prevents privilege escalation.
-- All admin tables get RLS + `has_role(auth.uid(), 'admin')` policies.
-- Edge functions handle password hashing (bcrypt) and session token issuance.
-- Storage RLS: admins full, vendors scoped to own bucket path.
-
-## What I need from you
-
-Just confirm: **"go ahead"** — ami Cloud enable kore migrations chalabo, then modules ek ek kore live korbo. Prothom login er por default password change korte hobe.
+## Confirm
+Egiye jai?
