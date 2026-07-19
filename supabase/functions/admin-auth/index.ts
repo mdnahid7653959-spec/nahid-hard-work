@@ -17,6 +17,23 @@ function normalizeUsername(username: string): string {
   return (username || "").trim();
 }
 
+function usernameLookupKey(username: string): string {
+  return normalizeUsername(username).replace(/\s+/g, "").toLowerCase();
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function invalidCredentialsResponse() {
+  // Keep credential failures as handled app-level errors so the browser
+  // does not surface them as Edge Function runtime failures.
+  return json({ success: false, error: "Invalid credentials" });
+}
+
 function toBase64(bytes: Uint8Array): string {
   let binary = "";
   for (const b of bytes) binary += String.fromCharCode(b);
@@ -199,19 +216,20 @@ serve(async (req) => {
     }
 
     if (action === "login") {
-      // Fetch admin credentials using service role (bypasses RLS)
-      const { data: admin, error: fetchError } = await supabase
+      // Fetch active admin credentials using service role (bypasses RLS).
+      // Match in code so login is tolerant of accidental case/space variation.
+      const { data: admins, error: fetchError } = await supabase
         .from("admin_credentials")
         .select("*")
-        .eq("username", normalizedUsername)
-        .eq("is_active", true)
-        .single();
+        .eq("is_active", true);
+
+      const requestedUsernameKey = usernameLookupKey(normalizedUsername);
+      const admin = Array.isArray(admins)
+        ? admins.find((candidate) => usernameLookupKey(candidate.username) === requestedUsernameKey)
+        : null;
 
       if (fetchError || !admin) {
-        return new Response(
-          JSON.stringify({ error: "Invalid credentials" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return invalidCredentialsResponse();
       }
 
       const providedPassword = (password || "").toString();
@@ -219,10 +237,7 @@ serve(async (req) => {
       const verify = await verifyAndMaybeUpgradePassword(providedPassword, admin.password_hash);
 
       if (!verify.valid) {
-        return new Response(
-          JSON.stringify({ error: "Invalid credentials" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return invalidCredentialsResponse();
       }
 
       // Upgrade legacy hash to PBKDF2
