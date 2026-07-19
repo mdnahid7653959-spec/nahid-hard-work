@@ -693,6 +693,7 @@ export type Database = {
           amount_to_collect: number | null
           approved_at: string | null
           consignment_id: string | null
+          consignment_number: string | null
           courier: string | null
           created_at: string
           delivered_at: string | null
@@ -701,6 +702,8 @@ export type Database = {
           item_description: string | null
           metadata: Json | null
           order_id: string | null
+          product_id: string | null
+          quantity: number
           received_at: string | null
           recipient_address: string | null
           recipient_name: string | null
@@ -711,12 +714,14 @@ export type Database = {
           status: string
           tracking_number: string | null
           updated_at: string
+          warehouse_id: string | null
         }
         Insert: {
           admin_notes?: string | null
           amount_to_collect?: number | null
           approved_at?: string | null
           consignment_id?: string | null
+          consignment_number?: string | null
           courier?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -725,6 +730,8 @@ export type Database = {
           item_description?: string | null
           metadata?: Json | null
           order_id?: string | null
+          product_id?: string | null
+          quantity?: number
           received_at?: string | null
           recipient_address?: string | null
           recipient_name?: string | null
@@ -735,12 +742,14 @@ export type Database = {
           status?: string
           tracking_number?: string | null
           updated_at?: string
+          warehouse_id?: string | null
         }
         Update: {
           admin_notes?: string | null
           amount_to_collect?: number | null
           approved_at?: string | null
           consignment_id?: string | null
+          consignment_number?: string | null
           courier?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -749,6 +758,8 @@ export type Database = {
           item_description?: string | null
           metadata?: Json | null
           order_id?: string | null
+          product_id?: string | null
+          quantity?: number
           received_at?: string | null
           recipient_address?: string | null
           recipient_name?: string | null
@@ -759,6 +770,7 @@ export type Database = {
           status?: string
           tracking_number?: string | null
           updated_at?: string
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -766,6 +778,27 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignments_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
