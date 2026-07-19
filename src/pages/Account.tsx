@@ -333,9 +333,21 @@ export default function Account() {
                           <User className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground" />
                         )}
                       </div>
-                      <button className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 shadow-lg touch-manipulation active:scale-95">
-                        <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </button>
+                      <label className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 shadow-lg touch-manipulation active:scale-95 cursor-pointer">
+                        {uploadingAvatar ? (
+                          <span className="block w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleAvatarUpload}
+                          disabled={uploadingAvatar}
+                        />
+                      </label>
+
                     </div>
                     <div className="text-center sm:text-left">
                       <h3 className="font-semibold text-sm sm:text-base">{fullName || "Your Name"}</h3>
