@@ -220,42 +220,61 @@ export function HeroBanner() {
       {/* Main content area */}
       <div className="flex-1 min-w-0 space-y-2.5 sm:space-y-3">
         {/* Main carousel - Mobile-first swipeable */}
-        {loading ? <Skeleton className="h-[180px] xs:h-[200px] sm:h-[240px] md:h-[280px] lg:h-[340px] rounded-2xl" /> : <div className="relative overflow-hidden rounded-2xl shadow-lg" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-            <div className="flex transition-transform duration-500 ease-out will-change-transform" style={{
+        {loading ? <Skeleton className="h-[240px] xs:h-[270px] sm:h-[320px] md:h-[360px] lg:h-[420px] rounded-3xl" /> : <div className="relative overflow-hidden rounded-3xl shadow-2xl ring-1 ring-black/5" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+            <div className="flex transition-transform duration-700 ease-out will-change-transform" style={{
           transform: `translateX(-${currentSlide * 100}%)`
         }}>
-              {slides.map(slide => <Link key={slide.id} to={slide.link} className={`min-w-full h-[180px] xs:h-[200px] sm:h-[240px] md:h-[280px] lg:h-[340px] flex items-center relative overflow-hidden bg-black`}>
+              {slides.map(slide => <Link key={slide.id} to={slide.link} className={`min-w-full h-[240px] xs:h-[270px] sm:h-[320px] md:h-[360px] lg:h-[420px] flex items-center relative overflow-hidden bg-black group`}>
                   {/* Background image */}
                   <div className="absolute inset-0">
-                    <img src={slide.image} alt={slide.title} className="w-full h-full" style={{ objectFit: slide.imageFit as any, objectPosition: slide.imagePosition }} loading="lazy" />
+                    <img src={slide.image} alt={slide.title} className="w-full h-full transition-transform duration-[7000ms] group-hover:scale-110" style={{ objectFit: slide.imageFit as any, objectPosition: slide.imagePosition }} loading="lazy" />
                   </div>
-                  
+
+                  {/* Cinematic gradient overlays */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
                   {/* Content */}
-                  <div className="relative z-10 px-5 sm:px-6 lg:px-8 w-full">
+                  <div className="relative z-10 px-6 sm:px-8 lg:px-12 w-full">
                     <div className="max-w-[90%] sm:max-w-md lg:max-w-lg text-white">
-                      {slide.subtitle && <span className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-white/20 backdrop-blur-sm text-[11px] sm:text-xs font-bold mb-2 sm:mb-3 border border-white/20">
-                          <Star className="h-3 w-3 sm:h-3 sm:w-3 fill-white" />
+                      {slide.subtitle && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-[11px] sm:text-xs font-bold mb-3 sm:mb-4 border border-white/30 shadow-lg">
+                          <Star className="h-3 w-3 fill-white" />
                           {slide.subtitle}
                         </span>}
-                      
-                      <h2 className="text-2xl xs:text-3xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-1.5 sm:mb-2 drop-shadow-lg leading-tight">
+
+                      <h2 className="text-3xl xs:text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 sm:mb-3 drop-shadow-2xl leading-[1.05] tracking-tight">
                         {slide.title}
                       </h2>
-                      
-                      {slide.description && <p className="text-xs sm:text-sm md:text-base opacity-90 mb-3 sm:mb-4 line-clamp-2 max-w-xs sm:max-w-md">
+
+                      {slide.description && <p className="text-sm sm:text-base md:text-lg opacity-95 mb-4 sm:mb-5 line-clamp-2 max-w-xs sm:max-w-md drop-shadow-lg">
                           {slide.description}
                         </p>}
-                      
-                      <Button size="sm" className="bg-white text-foreground hover:bg-white/90 font-bold shadow-lg press-scale transition-all h-10 sm:h-10 px-5 sm:px-6 text-sm sm:text-sm rounded-xl">
+
+                      <Button size="sm" className="bg-white text-foreground hover:bg-white/95 font-bold shadow-2xl press-scale transition-all h-11 sm:h-12 px-6 sm:px-7 text-sm sm:text-base rounded-xl">
                         {slide.cta}
                         <ArrowRight className="h-4 w-4 ml-1.5" />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="absolute -right-12 -bottom-12 w-32 h-32 sm:w-64 sm:h-64 bg-white/10 rounded-full blur-3xl" />
+                  <div className="absolute -right-16 -bottom-16 w-48 h-48 sm:w-80 sm:h-80 bg-primary/20 rounded-full blur-3xl" />
+                  <div className="absolute -left-20 -top-20 w-40 h-40 sm:w-64 sm:h-64 bg-white/10 rounded-full blur-3xl" />
                 </Link>)}
             </div>
+
+            {/* Slide indicators */}
+            {slides.length > 1 && (
+              <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.preventDefault(); goToSlide(i); }}
+                    aria-label={`Go to slide ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === currentSlide ? 'w-6 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>}
 
 
