@@ -109,13 +109,10 @@ export default function AdminWarehouses() {
         is_active: form.is_active,
       };
       if (editing) {
-        const { error } = await supabase
-          .from("warehouses")
-          .update(payload)
-          .eq("id", editing.id);
+        const { error } = await adminDb.update("warehouses", payload, { id: editing.id });
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("warehouses").insert([payload]);
+        const { error } = await adminDb.insert("warehouses", payload);
         if (error) throw error;
       }
     },
@@ -131,7 +128,7 @@ export default function AdminWarehouses() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("warehouses").delete().eq("id", id);
+      const { error } = await adminDb.remove("warehouses", { id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -146,10 +143,7 @@ export default function AdminWarehouses() {
 
   const toggleActive = useMutation({
     mutationFn: async (w: Warehouse) => {
-      const { error } = await supabase
-        .from("warehouses")
-        .update({ is_active: !w.is_active })
-        .eq("id", w.id);
+      const { error } = await adminDb.update("warehouses", { is_active: !w.is_active }, { id: w.id });
       if (error) throw error;
     },
     onSuccess: () => {
