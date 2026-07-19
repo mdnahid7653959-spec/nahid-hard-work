@@ -148,25 +148,18 @@ export default function SellerRegister() {
       return;
     }
 
-    // Identity: require EITHER NID (number) OR Birth Certificate (number + image)
-    if (form.idDocumentType === "nid") {
-      if (!form.nidNumber.trim()) {
-        toast({
-          title: "NID Required",
-          description: "Please provide your National ID number, or switch to Birth Certificate if you don't have one.",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else {
-      if (!form.birthCertNumber.trim() || !birthCertImage) {
-        toast({
-          title: "Birth Certificate Required",
-          description: "Please provide your Birth Certificate number and upload a photo of it.",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Identity: require at least ONE — NID number, or Birth Certificate (number + image).
+    // Seller can also provide BOTH; whichever is provided will be sent to the admin panel.
+    const hasNid = !!form.nidNumber.trim();
+    const hasBirthCert = !!form.birthCertNumber.trim() && !!birthCertImage;
+    if (!hasNid && !hasBirthCert) {
+      toast({
+        title: "Identity Document Required",
+        description: "Please provide your NID number, or a Birth Certificate number with its photo. You may also provide both.",
+        variant: "destructive",
+      });
+      setActiveTab("identity");
+      return;
     }
 
     // Trade License: required for partnership / private_limited / limited / other non-individual
@@ -247,11 +240,13 @@ export default function SellerRegister() {
         warehouse_address: form.warehouseAddress,
         return_address: form.warehouseAddress,
         id_document_type: form.idDocumentType,
-        nid_number: form.idDocumentType === "nid" ? form.nidNumber : null,
-        nid_front_image: form.idDocumentType === "nid" ? nidFrontUrl : null,
-        nid_back_image: form.idDocumentType === "nid" ? nidBackUrl : null,
-        birth_certificate_number: form.idDocumentType === "birth_certificate" ? form.birthCertNumber : null,
-        birth_certificate_image: form.idDocumentType === "birth_certificate" ? birthCertUrl : null,
+        // Save whichever documents the seller provided — both NID and Birth Certificate
+        // can be uploaded together, and all of them will show up in the admin panel.
+        nid_number: form.nidNumber?.trim() ? form.nidNumber.trim() : null,
+        nid_front_image: nidFrontUrl,
+        nid_back_image: nidBackUrl,
+        birth_certificate_number: form.birthCertNumber?.trim() ? form.birthCertNumber.trim() : null,
+        birth_certificate_image: birthCertUrl,
         bank_name: form.bankName,
         bank_account_name: form.bankAccountName,
         bank_account_number: form.bankAccountNumber,
@@ -581,145 +576,105 @@ export default function SellerRegister() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Identity Verification</CardTitle>
-                    <CardDescription>Verify with National ID (NID) or Birth Certificate</CardDescription>
+                    <CardDescription>
+                      Provide your National ID (NID) OR Birth Certificate. You can also upload both — everything you provide will be sent to the admin panel for review.
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Which document do you have?</Label>
-                      <Select
-                        value={form.idDocumentType}
-                        onValueChange={(value) => updateForm("idDocumentType", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="nid">National ID (NID)</SelectItem>
-                          <SelectItem value="birth_certificate">Birth Certificate (no NID)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Don't have an NID? Choose Birth Certificate. Trade License is optional and can be added later.
-                      </p>
-                    </div>
-
-                    {form.idDocumentType === "nid" ? (
-                      <>
+                  <CardContent className="space-y-6">
+                    {/* NID Section */}
+                    <div className="space-y-4 rounded-lg border p-4">
+                      <div>
+                        <h3 className="font-semibold">National ID (NID)</h3>
+                        <p className="text-xs text-muted-foreground">Optional if you provide a Birth Certificate below.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="nidNumber">NID Number</Label>
+                        <Input
+                          id="nidNumber"
+                          value={form.nidNumber}
+                          onChange={(e) => updateForm("nidNumber", e.target.value)}
+                          placeholder="Enter your NID number"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="nidNumber">National ID Number *</Label>
-                          <Input
-                            id="nidNumber"
-                            value={form.nidNumber}
-                            onChange={(e) => updateForm("nidNumber", e.target.value)}
-                            placeholder="Enter your NID number"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>NID Front Side (optional)</Label>
-                            <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                              {nidFrontImage ? (
-                                <div className="space-y-2">
-                                  <img
-                                    src={URL.createObjectURL(nidFrontImage)}
-                                    alt="NID Front"
-                                    className="max-h-32 mx-auto rounded"
-                                  />
-                                  <p className="text-sm text-muted-foreground">{nidFrontImage.name}</p>
-                                </div>
-                              ) : (
-                                <label className="cursor-pointer">
-                                  <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                  <p className="text-sm text-muted-foreground">Click to upload NID front</p>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => setNidFrontImage(e.target.files?.[0] || null)}
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>NID Back Side (optional)</Label>
-                            <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                              {nidBackImage ? (
-                                <div className="space-y-2">
-                                  <img
-                                    src={URL.createObjectURL(nidBackImage)}
-                                    alt="NID Back"
-                                    className="max-h-32 mx-auto rounded"
-                                  />
-                                  <p className="text-sm text-muted-foreground">{nidBackImage.name}</p>
-                                </div>
-                              ) : (
-                                <label className="cursor-pointer">
-                                  <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                  <p className="text-sm text-muted-foreground">Click to upload NID back</p>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => setNidBackImage(e.target.files?.[0] || null)}
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="birthCertNumber">Birth Certificate Number *</Label>
-                          <Input
-                            id="birthCertNumber"
-                            value={form.birthCertNumber}
-                            onChange={(e) => updateForm("birthCertNumber", e.target.value)}
-                            placeholder="Enter your birth certificate number"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Birth Certificate Photo *</Label>
+                          <Label>NID Front Side</Label>
                           <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                            {birthCertImage ? (
+                            {nidFrontImage ? (
                               <div className="space-y-2">
-                                <img
-                                  src={URL.createObjectURL(birthCertImage)}
-                                  alt="Birth Certificate"
-                                  className="max-h-40 mx-auto rounded"
-                                />
-                                <p className="text-sm text-muted-foreground">{birthCertImage.name}</p>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setBirthCertImage(null)}
-                                >
-                                  Remove
-                                </Button>
+                                <img src={URL.createObjectURL(nidFrontImage)} alt="NID Front" className="max-h-32 mx-auto rounded" />
+                                <p className="text-sm text-muted-foreground">{nidFrontImage.name}</p>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => setNidFrontImage(null)}>Remove</Button>
                               </div>
                             ) : (
                               <label className="cursor-pointer">
                                 <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                <p className="text-sm font-medium">Upload Birth Certificate</p>
-                                <p className="text-xs text-muted-foreground mt-1">JPG or PNG</p>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => setBirthCertImage(e.target.files?.[0] || null)}
-                                />
+                                <p className="text-sm text-muted-foreground">Click to upload NID front</p>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => setNidFrontImage(e.target.files?.[0] || null)} />
                               </label>
                             )}
                           </div>
                         </div>
-                      </>
-                    )}
+                        <div className="space-y-2">
+                          <Label>NID Back Side</Label>
+                          <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                            {nidBackImage ? (
+                              <div className="space-y-2">
+                                <img src={URL.createObjectURL(nidBackImage)} alt="NID Back" className="max-h-32 mx-auto rounded" />
+                                <p className="text-sm text-muted-foreground">{nidBackImage.name}</p>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => setNidBackImage(null)}>Remove</Button>
+                              </div>
+                            ) : (
+                              <label className="cursor-pointer">
+                                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground">Click to upload NID back</p>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => setNidBackImage(e.target.files?.[0] || null)} />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Birth Certificate Section */}
+                    <div className="space-y-4 rounded-lg border p-4">
+                      <div>
+                        <h3 className="font-semibold">Birth Certificate</h3>
+                        <p className="text-xs text-muted-foreground">Optional if you provided an NID above. Number + photo both required if used.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="birthCertNumber">Birth Certificate Number</Label>
+                        <Input
+                          id="birthCertNumber"
+                          value={form.birthCertNumber}
+                          onChange={(e) => updateForm("birthCertNumber", e.target.value)}
+                          placeholder="Enter your birth certificate number"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Birth Certificate Photo</Label>
+                        <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                          {birthCertImage ? (
+                            <div className="space-y-2">
+                              <img src={URL.createObjectURL(birthCertImage)} alt="Birth Certificate" className="max-h-40 mx-auto rounded" />
+                              <p className="text-sm text-muted-foreground">{birthCertImage.name}</p>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => setBirthCertImage(null)}>Remove</Button>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer">
+                              <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                              <p className="text-sm font-medium">Upload Birth Certificate</p>
+                              <p className="text-xs text-muted-foreground mt-1">JPG or PNG</p>
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => setBirthCertImage(e.target.files?.[0] || null)} />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      At least one document (NID number or Birth Certificate with photo) is required to continue.
+                    </p>
 
                     <div className="flex gap-2 pt-4">
                       <Button type="button" variant="outline" onClick={() => setActiveTab("business")}>
@@ -728,32 +683,15 @@ export default function SellerRegister() {
                       <Button
                         type="button"
                         onClick={() => {
-                          if (form.idDocumentType === "nid") {
-                            if (!form.nidNumber.trim()) {
-                              toast({
-                                title: "NID number required",
-                                description: "Please enter your National ID number to continue.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                          } else {
-                            if (!form.birthCertNumber.trim()) {
-                              toast({
-                                title: "Birth certificate number required",
-                                description: "Please enter your birth certificate number to continue.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                            if (!birthCertImage) {
-                              toast({
-                                title: "Birth certificate photo required",
-                                description: "Please upload a photo of your birth certificate to continue.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
+                          const hasNid = !!form.nidNumber.trim();
+                          const hasBirthCert = !!form.birthCertNumber.trim() && !!birthCertImage;
+                          if (!hasNid && !hasBirthCert) {
+                            toast({
+                              title: "Identity document required",
+                              description: "Provide your NID number, or a Birth Certificate number with photo. You can also provide both.",
+                              variant: "destructive",
+                            });
+                            return;
                           }
                           setActiveTab("payment");
                         }}
