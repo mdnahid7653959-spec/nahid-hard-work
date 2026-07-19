@@ -262,19 +262,6 @@ export function HeroBanner() {
                 </Link>)}
             </div>
 
-            {/* Slide indicators */}
-            {slides.length > 1 && (
-              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-20 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/30 backdrop-blur-md">
-                {slides.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={(e) => { e.preventDefault(); goToSlide(i); }}
-                    aria-label={`Go to slide ${i + 1}`}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${i === currentSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'}`}
-                  />
-                ))}
-              </div>
-            )}
           </div>}
 
 
