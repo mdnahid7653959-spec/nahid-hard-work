@@ -675,8 +675,6 @@ export default function SellerRegister() {
                     <p className="text-xs text-muted-foreground">
                       At least one document (NID number or Birth Certificate with photo) is required to continue.
                     </p>
-                      </>
-                    )}
 
                     <div className="flex gap-2 pt-4">
                       <Button type="button" variant="outline" onClick={() => setActiveTab("business")}>
@@ -685,32 +683,15 @@ export default function SellerRegister() {
                       <Button
                         type="button"
                         onClick={() => {
-                          if (form.idDocumentType === "nid") {
-                            if (!form.nidNumber.trim()) {
-                              toast({
-                                title: "NID number required",
-                                description: "Please enter your National ID number to continue.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                          } else {
-                            if (!form.birthCertNumber.trim()) {
-                              toast({
-                                title: "Birth certificate number required",
-                                description: "Please enter your birth certificate number to continue.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                            if (!birthCertImage) {
-                              toast({
-                                title: "Birth certificate photo required",
-                                description: "Please upload a photo of your birth certificate to continue.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
+                          const hasNid = !!form.nidNumber.trim();
+                          const hasBirthCert = !!form.birthCertNumber.trim() && !!birthCertImage;
+                          if (!hasNid && !hasBirthCert) {
+                            toast({
+                              title: "Identity document required",
+                              description: "Provide your NID number, or a Birth Certificate number with photo. You can also provide both.",
+                              variant: "destructive",
+                            });
+                            return;
                           }
                           setActiveTab("payment");
                         }}
