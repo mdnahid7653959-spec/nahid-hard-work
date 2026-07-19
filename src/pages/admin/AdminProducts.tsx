@@ -431,6 +431,17 @@ export default function AdminProducts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* In-panel Product Preview */}
+      <AdminProductPreviewDialog
+        productId={previewId}
+        open={!!previewId}
+        onOpenChange={(o) => !o && setPreviewId(null)}
+        actionLoading={actionLoading}
+        onApprove={async (id) => { await handleApprove(id); setPreviewId(null); }}
+        onReject={(id) => { setPreviewId(null); setRejectDialog({ open: true, productId: id, action: "reject" }); }}
+        onBan={(id) => { setPreviewId(null); setRejectDialog({ open: true, productId: id, action: "ban" }); }}
+      />
     </AdminLayout>
   );
 }
