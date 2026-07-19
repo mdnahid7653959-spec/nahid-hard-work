@@ -423,6 +423,16 @@ export default function SellerProductForm() {
       setActiveTab("pricing");
       return;
     }
+
+    if (images.length === 0) {
+      setActiveTab("media");
+      toast({
+        variant: "destructive",
+        title: "Product image required",
+        description: "Onnoto ekta product photo add korun tarpor submit korun."
+      });
+      return;
+    }
     
     setSaving(true);
 
