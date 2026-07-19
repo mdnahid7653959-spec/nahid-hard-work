@@ -982,14 +982,14 @@ export type Database = {
           {
             foreignKeyName: "inventory_alerts_product_id_fkey"
             columns: ["product_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inventory_alerts_product_id_fkey"
             columns: ["product_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "products_public"
             referencedColumns: ["id"]
           },
@@ -1568,6 +1568,8 @@ export type Database = {
       products: {
         Row: {
           approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           brand_id: string | null
           category_id: string | null
           color: string | null
@@ -1597,6 +1599,7 @@ export type Database = {
           rating_average: number | null
           rating_count: number | null
           regular_price: number
+          rejection_reason: string | null
           return_policy: string | null
           reviews_enabled: boolean | null
           seller_id: string | null
@@ -1616,6 +1619,8 @@ export type Database = {
         }
         Insert: {
           approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           brand_id?: string | null
           category_id?: string | null
           color?: string | null
@@ -1645,6 +1650,7 @@ export type Database = {
           rating_average?: number | null
           rating_count?: number | null
           regular_price?: number
+          rejection_reason?: string | null
           return_policy?: string | null
           reviews_enabled?: boolean | null
           seller_id?: string | null
@@ -1664,6 +1670,8 @@ export type Database = {
         }
         Update: {
           approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           brand_id?: string | null
           category_id?: string | null
           color?: string | null
@@ -1693,6 +1701,7 @@ export type Database = {
           rating_average?: number | null
           rating_count?: number | null
           regular_price?: number
+          rejection_reason?: string | null
           return_policy?: string | null
           reviews_enabled?: boolean | null
           seller_id?: string | null
