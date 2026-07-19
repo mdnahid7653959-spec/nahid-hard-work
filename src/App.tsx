@@ -42,6 +42,8 @@ const Wallet = lazy(() => import("./pages/Wallet"));
 const MyVouchers = lazy(() => import("./pages/MyVouchers"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const PaymentCallback = lazy(() => import("./pages/PaymentCallback"));
+const SearchPage = lazy(() => import("./pages/Search"));
+
 
 // Info Pages - lazy load
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
