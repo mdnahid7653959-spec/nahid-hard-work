@@ -284,15 +284,9 @@ export function Header() {
 
           {/* Mobile search */}
           {showSearch && (
-            <form onSubmit={handleSearch} className="mt-1.5 md:hidden">
-              <div className="relative w-full flex">
-                <Input type="search" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  className="rounded-r-none border-0 bg-white text-foreground text-xs pr-8 h-8 focus-visible:ring-0" />
-                <Button type="submit" className="rounded-l-none h-8 w-9 bg-warning hover:bg-warning/90" size="icon">
-                  <Search className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </form>
+            <div className="mt-1.5 md:hidden">
+              <SmartSearchBar variant="mobile" trendingSearches={trendingSearches} />
+            </div>
           )}
 
           {/* Trending searches - desktop */}
