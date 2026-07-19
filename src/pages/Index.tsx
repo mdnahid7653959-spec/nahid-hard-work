@@ -8,6 +8,7 @@ import { useCJSettings } from "@/hooks/useCJSettings";
 import { useLayoutConfig, useCustomSections, defaultSections, SectionConfig } from "@/hooks/useLayoutConfig";
 import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { ProductSection } from "@/components/home/ProductSection";
+import { PersonalizedFeed } from "@/components/home/PersonalizedFeed";
 import { Flame, Sparkles, TrendingUp, ThumbsUp, Clock } from "lucide-react";
 
 const CJTrendingProducts = lazy(() => import("@/components/home/CJTrendingProducts").then(m => ({ default: m.CJTrendingProducts })));
@@ -155,13 +156,20 @@ function SectionRenderer({
       return (
         <section className="w-full px-3 sm:px-4" style={sectionStyle}>
           <div className="max-w-7xl mx-auto">
-            {isLoading ? <SectionSkeleton /> : data?.latestProducts?.length > 0 ? (
-              <ProductSection
-                title="Just Added" subtitle="Fresh products"
-                products={data.latestProducts} viewAllLink="/products?sort=newest"
-                icon={Clock} iconBgColor="bg-gradient-to-br from-blue-500 to-cyan-500" iconColor="text-white"
-              />
-            ) : null}
+            {/* Mobile: personalized dense micro-grid feed */}
+            <div className="block md:hidden">
+              <PersonalizedFeed />
+            </div>
+            {/* Tablet/Desktop: keep existing Just Added grid */}
+            <div className="hidden md:block">
+              {isLoading ? <SectionSkeleton /> : data?.latestProducts?.length > 0 ? (
+                <ProductSection
+                  title="Just Added" subtitle="Fresh products"
+                  products={data.latestProducts} viewAllLink="/products?sort=newest"
+                  icon={Clock} iconBgColor="bg-gradient-to-br from-blue-500 to-cyan-500" iconColor="text-white"
+                />
+              ) : null}
+            </div>
           </div>
         </section>
       );
