@@ -151,3 +151,14 @@ export function clearRecentSearches() {
     /* ignore */
   }
 }
+
+export function removeRecentSearch(term: string) {
+  try {
+    const t = term.trim().toLowerCase();
+    const list = getRecentSearches().filter((x) => x.toLowerCase() !== t);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+  } catch {
+    /* ignore */
+  }
+}
+

@@ -136,8 +136,40 @@ export function SmartSearchBar({
   const showDropdown =
     open && (hasQuery ? true : rows.length > 0);
 
+  // Mobile: tap opens dedicated /search page for a richer experience
+  if (variant === "mobile") {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          onNavigate?.();
+          navigate("/search");
+        }}
+        aria-label="Open search"
+        className={cn(
+          "w-full h-10 pl-3.5 pr-1 flex items-center gap-2 rounded-full",
+          "bg-background/95 border border-border/60 shadow-lg shadow-black/5 text-left",
+          "active:scale-[0.99] transition",
+          className
+        )}
+      >
+        <Search className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
+        <span className="flex-1 min-w-0 truncate text-[13px] text-muted-foreground/70">
+          {placeholder}
+        </span>
+        <span
+          aria-hidden
+          className="h-8 w-8 grid place-items-center rounded-full bg-primary text-primary-foreground shrink-0"
+        >
+          <Search className="h-3.5 w-3.5" />
+        </span>
+      </button>
+    );
+  }
+
   return (
     <div ref={wrapRef} className={cn("relative w-full", className)}>
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
