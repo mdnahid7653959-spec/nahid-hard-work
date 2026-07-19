@@ -10,6 +10,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { SmartSearchBar } from "@/components/search/SmartSearchBar";
 
 interface CategoryItem {
   name: string;
@@ -207,15 +208,9 @@ export function Header() {
 
             {/* Search bar */}
             {showSearch && (
-              <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:flex">
-                <div className="relative w-full flex">
-                  <Input type="search" placeholder="Search for products, brands and more..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    className="rounded-r-none border-0 bg-white text-foreground placeholder:text-muted-foreground h-8 text-xs pr-16 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                  <Button type="submit" className="rounded-l-none h-8 px-3 bg-warning hover:bg-warning/90 text-warning-foreground font-medium text-xs">
-                    <Search className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </form>
+              <div className="flex-1 max-w-2xl hidden md:block">
+                <SmartSearchBar variant="desktop" trendingSearches={trendingSearches} />
+              </div>
             )}
 
             {/* Actions */}
@@ -289,15 +284,9 @@ export function Header() {
 
           {/* Mobile search */}
           {showSearch && (
-            <form onSubmit={handleSearch} className="mt-1.5 md:hidden">
-              <div className="relative w-full flex">
-                <Input type="search" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  className="rounded-r-none border-0 bg-white text-foreground text-xs pr-8 h-8 focus-visible:ring-0" />
-                <Button type="submit" className="rounded-l-none h-8 w-9 bg-warning hover:bg-warning/90" size="icon">
-                  <Search className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </form>
+            <div className="mt-1.5 md:hidden">
+              <SmartSearchBar variant="mobile" trendingSearches={trendingSearches} />
+            </div>
           )}
 
           {/* Trending searches - desktop */}
