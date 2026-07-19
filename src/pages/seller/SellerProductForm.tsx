@@ -161,7 +161,36 @@ export default function SellerProductForm() {
   const [uploading, setUploading] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [activeTab, setActiveTab] = useState("basic");
+  const [brandDialogOpen, setBrandDialogOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [creatingBrand, setCreatingBrand] = useState(false);
   const isEdit = !!id;
+
+  const handleCreateBrand = async () => {
+    const name = newBrandName.trim();
+    if (!name) {
+      toast({ title: "Brand name required", variant: "destructive" });
+      return;
+    }
+    if (!user) return;
+    setCreatingBrand(true);
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Math.random().toString(36).slice(2, 6);
+    const { data, error } = await supabase
+      .from("brands")
+      .insert({ name, slug, is_active: true, created_by: user.id })
+      .select("id, name")
+      .single();
+    setCreatingBrand(false);
+    if (error || !data) {
+      toast({ title: "Failed to create brand", description: error?.message, variant: "destructive" });
+      return;
+    }
+    setBrands((prev) => [...prev, { id: data.id, name: data.name }].sort((a, b) => a.name.localeCompare(b.name)));
+    setForm((prev) => ({ ...prev, brand_id: data.id }));
+    setNewBrandName("");
+    setBrandDialogOpen(false);
+    toast({ title: "Brand created", description: `"${data.name}" added.` });
+  };
 
   useEffect(() => {
     if (!user) {
