@@ -204,7 +204,28 @@ export default function SellerRegister() {
         logoUrl = await uploadFile(shopLogo, "seller-logos");
       }
 
-      const { error } = await supabase.from("sellers").insert({
+      // Check if user already has a seller record
+      const { data: existing } = await supabase
+        .from("sellers")
+        .select("id, status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing && (existing.status === "pending" || existing.status === "approved" || existing.status === "suspended" || existing.status === "banned")) {
+        toast({
+          title: "Application already exists",
+          description:
+            existing.status === "approved"
+              ? "You are already an approved seller."
+              : existing.status === "pending"
+              ? "Your application is under review."
+              : `Your seller account is ${existing.status}. Contact support.`,
+        });
+        navigate(existing.status === "approved" ? "/seller/dashboard" : "/seller/pending");
+        return;
+      }
+
+      const payload = {
         user_id: user.id,
         shop_name: form.shopName,
         shop_slug: generateSlug(form.shopName),
@@ -232,10 +253,16 @@ export default function SellerRegister() {
         bank_branch: form.bankBranch,
         mobile_banking_provider: form.mobileBankingProvider,
         mobile_banking_number: form.mobileBankingNumber,
-        status: "pending",
-      });
+        status: "pending" as const,
+        rejection_reason: null,
+      };
+
+      const { error } = existing
+        ? await supabase.from("sellers").update(payload).eq("id", existing.id)
+        : await supabase.from("sellers").insert(payload);
 
       if (error) throw error;
+
 
       toast({
         title: "Application Submitted! 🎉",
