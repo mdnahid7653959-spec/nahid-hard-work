@@ -117,6 +117,44 @@ export default function AdminSellers() {
   const [actionType, setActionType] = useState<"approve" | "reject" | "suspend" | "ban" | "unsuspend">("approve");
   const [actionReason, setActionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
+
+  // Resolve stored image reference (storage path OR full URL) to a viewable URL.
+  const resolveImage = useCallback(async (ref: string | null | undefined) => {
+    if (!ref) return null;
+    if (/^https?:\/\//i.test(ref)) return ref;
+    // Legacy entries may include the bucket prefix; strip it.
+    const path = ref.replace(/^product-media\//, "");
+    const { data, error } = await supabase.storage
+      .from("product-media")
+      .createSignedUrl(path, 60 * 60);
+    if (error) {
+      console.error("Signed URL error for", path, error);
+      return null;
+    }
+    return data.signedUrl;
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSeller) {
+      setResolvedImages({});
+      return;
+    }
+    const refs = {
+      shop_logo: selectedSeller.shop_logo,
+      nid_front_image: selectedSeller.nid_front_image,
+      nid_back_image: selectedSeller.nid_back_image,
+      birth_certificate_image: selectedSeller.birth_certificate_image,
+      trade_license_image: selectedSeller.trade_license_image,
+    };
+    (async () => {
+      const entries = await Promise.all(
+        Object.entries(refs).map(async ([k, v]) => [k, await resolveImage(v)] as const)
+      );
+      setResolvedImages(Object.fromEntries(entries.filter(([, v]) => v)) as Record<string, string>);
+    })();
+  }, [selectedSeller, resolveImage]);
+
 
   const fetchSellers = useCallback(async () => {
     try {
@@ -528,10 +566,11 @@ export default function AdminSellers() {
               <div className="space-y-6">
                 {/* Shop Info */}
                 <div className="flex items-start gap-4">
-                  {selectedSeller.shop_logo ? (
+                  {resolvedImages.shop_logo ? (
                     <img
-                      src={selectedSeller.shop_logo}
+                      src={resolvedImages.shop_logo}
                       alt={selectedSeller.shop_name}
+
                       className="h-20 w-20 rounded-xl object-cover"
                     />
                   ) : (
@@ -628,23 +667,24 @@ export default function AdminSellers() {
                     selectedSeller.trade_license_image) ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
-                        { url: selectedSeller.nid_front_image, label: "NID Front" },
-                        { url: selectedSeller.nid_back_image, label: "NID Back" },
-                        { url: selectedSeller.birth_certificate_image, label: "Birth Certificate" },
-                        { url: selectedSeller.trade_license_image, label: "Trade License" },
+                        { key: "nid_front_image", label: "NID Front" },
+                        { key: "nid_back_image", label: "NID Back" },
+                        { key: "birth_certificate_image", label: "Birth Certificate" },
+                        { key: "trade_license_image", label: "Trade License" },
                       ]
+                        .map((d) => ({ ...d, url: resolvedImages[d.key] }))
                         .filter((d) => d.url)
                         .map((d) => (
                           <a
                             key={d.label}
-                            href={d.url as string}
+                            href={d.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block"
                           >
                             <div className="border rounded-lg p-2 hover:bg-muted transition-colors">
                               <img
-                                src={d.url as string}
+                                src={d.url}
                                 alt={d.label}
                                 className="w-full h-28 object-cover rounded"
                                 onError={(e) => {
@@ -656,6 +696,7 @@ export default function AdminSellers() {
                           </a>
                         ))}
                     </div>
+
                   ) : (
                     <div className="text-sm text-muted-foreground bg-muted/50 border border-dashed rounded-lg p-4 text-center">
                       No document images uploaded by this seller.
