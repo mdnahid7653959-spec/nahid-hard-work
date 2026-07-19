@@ -117,6 +117,44 @@ export default function AdminSellers() {
   const [actionType, setActionType] = useState<"approve" | "reject" | "suspend" | "ban" | "unsuspend">("approve");
   const [actionReason, setActionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
+
+  // Resolve stored image reference (storage path OR full URL) to a viewable URL.
+  const resolveImage = useCallback(async (ref: string | null | undefined) => {
+    if (!ref) return null;
+    if (/^https?:\/\//i.test(ref)) return ref;
+    // Legacy entries may include the bucket prefix; strip it.
+    const path = ref.replace(/^product-media\//, "");
+    const { data, error } = await supabase.storage
+      .from("product-media")
+      .createSignedUrl(path, 60 * 60);
+    if (error) {
+      console.error("Signed URL error for", path, error);
+      return null;
+    }
+    return data.signedUrl;
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSeller) {
+      setResolvedImages({});
+      return;
+    }
+    const refs = {
+      shop_logo: selectedSeller.shop_logo,
+      nid_front_image: selectedSeller.nid_front_image,
+      nid_back_image: selectedSeller.nid_back_image,
+      birth_certificate_image: selectedSeller.birth_certificate_image,
+      trade_license_image: selectedSeller.trade_license_image,
+    };
+    (async () => {
+      const entries = await Promise.all(
+        Object.entries(refs).map(async ([k, v]) => [k, await resolveImage(v)] as const)
+      );
+      setResolvedImages(Object.fromEntries(entries.filter(([, v]) => v)) as Record<string, string>);
+    })();
+  }, [selectedSeller, resolveImage]);
+
 
   const fetchSellers = useCallback(async () => {
     try {
