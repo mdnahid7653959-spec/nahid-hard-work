@@ -84,6 +84,7 @@ export default function SellerRegister() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [nidFrontImage, setNidFrontImage] = useState<File | null>(null);
   const [nidBackImage, setNidBackImage] = useState<File | null>(null);
+  const [birthCertImage, setBirthCertImage] = useState<File | null>(null);
   const [tradeLicenseImage, setTradeLicenseImage] = useState<File | null>(null);
   const [shopLogo, setShopLogo] = useState<File | null>(null);
 
