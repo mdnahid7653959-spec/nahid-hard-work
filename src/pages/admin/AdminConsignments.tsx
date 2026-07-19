@@ -180,10 +180,7 @@ export default function AdminConsignments() {
         updates.received_at = new Date().toISOString();
       }
 
-      const { error } = await supabase
-        .from("consignments")
-        .update(updates as never)
-        .eq("id", id);
+      const { error } = await adminDb.update("consignments", updates, { id });
 
       if (error) throw error;
     },
