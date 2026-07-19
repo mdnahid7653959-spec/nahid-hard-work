@@ -176,9 +176,13 @@ export default function SellerNewConsignment() {
       toast({ title: "Error", description: "Please select a product", variant: "destructive" });
       return;
     }
-    if (!selectedWarehouse) {
-      toast({ title: "Error", description: "Please select a warehouse", variant: "destructive" });
+    const warehouseId = selectedWarehouse || lockedWarehouse?.id;
+    if (!warehouseId) {
+      toast({ title: "Error", description: "Warehouse is loading, please wait a moment", variant: "destructive" });
       return;
+    }
+    if (!selectedWarehouse && lockedWarehouse) {
+      setSelectedWarehouse(lockedWarehouse.id);
     }
     if (!quantity || parseInt(quantity) <= 0) {
       toast({ title: "Error", description: "Please enter a valid quantity", variant: "destructive" });
