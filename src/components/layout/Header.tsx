@@ -148,14 +148,14 @@ export function Header() {
 
       {/* Main header */}
       <div className="bg-primary text-primary-foreground">
-        <div className="container py-2.5 sm:py-3">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        <div className="container py-1.5 sm:py-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button className="lg:hidden p-1.5 hover:bg-white/10 rounded-md transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
 
             <Link to="/" className="flex items-center gap-2 shrink-0">
-              <img alt="Darzo.com" className="h-8 sm:h-9 w-auto object-contain rounded-lg" src={logoUrl} />
+              <img alt="Darzo.com" className="h-6 sm:h-7 w-auto object-contain rounded-md" src={logoUrl} />
             </Link>
 
             {/* Categories dropdown for desktop */}
