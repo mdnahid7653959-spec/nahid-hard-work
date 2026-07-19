@@ -137,10 +137,31 @@ export default function SellerRegister() {
     if (!form.shopName || !form.contactPhone || !form.contactEmail) {
       toast({
         title: "Required Fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in shop name, contact phone and email",
         variant: "destructive",
       });
       return;
+    }
+
+    // Identity: require EITHER NID (number) OR Birth Certificate (number + image)
+    if (form.idDocumentType === "nid") {
+      if (!form.nidNumber.trim()) {
+        toast({
+          title: "NID Required",
+          description: "Please provide your National ID number, or switch to Birth Certificate if you don't have one.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      if (!form.birthCertNumber.trim() || !birthCertImage) {
+        toast({
+          title: "Birth Certificate Required",
+          description: "Please provide your Birth Certificate number and upload a photo of it.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setLoading(true);
