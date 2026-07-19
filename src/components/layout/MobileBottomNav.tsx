@@ -53,8 +53,8 @@ export function MobileBottomNav() {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/60" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 4px)' }}>
-      <div className={`grid h-[44px]`} style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-lg" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 6px)' }}>
+      <div className={`grid h-[60px]`} style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.href || 
             (tab.href !== "/" && location.pathname.startsWith(tab.href));
@@ -67,22 +67,25 @@ export function MobileBottomNav() {
               to={tab.href}
               aria-label={tab.label}
               className={cn(
-                "flex items-center justify-center relative touch-manipulation",
-                isActive ? "text-primary" : "text-muted-foreground/70"
+                "flex flex-col items-center justify-center gap-1 relative touch-manipulation",
+                isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
               <div className="relative">
                 <IconComp className={cn(
-                  "h-[18px] w-[18px] transition-colors",
+                  "h-5 w-5 transition-colors",
                   isActive && "stroke-[2.5]"
                 )} />
                 
                 {badgeCount > 0 && (
-                  <span className="absolute -top-1 -right-2 min-w-[14px] h-[14px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
                     {badgeCount > 99 ? "99+" : badgeCount}
                   </span>
                 )}
               </div>
+              <span className={cn("text-[10px] font-medium leading-none", isActive && "font-semibold")}>
+                {tab.label}
+              </span>
             </Link>
           );
         })}
