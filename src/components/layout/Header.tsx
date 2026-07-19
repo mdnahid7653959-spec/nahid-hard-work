@@ -10,6 +10,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { SmartSearchBar } from "@/components/search/SmartSearchBar";
 
 interface CategoryItem {
   name: string;
