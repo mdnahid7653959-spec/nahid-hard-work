@@ -70,12 +70,11 @@ export default function AdminWarehouses() {
   const { data: warehouses = [], isLoading } = useQuery({
     queryKey: ["admin-warehouses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await adminDb.select<Warehouse>("warehouses", {
+        orderBy: { col: "created_at", ascending: false },
+      });
       if (error) throw error;
-      return data as Warehouse[];
+      return (data ?? []) as Warehouse[];
     },
   });
 
