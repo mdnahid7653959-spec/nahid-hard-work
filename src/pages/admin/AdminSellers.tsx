@@ -83,6 +83,11 @@ interface Seller {
   created_at: string;
   nid_front_image: string | null;
   nid_back_image: string | null;
+  nid_number: string | null;
+  id_document_type: string | null;
+  birth_certificate_number: string | null;
+  birth_certificate_image: string | null;
+  trade_license_number: string | null;
   trade_license_image: string | null;
   warehouse_address: any;
   bank_name: string | null;
