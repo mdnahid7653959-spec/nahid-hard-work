@@ -264,7 +264,8 @@ export default function SellerOrders() {
         </div>
 
         {/* Orders Table */}
-        <Card>
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -292,8 +293,8 @@ export default function SellerOrders() {
               ) : (
                 filteredOrders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.order_number}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{order.order_number}</TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {new Date(order.created_at).toLocaleDateString("bn-BD")}
                     </TableCell>
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
@@ -302,7 +303,7 @@ export default function SellerOrders() {
                         {order.payment_status || "pending"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium">
+                    <TableCell className="text-right font-medium whitespace-nowrap">
                       ৳{Number(order.total).toLocaleString()}
                     </TableCell>
                     <TableCell>
@@ -319,7 +320,9 @@ export default function SellerOrders() {
               )}
             </TableBody>
           </Table>
+          </div>
         </Card>
+
 
         {/* Order Details Dialog */}
         <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
