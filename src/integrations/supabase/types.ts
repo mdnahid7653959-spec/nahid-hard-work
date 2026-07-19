@@ -2117,6 +2117,8 @@ export type Database = {
           bank_account_number: string | null
           bank_branch: string | null
           bank_name: string | null
+          birth_certificate_image: string | null
+          birth_certificate_number: string | null
           business_address: string | null
           business_email: string | null
           business_license: string | null
@@ -2130,6 +2132,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          id_document_type: string | null
           is_verified: boolean | null
           logo_url: string | null
           metadata: Json | null
@@ -2169,6 +2172,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_branch?: string | null
           bank_name?: string | null
+          birth_certificate_image?: string | null
+          birth_certificate_number?: string | null
           business_address?: string | null
           business_email?: string | null
           business_license?: string | null
@@ -2182,6 +2187,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          id_document_type?: string | null
           is_verified?: boolean | null
           logo_url?: string | null
           metadata?: Json | null
@@ -2221,6 +2227,8 @@ export type Database = {
           bank_account_number?: string | null
           bank_branch?: string | null
           bank_name?: string | null
+          birth_certificate_image?: string | null
+          birth_certificate_number?: string | null
           business_address?: string | null
           business_email?: string | null
           business_license?: string | null
@@ -2234,6 +2242,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          id_document_type?: string | null
           is_verified?: boolean | null
           logo_url?: string | null
           metadata?: Json | null
