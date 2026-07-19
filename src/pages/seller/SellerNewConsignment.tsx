@@ -113,27 +113,27 @@ export default function SellerNewConsignment() {
     enabled: !!sellerProfile?.id,
   });
 
-  // Fetch warehouses (auto-select the default one — user cannot change)
+  // Fetch all active warehouses so the seller can pick the nearest one
   const { data: warehouses = [] } = useQuery({
     queryKey: ["warehouses"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("warehouses")
-        .select("id, name, address")
+        .select("id, name, address, city")
         .eq("is_active", true)
         .order("name");
       if (error) throw error;
-      return data as Warehouse[];
+      return data as any as Warehouse[];
     },
   });
 
-  // Auto-lock warehouse to the first active one (Dartup Main House)
-  const lockedWarehouse = warehouses[0];
+  // Auto-preselect first warehouse if none chosen yet
   useEffect(() => {
-    if (lockedWarehouse && selectedWarehouse !== lockedWarehouse.id) {
-      setSelectedWarehouse(lockedWarehouse.id);
+    if (!selectedWarehouse && warehouses.length > 0) {
+      setSelectedWarehouse(warehouses[0].id);
     }
-  }, [lockedWarehouse, selectedWarehouse]);
+  }, [warehouses, selectedWarehouse]);
+  const lockedWarehouse = warehouses.find((w) => w.id === selectedWarehouse) || warehouses[0];
 
   // Create consignment mutation
   const createConsignment = useMutation({
