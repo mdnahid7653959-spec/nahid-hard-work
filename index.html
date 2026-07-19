@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <title>Darzo.com - Shop Millions of Products at Best Prices</title>
+    <meta name="description" content="Discover amazing deals on electronics, fashion, home goods and more at Darzo.com. Free shipping on orders over ৳3500." />
+    <meta property="og:title" content="Darzo.com - Your One-Stop Online Marketplace" />
+    <meta property="og:description" content="Shop millions of products at unbeatable prices with fast, reliable shipping worldwide." />
+    <meta property="og:type" content="website" />
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Darzo.com" />
+    <link rel="apple-touch-icon" href="/darzo-logo.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>
