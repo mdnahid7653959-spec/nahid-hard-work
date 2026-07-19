@@ -156,13 +156,20 @@ function SectionRenderer({
       return (
         <section className="w-full px-3 sm:px-4" style={sectionStyle}>
           <div className="max-w-7xl mx-auto">
-            {isLoading ? <SectionSkeleton /> : data?.latestProducts?.length > 0 ? (
-              <ProductSection
-                title="Just Added" subtitle="Fresh products"
-                products={data.latestProducts} viewAllLink="/products?sort=newest"
-                icon={Clock} iconBgColor="bg-gradient-to-br from-blue-500 to-cyan-500" iconColor="text-white"
-              />
-            ) : null}
+            {/* Mobile: personalized dense micro-grid feed */}
+            <div className="block md:hidden">
+              <PersonalizedFeed />
+            </div>
+            {/* Tablet/Desktop: keep existing Just Added grid */}
+            <div className="hidden md:block">
+              {isLoading ? <SectionSkeleton /> : data?.latestProducts?.length > 0 ? (
+                <ProductSection
+                  title="Just Added" subtitle="Fresh products"
+                  products={data.latestProducts} viewAllLink="/products?sort=newest"
+                  icon={Clock} iconBgColor="bg-gradient-to-br from-blue-500 to-cyan-500" iconColor="text-white"
+                />
+              ) : null}
+            </div>
           </div>
         </section>
       );
