@@ -56,6 +56,32 @@ const getYouTubeEmbedUrl = (url: string): string | null => {
   return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
 };
 
+function MobileProductTopBar() {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  return (
+    <div className="md:hidden sticky top-0 z-40 bg-primary text-primary-foreground shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <div className="flex items-center gap-2 px-2 py-1.5">
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-white/10 rounded-md" aria-label="Back">
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <form onSubmit={(e) => { e.preventDefault(); if (q.trim()) navigate(`/products?search=${encodeURIComponent(q)}`); }} className="flex-1">
+          <input type="search" placeholder="Search products..." value={q} onChange={(e) => setQ(e.target.value)}
+            className="w-full h-8 rounded-md px-3 text-xs text-foreground bg-white placeholder:text-muted-foreground focus:outline-none" />
+        </form>
+        <Link to="/wishlist" className="p-1.5 hover:bg-white/10 rounded-md" aria-label="Wishlist">
+          <Heart className="h-5 w-5" />
+        </Link>
+        <Link to="/cart" className="p-1.5 hover:bg-white/10 rounded-md" aria-label="Cart">
+          <ShoppingCart className="h-5 w-5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+
+
 function InlineStoreBar({ sellerId, onContactSeller, contactingSeller }: {
   sellerId: string;
   onContactSeller: () => void;
