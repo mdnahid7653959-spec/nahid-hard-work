@@ -219,12 +219,12 @@ export function Header() {
             )}
 
             {/* Actions */}
-            <div className="flex items-center gap-1 sm:gap-1.5 ml-auto">
+            <div className="flex items-center gap-0.5 sm:gap-1 ml-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                    <span className="text-[9px] sm:text-[10px] leading-tight font-medium">
+                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md">
+                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">
                       {user ? profile?.full_name?.split(' ')[0] || 'Account' : 'Account'}
                     </span>
                   </Button>
@@ -262,26 +262,26 @@ export function Header() {
               </DropdownMenu>
 
               <Link to="/messages">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg relative">
-                  <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                  <span className="text-[9px] sm:text-[10px] leading-tight font-medium">Messages</span>
-                  {hasUnreadMessages && <span className="absolute top-0.5 right-1 h-2.5 w-2.5 rounded-full bg-green-400 border-2 border-primary animate-pulse" />}
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md relative">
+                  <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">Messages</span>
+                  {hasUnreadMessages && <span className="absolute top-0 right-0.5 h-2 w-2 rounded-full bg-green-400 border border-primary animate-pulse" />}
                 </Button>
               </Link>
 
               <Link to="/wishlist">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg relative">
-                  <Heart className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                  <span className="text-[9px] sm:text-[10px] leading-tight font-medium">Wishlist</span>
-                  {wishlistCount > 0 && <span className="absolute -top-0.5 right-0 h-4 w-4 rounded-full bg-warning text-[9px] font-bold text-warning-foreground flex items-center justify-center">{wishlistCount > 99 ? "99+" : wishlistCount}</span>}
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md relative">
+                  <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">Wishlist</span>
+                  {wishlistCount > 0 && <span className="absolute -top-0.5 right-0 h-3.5 w-3.5 rounded-full bg-warning text-[8px] font-bold text-warning-foreground flex items-center justify-center">{wishlistCount > 99 ? "99+" : wishlistCount}</span>}
                 </Button>
               </Link>
 
               <Link to="/cart" className="hidden sm:block">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1.5 px-2 sm:px-3 rounded-lg relative">
-                  <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                  <span className="text-[9px] sm:text-[10px] leading-tight font-medium">Cart</span>
-                  {cartCount > 0 && <span className="absolute -top-0.5 right-0 h-4 w-4 rounded-full bg-warning text-[9px] font-bold text-warning-foreground flex items-center justify-center">{cartCount > 99 ? "99+" : cartCount}</span>}
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md relative">
+                  <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-[8px] sm:text-[9px] leading-none mt-0.5 font-medium">Cart</span>
+                  {cartCount > 0 && <span className="absolute -top-0.5 right-0 h-3.5 w-3.5 rounded-full bg-warning text-[8px] font-bold text-warning-foreground flex items-center justify-center">{cartCount > 99 ? "99+" : cartCount}</span>}
                 </Button>
               </Link>
             </div>
