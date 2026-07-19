@@ -566,10 +566,11 @@ export default function AdminSellers() {
               <div className="space-y-6">
                 {/* Shop Info */}
                 <div className="flex items-start gap-4">
-                  {selectedSeller.shop_logo ? (
+                  {resolvedImages.shop_logo ? (
                     <img
-                      src={selectedSeller.shop_logo}
+                      src={resolvedImages.shop_logo}
                       alt={selectedSeller.shop_name}
+
                       className="h-20 w-20 rounded-xl object-cover"
                     />
                   ) : (
