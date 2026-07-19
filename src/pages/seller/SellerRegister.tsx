@@ -247,11 +247,13 @@ export default function SellerRegister() {
         warehouse_address: form.warehouseAddress,
         return_address: form.warehouseAddress,
         id_document_type: form.idDocumentType,
-        nid_number: form.idDocumentType === "nid" ? form.nidNumber : null,
-        nid_front_image: form.idDocumentType === "nid" ? nidFrontUrl : null,
-        nid_back_image: form.idDocumentType === "nid" ? nidBackUrl : null,
-        birth_certificate_number: form.idDocumentType === "birth_certificate" ? form.birthCertNumber : null,
-        birth_certificate_image: form.idDocumentType === "birth_certificate" ? birthCertUrl : null,
+        // Save whichever documents the seller provided — both NID and Birth Certificate
+        // can be uploaded together, and all of them will show up in the admin panel.
+        nid_number: form.nidNumber?.trim() ? form.nidNumber.trim() : null,
+        nid_front_image: nidFrontUrl,
+        nid_back_image: nidBackUrl,
+        birth_certificate_number: form.birthCertNumber?.trim() ? form.birthCertNumber.trim() : null,
+        birth_certificate_image: birthCertUrl,
         bank_name: form.bankName,
         bank_account_name: form.bankAccountName,
         bank_account_number: form.bankAccountNumber,
