@@ -98,6 +98,7 @@ const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
 const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
 const AdminCMS = lazy(() => import("./pages/admin/AdminCMS"));
 const AdminConsignments = lazy(() => import("./pages/admin/AdminConsignments"));
+const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 
