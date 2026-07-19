@@ -48,6 +48,37 @@ export default function Checkout() {
     zipCode: "",
     country: "Bangladesh"
   });
+  const [savedAddressId, setSavedAddressId] = useState<string | null>(null);
+
+  // Prefill shipping info from profile + default address so user doesn't retype
+  useEffect(() => {
+    const loadSaved = async () => {
+      if (!user) return;
+
+      const [{ data: profile }, { data: address }] = await Promise.all([
+        supabase.from("profiles").select("full_name, phone, email").eq("user_id", user.id).maybeSingle(),
+        supabase.from("addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+
+      setShippingInfo((prev) => {
+        const [first = "", ...rest] = (profile?.full_name || address?.full_name || "").split(" ");
+        return {
+          firstName: prev.firstName || first,
+          lastName: prev.lastName || rest.join(" "),
+          email: prev.email || profile?.email || user.email || "",
+          phone: prev.phone || profile?.phone || address?.phone || "",
+          address: prev.address || address?.address_line1 || "",
+          city: prev.city || address?.city || "",
+          state: prev.state || address?.state || "",
+          zipCode: prev.zipCode || address?.postal_code || "",
+          country: prev.country || address?.country || "Bangladesh",
+        };
+      });
+
+      if (address?.id) setSavedAddressId(address.id);
+    };
+    loadSaved();
+  }, [user]);
 
   // Combined items and totals
   const totalItems = regularItems.length + cjItems.length;
