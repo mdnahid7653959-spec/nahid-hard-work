@@ -564,7 +564,17 @@ export default function SellerProductForm() {
             return (
               <Button
                 type="button"
-                onClick={() => setActiveTab(tabOrder[currentIdx + 1])}
+                onClick={() => {
+                  if (activeTab === "media" && images.length === 0) {
+                    toast({
+                      variant: "destructive",
+                      title: "Product image required",
+                      description: "Onnoto ekta product photo add korun tarpor porer step e jan."
+                    });
+                    return;
+                  }
+                  setActiveTab(tabOrder[currentIdx + 1]);
+                }}
                 className="gap-2 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
               >
                 Next: {tabOrder[currentIdx + 1].charAt(0).toUpperCase() + tabOrder[currentIdx + 1].slice(1)}
