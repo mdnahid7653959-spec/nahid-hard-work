@@ -201,14 +201,15 @@ export function SmartSearchBar({
             type="submit"
             aria-label="Search"
             className={cn(
-              "inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0",
+              "inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shrink-0",
               "hover:bg-primary/90 active:scale-95 transition-all shadow-sm",
-              variant === "desktop" ? "h-8 px-3 text-xs font-semibold gap-1.5" : "h-9 w-9"
+              variant === "desktop" ? "h-8 px-3.5 text-xs font-semibold gap-1.5" : "h-8 w-8"
             )}
           >
-            <Search className="h-4 w-4" />
+            <Search className={variant === "desktop" ? "h-4 w-4" : "h-3.5 w-3.5"} />
             {variant === "desktop" && <span>Search</span>}
           </button>
+
 
 
         </div>
