@@ -59,6 +59,7 @@ export default function AdminProducts() {
   const [activeTab, setActiveTab] = useState("all");
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; productId: string; action: "reject" | "ban" }>({ open: false, productId: "", action: "reject" });
   const [rejectReason, setRejectReason] = useState("");
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const { toast } = useToast();
   const { admin } = useAdminAuth();
