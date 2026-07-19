@@ -164,6 +164,20 @@ export default function SellerRegister() {
       }
     }
 
+    // Trade License: required for partnership / private_limited / limited / other non-individual
+    if (form.businessType && form.businessType !== "individual") {
+      if (!form.tradeLicenseNumber.trim() || !tradeLicenseImage) {
+        toast({
+          title: "Trade License Required",
+          description: "Partnership / Limited companies must provide a Trade License number and upload the document.",
+          variant: "destructive",
+        });
+        setActiveTab("business");
+        return;
+      }
+    }
+
+
     setLoading(true);
 
     try {
@@ -458,14 +472,28 @@ export default function SellerRegister() {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="tradeLicenseNumber">Trade License Number</Label>
+                      <Label htmlFor="tradeLicenseNumber">
+                        Trade License Number{" "}
+                        {form.businessType !== "individual" && <span className="text-destructive">*</span>}
+                      </Label>
                       <Input
                         id="tradeLicenseNumber"
                         value={form.tradeLicenseNumber}
                         onChange={(e) => updateForm("tradeLicenseNumber", e.target.value)}
-                        placeholder="Trade license number (if applicable)"
+                        placeholder={
+                          form.businessType === "individual"
+                            ? "Trade license number (optional)"
+                            : "Trade license number (required)"
+                        }
+                        required={form.businessType !== "individual"}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        {form.businessType === "individual"
+                          ? "Optional for individuals / sole proprietors."
+                          : "Required for Partnership and Limited companies."}
+                      </p>
                     </div>
+
 
                     <div className="border-t pt-4 mt-4">
                       <h4 className="font-medium mb-4">Warehouse / Pickup Address</h4>
@@ -773,7 +801,14 @@ export default function SellerRegister() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
-                      <Label>Trade License (if applicable)</Label>
+                      <Label>
+                        Trade License{" "}
+                        {form.businessType !== "individual" ? (
+                          <span className="text-destructive">* (Required for {form.businessType.replace("_", " ")})</span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">(optional for individuals)</span>
+                        )}
+                      </Label>
                       <div className="border-2 border-dashed rounded-lg p-6 text-center">
                         {tradeLicenseImage ? (
                           <div className="space-y-2">
