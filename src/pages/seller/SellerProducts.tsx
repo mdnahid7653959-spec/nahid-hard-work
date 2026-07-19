@@ -222,7 +222,90 @@ export default function SellerProducts() {
           </div>
         </div>
 
-        <div className="border rounded-lg bg-card">
+        {/* Mobile card list */}
+        <div className="md:hidden space-y-3">
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="border rounded-lg bg-card p-8 text-center text-muted-foreground">
+              <div className="flex flex-col items-center gap-2">
+                <AlertCircle className="h-8 w-8 opacity-50" />
+                <p>No products found</p>
+                <Link to="/seller/products/new">
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add your first product
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            filteredProducts.map((product) => (
+              <div key={product.id} className="border rounded-lg bg-card p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-foreground text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">/{product.slug}</p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 -mr-1 -mt-1 shrink-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover">
+                      {product.approval_status === "approved" && product.status === "active" && (
+                        <DropdownMenuItem asChild>
+                          <Link to={`/product/${product.slug}`}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Live
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem asChild>
+                        <Link to={`/seller/products/${product.id}`}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setDeleteProductId(product.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      ৳{(product.discount_price || product.regular_price).toLocaleString()}
+                    </p>
+                    {product.discount_price && (
+                      <p className="text-[11px] text-muted-foreground line-through">
+                        ৳{product.regular_price.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant={product.stock_quantity > 10 ? "outline" : "destructive"} className="text-[10px]">
+                    {product.stock_quantity} in stock
+                  </Badge>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <Badge variant={product.status === "active" ? "default" : "secondary"} className="text-[10px]">
+                    {product.status}
+                  </Badge>
+                  {getApprovalBadge(product.approval_status || "pending")}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop / tablet table */}
+        <div className="hidden md:block border rounded-lg bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
