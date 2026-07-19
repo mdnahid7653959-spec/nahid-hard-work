@@ -168,24 +168,7 @@ export function PersonalizedFeed() {
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground tracking-tight">
-            {personalized ? "Picked for You" : "Just Added"}
-          </h2>
-          <Link
-            to="/products"
-            className="bg-primary/10 text-primary text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider"
-          >
-            See All
-            <ChevronRight className="w-2.5 h-2.5" strokeWidth={3} />
-          </Link>
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-1">
-          {personalized ? "Curated based on your recent activity" : "Trending picks shoppers love"}
-        </p>
-      </div>
+
 
       {/* Dense feed */}
       <div className="px-3 pb-4">
