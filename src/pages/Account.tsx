@@ -14,6 +14,7 @@ import { useSellerStatus } from "@/hooks/useSellerStatus";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Account() {
@@ -493,6 +494,7 @@ export default function Account() {
         </div>
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }
