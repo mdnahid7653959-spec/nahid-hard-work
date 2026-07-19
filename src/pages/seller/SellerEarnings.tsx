@@ -344,15 +344,16 @@ export default function SellerEarnings() {
           <CardHeader>
             <CardTitle>Payout History</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-6">
+            <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="whitespace-nowrap">Date</TableHead>
+                  <TableHead className="whitespace-nowrap">Period</TableHead>
+                  <TableHead className="whitespace-nowrap">Method</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
+                  <TableHead className="whitespace-nowrap">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -365,15 +366,15 @@ export default function SellerEarnings() {
                 ) : (
                   payouts.map((payout) => (
                     <TableRow key={payout.id}>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {new Date(payout.created_at).toLocaleDateString("bn-BD")}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {new Date(payout.period_start).toLocaleDateString()} -{" "}
                         {new Date(payout.period_end).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="capitalize">{payout.payment_method}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="capitalize whitespace-nowrap">{payout.payment_method}</TableCell>
+                      <TableCell className="text-right font-medium whitespace-nowrap">
                         ৳{Number(payout.net_amount).toLocaleString()}
                       </TableCell>
                       <TableCell>{getStatusBadge(payout.status)}</TableCell>
@@ -382,23 +383,26 @@ export default function SellerEarnings() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
+
 
         {/* Recent Earnings */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Earnings</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-6">
+            <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Gross</TableHead>
-                  <TableHead className="text-right">Commission</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="whitespace-nowrap">Date</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Gross</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Commission</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Net</TableHead>
+                  <TableHead className="whitespace-nowrap">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -411,16 +415,16 @@ export default function SellerEarnings() {
                 ) : (
                   earnings.slice(0, 10).map((earning) => (
                     <TableRow key={earning.id}>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {new Date(earning.created_at).toLocaleDateString("bn-BD")}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right whitespace-nowrap">
                         ৳{Number(earning.gross_amount).toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
+                      <TableCell className="text-right text-muted-foreground whitespace-nowrap">
                         -৳{Number(earning.commission_amount).toLocaleString()} ({earning.commission_rate}%)
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium whitespace-nowrap">
                         ৳{Number(earning.net_amount).toLocaleString()}
                       </TableCell>
                       <TableCell>{getStatusBadge(earning.status)}</TableCell>
@@ -429,7 +433,9 @@ export default function SellerEarnings() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
+
         </Card>
 
         {/* Payout Request Dialog */}

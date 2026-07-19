@@ -120,14 +120,14 @@ export function SellerLayout({ children, title }: SellerLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 lg:pl-64">
+      <div className="flex-1 lg:pl-64 min-w-0 w-full">
         {/* Header */}
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+          <div className="flex h-14 md:h-16 items-center gap-2 md:gap-4 px-3 md:px-6">
             {/* Mobile Menu */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="shrink-0">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -137,17 +137,17 @@ export function SellerLayout({ children, title }: SellerLayoutProps) {
             </Sheet>
 
             {/* Page Title */}
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold">{title}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base md:text-xl font-semibold truncate">{title}</h1>
             </div>
 
             {/* Header Actions */}
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
+            <div className="flex items-center gap-1 md:gap-2 shrink-0">
+              <Button variant="ghost" size="icon" className="relative h-9 w-9">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="h-9 w-9 hidden sm:inline-flex">
                 <HelpCircle className="h-5 w-5" />
               </Button>
             </div>
@@ -155,10 +155,13 @@ export function SellerLayout({ children, title }: SellerLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="p-4 md:p-6 lg:p-8">
-          {children}
+        <main className="p-3 md:p-6 lg:p-8 overflow-x-hidden pb-24 lg:pb-8">
+          <div className="min-w-0 w-full max-w-full">
+            {children}
+          </div>
         </main>
       </div>
+
     </div>
   );
 }
