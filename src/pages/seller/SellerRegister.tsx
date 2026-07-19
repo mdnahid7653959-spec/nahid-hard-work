@@ -170,6 +170,7 @@ export default function SellerRegister() {
       // Upload images if provided
       let nidFrontUrl = null;
       let nidBackUrl = null;
+      let birthCertUrl = null;
       let tradeLicenseUrl = null;
       let logoUrl = null;
 
@@ -178,6 +179,9 @@ export default function SellerRegister() {
       }
       if (nidBackImage) {
         nidBackUrl = await uploadFile(nidBackImage, "seller-documents");
+      }
+      if (birthCertImage) {
+        birthCertUrl = await uploadFile(birthCertImage, "seller-documents");
       }
       if (tradeLicenseImage) {
         tradeLicenseUrl = await uploadFile(tradeLicenseImage, "seller-documents");
@@ -196,15 +200,18 @@ export default function SellerRegister() {
         business_type: form.businessType,
         business_registration_number: form.businessRegistrationNumber,
         tax_id: form.taxId,
-        trade_license_number: form.tradeLicenseNumber,
+        trade_license_number: form.tradeLicenseNumber || null,
         trade_license_image: tradeLicenseUrl,
         contact_phone: form.contactPhone,
         contact_email: form.contactEmail,
         warehouse_address: form.warehouseAddress,
         return_address: form.warehouseAddress,
-        nid_number: form.nidNumber,
-        nid_front_image: nidFrontUrl,
-        nid_back_image: nidBackUrl,
+        id_document_type: form.idDocumentType,
+        nid_number: form.idDocumentType === "nid" ? form.nidNumber : null,
+        nid_front_image: form.idDocumentType === "nid" ? nidFrontUrl : null,
+        nid_back_image: form.idDocumentType === "nid" ? nidBackUrl : null,
+        birth_certificate_number: form.idDocumentType === "birth_certificate" ? form.birthCertNumber : null,
+        birth_certificate_image: form.idDocumentType === "birth_certificate" ? birthCertUrl : null,
         bank_name: form.bankName,
         bank_account_name: form.bankAccountName,
         bank_account_number: form.bankAccountNumber,
