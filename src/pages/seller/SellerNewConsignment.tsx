@@ -129,9 +129,11 @@ export default function SellerNewConsignment() {
 
   // Auto-lock warehouse to the first active one (Dartup Main House)
   const lockedWarehouse = warehouses[0];
-  if (lockedWarehouse && selectedWarehouse !== lockedWarehouse.id) {
-    setTimeout(() => setSelectedWarehouse(lockedWarehouse.id), 0);
-  }
+  useEffect(() => {
+    if (lockedWarehouse && selectedWarehouse !== lockedWarehouse.id) {
+      setSelectedWarehouse(lockedWarehouse.id);
+    }
+  }, [lockedWarehouse, selectedWarehouse]);
 
   // Create consignment mutation
   const createConsignment = useMutation({
