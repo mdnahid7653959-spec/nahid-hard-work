@@ -494,6 +494,7 @@ export default function Account() {
         </div>
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }
