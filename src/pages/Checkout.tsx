@@ -230,6 +230,37 @@ export default function Checkout() {
 
       if (orderError) throw orderError;
 
+      // Persist phone + full name to profile so admin sees latest details
+      const fullNameCombined = `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim();
+      try {
+        await supabase.from("profiles").update({
+          full_name: fullNameCombined || undefined,
+          phone: shippingInfo.phone || undefined,
+          updated_at: new Date().toISOString(),
+        }).eq("user_id", user.id);
+      } catch (e) { console.warn("profile update skipped", e); }
+
+      // Save / update default address so it prefills next time
+      try {
+        const addressPayload = {
+          user_id: user.id,
+          full_name: fullNameCombined || "Customer",
+          phone: shippingInfo.phone,
+          address_line1: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.state,
+          postal_code: shippingInfo.zipCode,
+          country: shippingInfo.country || "Bangladesh",
+          is_default: true,
+        };
+        if (savedAddressId) {
+          await supabase.from("addresses").update({ ...addressPayload, updated_at: new Date().toISOString() }).eq("id", savedAddressId);
+        } else {
+          await supabase.from("addresses").insert(addressPayload);
+        }
+      } catch (e) { console.warn("address save skipped", e); }
+
+
       // Update coupon usage count if a coupon was applied
       if (appliedCoupon) {
         const { data: currentCoupon } = await supabase
