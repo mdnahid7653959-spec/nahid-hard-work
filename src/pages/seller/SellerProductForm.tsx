@@ -410,19 +410,16 @@ export default function SellerProductForm() {
     }
 
     if (!form.name.trim()) {
-      toast({ variant: "destructive", title: "Validation Error", description: "Product name is required" });
       setActiveTab("basic");
       return;
     }
 
     if (!form.category_id) {
-      toast({ variant: "destructive", title: "Validation Error", description: "Please select a category" });
       setActiveTab("category");
       return;
     }
 
     if (!form.regular_price || parseFloat(form.regular_price) <= 0) {
-      toast({ variant: "destructive", title: "Validation Error", description: "Regular price must be greater than 0" });
       setActiveTab("pricing");
       return;
     }
