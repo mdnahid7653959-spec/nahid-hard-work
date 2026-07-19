@@ -35,7 +35,9 @@ interface SellerForm {
     postalCode: string;
   };
   // Identity
+  idDocumentType: "nid" | "birth_certificate";
   nidNumber: string;
+  birthCertNumber: string;
   // Payment
   bankName: string;
   bankAccountName: string;
