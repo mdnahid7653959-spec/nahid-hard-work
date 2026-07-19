@@ -35,6 +35,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdminCacheInvalidation } from "@/hooks/useRealtimeSync";
+import { AdminProductPreviewDialog } from "@/components/admin/AdminProductPreviewDialog";
 
 interface Product {
   id: string;
