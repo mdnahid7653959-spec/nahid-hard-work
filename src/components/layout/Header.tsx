@@ -210,9 +210,9 @@ export function Header() {
               <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:flex">
                 <div className="relative w-full flex">
                   <Input type="search" placeholder="Search for products, brands and more..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    className="rounded-r-none border-0 bg-white text-foreground placeholder:text-muted-foreground h-10 text-sm pr-20 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                  <Button type="submit" className="rounded-l-none h-10 px-5 bg-warning hover:bg-warning/90 text-warning-foreground font-semibold text-sm">
-                    <Search className="h-4 w-4 mr-1.5" /> Search
+                    className="rounded-r-none border-0 bg-white text-foreground placeholder:text-muted-foreground h-8 text-xs pr-16 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                  <Button type="submit" className="rounded-l-none h-8 px-3 bg-warning hover:bg-warning/90 text-warning-foreground font-medium text-xs">
+                    <Search className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </form>
