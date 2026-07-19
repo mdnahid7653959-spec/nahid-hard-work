@@ -148,25 +148,18 @@ export default function SellerRegister() {
       return;
     }
 
-    // Identity: require EITHER NID (number) OR Birth Certificate (number + image)
-    if (form.idDocumentType === "nid") {
-      if (!form.nidNumber.trim()) {
-        toast({
-          title: "NID Required",
-          description: "Please provide your National ID number, or switch to Birth Certificate if you don't have one.",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else {
-      if (!form.birthCertNumber.trim() || !birthCertImage) {
-        toast({
-          title: "Birth Certificate Required",
-          description: "Please provide your Birth Certificate number and upload a photo of it.",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Identity: require at least ONE — NID number, or Birth Certificate (number + image).
+    // Seller can also provide BOTH; whichever is provided will be sent to the admin panel.
+    const hasNid = !!form.nidNumber.trim();
+    const hasBirthCert = !!form.birthCertNumber.trim() && !!birthCertImage;
+    if (!hasNid && !hasBirthCert) {
+      toast({
+        title: "Identity Document Required",
+        description: "Please provide your NID number, or a Birth Certificate number with its photo. You may also provide both.",
+        variant: "destructive",
+      });
+      setActiveTab("identity");
+      return;
     }
 
     // Trade License: required for partnership / private_limited / limited / other non-individual
