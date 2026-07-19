@@ -302,7 +302,8 @@ export default function ProductDetail() {
   const inWishlist = product ? isInWishlist(product.id) : false;
   if (loading) {
     return <div className="min-h-screen flex flex-col bg-background">
-        <Header />
+        <div className="hidden md:block"><Header /></div>
+        <MobileProductTopBar />
         <main className="flex-1 container py-4 sm:py-8 pb-20 md:pb-8">
           <div className="animate-pulse">
             <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
@@ -321,7 +322,8 @@ export default function ProductDetail() {
   }
   if (!product) {
     return <div className="min-h-screen flex flex-col bg-background">
-        <Header />
+        <div className="hidden md:block"><Header /></div>
+        <MobileProductTopBar />
         <main className="flex-1 container py-8 pb-20 md:pb-8">
           <div className="text-center py-16">
             <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
@@ -338,7 +340,9 @@ export default function ProductDetail() {
   const price = product.discount_price || product.regular_price;
   const discount = product.discount_price ? Math.round((1 - product.discount_price / product.regular_price) * 100) : 0;
   return <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+      <div className="hidden md:block"><Header /></div>
+      <MobileProductTopBar />
+
       <main className="flex-1 pb-40 md:pb-8">
         <div className="container py-4 sm:py-8">
           {/* Breadcrumb - Hidden on mobile */}
