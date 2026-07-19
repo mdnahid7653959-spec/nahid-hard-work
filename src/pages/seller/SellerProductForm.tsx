@@ -1226,22 +1226,49 @@ export default function SellerProductForm() {
           </TabsContent>
         </Tabs>
 
-        {/* Bottom Submit Button */}
+        {/* Bottom action button */}
         <div className="flex justify-end pt-4 border-t">
-          <Button 
-            type="submit" 
-            disabled={saving} 
-            size="lg"
-            className="gap-2 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
-          >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Save className="h-5 w-5" />
-            )}
-            {saving ? "Submitting..." : "Submit Product for Review"}
-          </Button>
+          {(() => {
+            const tabOrder = ["basic", "category", "pricing", "media", "specs", "return"];
+            const currentIdx = tabOrder.indexOf(activeTab);
+            const isLast = currentIdx === tabOrder.length - 1;
+            if (isLast) {
+              return (
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  size="lg"
+                  className="gap-2 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
+                >
+                  {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                  {saving ? "Submitting..." : "Submit Product for Review"}
+                </Button>
+              );
+            }
+            const nextTab = tabOrder[currentIdx + 1];
+            return (
+              <Button
+                type="button"
+                size="lg"
+                onClick={() => {
+                  if (activeTab === "media" && images.length === 0) {
+                    toast({
+                      variant: "destructive",
+                      title: "Product image required",
+                      description: "Onnoto ekta product photo add korun tarpor porer step e jan."
+                    });
+                    return;
+                  }
+                  setActiveTab(nextTab);
+                }}
+                className="gap-2 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
+              >
+                Next: {nextTab.charAt(0).toUpperCase() + nextTab.slice(1)}
+              </Button>
+            );
+          })()}
         </div>
+
       </form>
     </SellerLayout>
   );
