@@ -266,13 +266,14 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-neutral-200 overflow-hidden relative group shadow-lg"
           >
             {trendingCfg.imageUrl ? (
-              <img src={trendingCfg.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
+              <img src={trendingCfg.imageUrl} alt="" className="w-full h-full group-hover:scale-110 transition-transform duration-1000" style={imgStyle(trendingCfg)} loading="lazy" />
             ) : trend ? (
               <img src={trend.image} alt={trend.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-[#ff6b35] via-[#e84393] to-[#6c5ce7]" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trendingCfg.overlay ?? 60)/100, 0.4)}), transparent)` }} />
+
             <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white">
               <span className="text-[9px] md:text-[10px] font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest">
                 {trendingCfg.subtitle || "Trending"}
