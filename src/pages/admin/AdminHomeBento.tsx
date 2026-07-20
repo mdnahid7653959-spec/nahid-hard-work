@@ -34,7 +34,11 @@ interface BentoTile {
   zoom?: number;
   textStyle?: TextStyle;
   kind?: TileKind;
+  badge?: string;
+  badgeVisible?: boolean;
+  ctaText?: string;
 }
+
 
 interface CustomSection {
   id: string;
@@ -52,7 +56,7 @@ interface CustomSection {
 }
 
 const DEFAULT_TILES: BentoTile[] = [
-  { id: "hero", kind: "hero", label: "Main Hero", visible: true, title: "The New Standard", subtitle: "Bangladesh's curated multi-vendor destination for the bold.", link: "/products", objectFit: "cover", focalX: 50, focalY: 50, overlay: 50, zoom: 100 },
+  { id: "hero", kind: "hero", label: "Main Hero", visible: true, title: "The New Standard", subtitle: "Bangladesh's curated multi-vendor destination for the bold.", link: "/products", objectFit: "cover", focalX: 50, focalY: 50, overlay: 50, zoom: 100, badge: "Darzo Marketplace", badgeVisible: true, ctaText: "Explore Darzo" },
   { id: "flash", kind: "flash", label: "Flash Deals", visible: true, title: "Flash Deals", subtitle: "Up to 70% Off", link: "/products?filter=flash-sale", objectFit: "cover", focalX: 50, focalY: 50, overlay: 20, zoom: 100 },
   { id: "cat_tech", kind: "category", label: "Tech", visible: true, title: "Tech", subtitle: "Gadgets", link: "/categories?c=electronics", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
   { id: "cat_lifestyle", kind: "category", label: "Lifestyle", visible: true, title: "Lifestyle", subtitle: "Fashion", link: "/categories?c=fashion", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
@@ -420,20 +424,25 @@ export default function AdminHomeBento() {
                   </>
                 )}
                 <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-12 text-white">
-                  <span className="inline-flex w-fit items-center gap-2 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase mb-3 md:mb-6">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    Darzo Marketplace
-                  </span>
+                  {hero.badgeVisible !== false && (
+                    <span className="inline-flex w-fit items-center gap-2 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase mb-3 md:mb-6">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      {hero.badge || "Darzo Marketplace"}
+                    </span>
+                  )}
                   <h1 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4" style={titleStyle("hero", hero.textStyle)}>
                     {hero.title || "The New Standard"}
                   </h1>
                   <p className="font-medium opacity-90 max-w-sm mb-4 md:mb-6" style={subtitleStyle("hero", hero.textStyle)}>
                     {hero.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
                   </p>
-                  <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase shadow-xl">
-                    Explore Darzo
-                  </span>
+                  {hero.ctaText !== "" && (
+                    <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase shadow-xl">
+                      {hero.ctaText || "Explore Darzo"}
+                    </span>
+                  )}
                 </div>
+
               </EditableTile>
 
               {/* Flash */}
@@ -622,6 +631,23 @@ export default function AdminHomeBento() {
                 <TabsTrigger value="image"><Maximize2 className="h-3.5 w-3.5 mr-1.5" />Image</TabsTrigger>
               </TabsList>
               <TabsContent value="text" className="space-y-3 mt-4">
+                {editing.id === "hero" && (
+                  <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold">Top badge / tag</Label>
+                      <Button type="button" size="sm" variant={editing.badgeVisible === false ? "outline" : "default"}
+                        className="h-7 text-[11px]"
+                        onClick={() => setEditing({ ...editing, badgeVisible: editing.badgeVisible === false })}>
+                        {editing.badgeVisible === false ? <><EyeOff className="h-3 w-3 mr-1" />Hidden</> : <><Eye className="h-3 w-3 mr-1" />Visible</>}
+                      </Button>
+                    </div>
+                    <Input value={editing.badge ?? ""} onChange={(e) => setEditing({ ...editing, badge: e.target.value })} placeholder="e.g. Darzo Marketplace" />
+                    <div className="space-y-1">
+                      <Label className="text-xs">CTA button text (empty to hide)</Label>
+                      <Input value={editing.ctaText ?? ""} onChange={(e) => setEditing({ ...editing, ctaText: e.target.value })} placeholder="Explore Darzo" />
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-1"><Label className="text-xs">Title</Label>
                   <Input value={editing.title ?? ""} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="Leave blank for default" /></div>
                 <div className="space-y-1"><Label className="text-xs">Subtitle</Label>
@@ -629,6 +655,7 @@ export default function AdminHomeBento() {
                 <div className="space-y-1"><Label className="text-xs">Link URL</Label>
                   <Input value={editing.link ?? ""} onChange={(e) => setEditing({ ...editing, link: e.target.value })} placeholder="/products or https://..." /></div>
               </TabsContent>
+
               <TabsContent value="style" className="mt-4">
                 <TextStyleEditor value={editing.textStyle} onChange={(ts) => setEditing({ ...editing, textStyle: ts })} />
               </TabsContent>
