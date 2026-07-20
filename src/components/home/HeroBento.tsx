@@ -294,8 +294,9 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("vendors") && (
           <div className="col-span-2 row-span-1 rounded-[2rem] md:rounded-[2.5rem] bg-muted/50 border border-border p-5 md:p-8 flex flex-col md:flex-row items-center gap-4 md:gap-8 justify-between overflow-hidden relative">
             {vendorsCfg.imageUrl && (
-              <img src={vendorsCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+              <img src={vendorsCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-40" style={imgStyle(vendorsCfg)} />
             )}
+
             <div className="flex flex-col text-center md:text-left relative z-10">
               <h4 className="font-['Bebas_Neue'] text-xl md:text-2xl text-foreground leading-none mb-1.5 md:mb-2">
                 {vendorsCfg.title || "Multi-Vendor Power"}
