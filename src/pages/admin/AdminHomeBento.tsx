@@ -445,10 +445,10 @@ export default function AdminHomeBento() {
                 )}
                 <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trending.overlay ?? 60)/100, 0.4)}), transparent)` }} />
                 <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white">
-                  <span className="text-[9px] md:text-[10px] font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest">
+                  <span className="font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest" style={subtitleStyle("trending", trending.textStyle)}>
                     {trending.subtitle || "Trending"}
                   </span>
-                  <h3 className="font-['Bebas_Neue'] text-2xl md:text-3xl mt-2 md:mt-3 leading-none tracking-wider line-clamp-2">
+                  <h3 className="font-['Bebas_Neue'] mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trending.textStyle)}>
                     {trending.title || "Capture Purity"}
                   </h3>
                 </div>
