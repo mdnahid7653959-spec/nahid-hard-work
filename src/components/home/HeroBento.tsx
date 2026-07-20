@@ -122,11 +122,11 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               </span>
               <h1
                 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4"
-                style={{ fontSize: "clamp(2.5rem, 7vw, 6rem)" }}
+                style={titleStyle("hero", heroCfg.textStyle)}
               >
                 {heroCfg.title || "The New Standard"}
               </h1>
-              <p className="text-sm md:text-xl font-medium opacity-90 max-w-sm mb-4 md:mb-6">
+              <p className="font-medium opacity-90 max-w-sm mb-4 md:mb-6" style={subtitleStyle("hero", heroCfg.textStyle)}>
                 {heroCfg.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
               </p>
               <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase group-hover:scale-105 transition-transform shadow-xl">
