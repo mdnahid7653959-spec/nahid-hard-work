@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Cpu, Shirt, Home as HomeIcon, Sparkles as SparklesIcon } from "lucide-react";
 import type { Product } from "@/components/products/ProductCard";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { titleStyle, subtitleStyle, type TextStyle } from "@/lib/bentoText";
 
 interface HeroBentoProps {
   forYou?: Product[];
@@ -23,6 +24,7 @@ interface BentoTileCfg {
   overlay?: number;
   bgColor?: string;
   zoom?: number;
+  textStyle?: TextStyle;
 }
 
 interface CustomSection {
@@ -37,6 +39,7 @@ interface CustomSection {
   focalX?: number;
   focalY?: number;
   visible: boolean;
+  textStyle?: TextStyle;
 }
 
 function imgStyle(t: Partial<BentoTileCfg>): React.CSSProperties {
@@ -47,6 +50,7 @@ function imgStyle(t: Partial<BentoTileCfg>): React.CSSProperties {
     transformOrigin: `${t.focalX ?? 50}% ${t.focalY ?? 50}%`,
   };
 }
+
 
 
 const CATEGORIES = [
