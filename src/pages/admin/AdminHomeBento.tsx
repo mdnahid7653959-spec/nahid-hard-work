@@ -212,6 +212,93 @@ function FocalPicker({ imageUrl, x, y, onChange }: { imageUrl?: string; x: numbe
   );
 }
 
+/* ---------- Text style editor ---------- */
+function TextStyleEditor({ value, onChange }: { value?: TextStyle; onChange: (ts: TextStyle) => void }) {
+  const ts = value || {};
+  const set = (patch: Partial<TextStyle>) => onChange({ ...ts, ...patch });
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label className="text-xs flex items-center gap-1"><Sparkles className="h-3 w-3" /> Templates</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {TEXT_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => onChange(tpl.style)}
+              className="text-left border rounded-lg p-2 hover:border-primary hover:bg-muted/40 transition-colors"
+            >
+              <div style={{ fontFamily: tpl.style.fontFamily, fontWeight: tpl.style.titleWeight, letterSpacing: tpl.style.letterSpacing != null ? `${tpl.style.letterSpacing/100}em` : undefined, textTransform: tpl.style.uppercase ? "uppercase" : "none", fontStyle: tpl.style.italic ? "italic" : undefined }} className="text-base leading-none truncate">
+                {tpl.name}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1 truncate">{tpl.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs">Font family</Label>
+        <select
+          value={ts.fontFamily ?? ""}
+          onChange={(e) => set({ fontFamily: e.target.value || undefined })}
+          className="w-full h-9 rounded-md border bg-background px-2 text-xs"
+        >
+          <option value="">Default</option>
+          {FONT_OPTIONS.map((f) => <option key={f.label} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>)}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Title size ({ts.titleScale ?? 100}%)</Label>
+          <Slider value={[ts.titleScale ?? 100]} min={50} max={250} step={5} onValueChange={([v]) => set({ titleScale: v })} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Subtitle size ({ts.subtitleScale ?? 100}%)</Label>
+          <Slider value={[ts.subtitleScale ?? 100]} min={50} max={250} step={5} onValueChange={([v]) => set({ subtitleScale: v })} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Title color</Label>
+          <Input type="color" value={ts.titleColor ?? "#ffffff"} onChange={(e) => set({ titleColor: e.target.value })} className="h-9 w-full" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Subtitle color</Label>
+          <Input type="color" value={ts.subtitleColor ?? "#ffffff"} onChange={(e) => set({ subtitleColor: e.target.value })} className="h-9 w-full" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Weight ({ts.titleWeight ?? 700})</Label>
+          <Slider value={[ts.titleWeight ?? 700]} min={300} max={900} step={100} onValueChange={([v]) => set({ titleWeight: v })} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Letter spacing ({(ts.letterSpacing ?? 0) / 100}em)</Label>
+          <Slider value={[ts.letterSpacing ?? 0]} min={-5} max={30} step={1} onValueChange={([v]) => set({ letterSpacing: v })} />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Label className="text-xs mr-2">Align</Label>
+        {([{v:"left",I:AlignLeft},{v:"center",I:AlignCenter},{v:"right",I:AlignRight}] as const).map(({v,I}) => (
+          <Button key={v} type="button" size="sm" variant={ts.align === v ? "default" : "outline"} onClick={() => set({ align: v })}><I className="h-3.5 w-3.5" /></Button>
+        ))}
+        <div className="flex-1" />
+        <Button type="button" size="sm" variant={ts.uppercase ? "default" : "outline"} onClick={() => set({ uppercase: !ts.uppercase })}>AA</Button>
+        <Button type="button" size="sm" variant={ts.italic ? "default" : "outline"} onClick={() => set({ italic: !ts.italic })} className="italic">I</Button>
+      </div>
+
+      <Button type="button" variant="ghost" size="sm" className="w-full" onClick={() => onChange({})}>
+        <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reset text style
+      </Button>
+    </div>
+  );
+}
+
 /* ---------- Main page ---------- */
 
 export default function AdminHomeBento() {
