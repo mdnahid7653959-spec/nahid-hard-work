@@ -334,18 +334,32 @@ export default function AdminHomeBento() {
   useEffect(() => {
     loadConfig()
       .then((saved) => {
-        if (saved?.tiles?.length) {
-          setDesktopTiles(DEFAULT_TILES.map((d) => ({ ...d, ...(saved.tiles!.find((s) => s.id === d.id) ?? {}) })));
-        }
+        // Compute desktop tiles first so mobile can inherit accurately.
+        const desktopMerged = saved?.tiles?.length
+          ? DEFAULT_TILES.map((d) => ({ ...d, ...(saved.tiles!.find((s) => s.id === d.id) ?? {}) }))
+          : DEFAULT_TILES;
+        if (saved?.tiles?.length) setDesktopTiles(desktopMerged);
         if (saved?.sections?.length) setDesktopSections(saved.sections);
         if (saved?.mobile?.tiles?.length) {
-          setMobileTiles(DEFAULT_TILES.map((d) => ({ ...d, ...(saved.mobile!.tiles.find((s) => s.id === d.id) ?? {}) })));
+          // Mobile overrides layer on top of desktop, not DEFAULT_TILES,
+          // so unmodified mobile tiles reflect the current desktop config.
+          setMobileTiles(
+            desktopMerged.map((d) => ({ ...d, ...(saved.mobile!.tiles.find((s) => s.id === d.id) ?? {}) }))
+          );
         }
         if (saved?.mobile?.sections) setMobileSections(saved.mobile.sections);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  // Warn before unloading with unsaved changes (data-loss guard).
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   const get = (id: string) => tiles.find((t) => t.id === id)!;
 
