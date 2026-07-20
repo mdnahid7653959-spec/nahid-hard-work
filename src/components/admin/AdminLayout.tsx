@@ -47,6 +47,7 @@ const menuItems = [
   { icon: ShoppingCart, label: "Orders", href: "/admin/orders" },
   { icon: Users, label: "Customers", href: "/admin/users" },
   { icon: Store, label: "Sellers", href: "/admin/sellers" },
+  { icon: Users, label: "Staff", href: "/admin/staff" },
   { icon: Truck, label: "Consignments", href: "/admin/consignments" },
   { icon: Warehouse, label: "Warehouses", href: "/admin/warehouses" },
   { icon: Percent, label: "Commissions", href: "/admin/commissions" },
