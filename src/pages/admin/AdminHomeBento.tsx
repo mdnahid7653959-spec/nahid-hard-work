@@ -631,6 +631,23 @@ export default function AdminHomeBento() {
                 <TabsTrigger value="image"><Maximize2 className="h-3.5 w-3.5 mr-1.5" />Image</TabsTrigger>
               </TabsList>
               <TabsContent value="text" className="space-y-3 mt-4">
+                {editing.id === "hero" && (
+                  <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold">Top badge / tag</Label>
+                      <Button type="button" size="sm" variant={editing.badgeVisible === false ? "outline" : "default"}
+                        className="h-7 text-[11px]"
+                        onClick={() => setEditing({ ...editing, badgeVisible: editing.badgeVisible === false })}>
+                        {editing.badgeVisible === false ? <><EyeOff className="h-3 w-3 mr-1" />Hidden</> : <><Eye className="h-3 w-3 mr-1" />Visible</>}
+                      </Button>
+                    </div>
+                    <Input value={editing.badge ?? ""} onChange={(e) => setEditing({ ...editing, badge: e.target.value })} placeholder="e.g. Darzo Marketplace" />
+                    <div className="space-y-1">
+                      <Label className="text-xs">CTA button text (empty to hide)</Label>
+                      <Input value={editing.ctaText ?? ""} onChange={(e) => setEditing({ ...editing, ctaText: e.target.value })} placeholder="Explore Darzo" />
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-1"><Label className="text-xs">Title</Label>
                   <Input value={editing.title ?? ""} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="Leave blank for default" /></div>
                 <div className="space-y-1"><Label className="text-xs">Subtitle</Label>
@@ -638,6 +655,7 @@ export default function AdminHomeBento() {
                 <div className="space-y-1"><Label className="text-xs">Link URL</Label>
                   <Input value={editing.link ?? ""} onChange={(e) => setEditing({ ...editing, link: e.target.value })} placeholder="/products or https://..." /></div>
               </TabsContent>
+
               <TabsContent value="style" className="mt-4">
                 <TextStyleEditor value={editing.textStyle} onChange={(ts) => setEditing({ ...editing, textStyle: ts })} />
               </TabsContent>
