@@ -268,6 +268,7 @@ const App = () => (
                     </AppLayout>
                   </WishlistProvider>
                 </CartProvider>
+                </StaffProvider>
               </AdminAuthProvider>
               </ThemeProvider>
             </AuthProvider>
