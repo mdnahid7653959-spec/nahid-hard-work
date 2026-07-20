@@ -422,7 +422,8 @@ export default function AdminHomeBento() {
         </div>
 
         {/* Bento preview — mirrors HeroBento exactly */}
-        <div className="bg-muted/30 border rounded-3xl p-4 md:p-6">
+        <div className={`bg-muted/30 border rounded-3xl p-4 md:p-6 ${viewMode === "desktop" ? "" : "hidden"}`}>
+
           <div className="w-full font-['Barlow',sans-serif]">
             <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[200px] gap-3 md:gap-5">
 
