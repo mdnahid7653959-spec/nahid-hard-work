@@ -664,7 +664,7 @@ export default function AdminHomeBento() {
             <div className="flex items-center justify-between w-full max-w-[430px]">
               <div>
                 <p className="text-xs font-semibold text-white">Mobile Visual Editor (390px)</p>
-                <p className="text-[10px] text-white/60">Hover any tile → upload, edit text/style, hide. Changes apply to both desktop &amp; mobile.</p>
+                <p className="text-[10px] text-white/60">Edits here apply to <b>mobile only</b>. Desktop stays untouched.</p>
               </div>
               <span className="text-[10px] text-white/60">Live · no reload needed</span>
             </div>
