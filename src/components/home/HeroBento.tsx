@@ -189,10 +189,11 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             >
               {c.imageUrl && (
                 <>
-                  <img src={c.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <img src={c.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(c)} />
+                  <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(c.overlay ?? 40)/100})` }} />
                 </>
               )}
+
               <div className="relative z-10">
                 <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm mb-3 md:mb-4">
                   <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
