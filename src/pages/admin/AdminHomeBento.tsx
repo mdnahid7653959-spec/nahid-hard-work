@@ -314,6 +314,9 @@ export default function AdminHomeBento() {
   const [editing, setEditing] = useState<BentoTile | null>(null);
   const [editingSection, setEditingSection] = useState<CustomSection | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+  const [mobileFrameKey, setMobileFrameKey] = useState(0);
+
 
   useEffect(() => {
     loadConfig()
