@@ -99,12 +99,12 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
 
   return (
     <div className="w-full font-['Barlow',sans-serif]">
-      <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[200px] gap-3 md:gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[128px] sm:auto-rows-[150px] md:auto-rows-[200px] gap-2.5 sm:gap-3 md:gap-5">
         {/* Hero brand moment */}
         {isVisible("hero") && (
           <Link
             to={heroCfg.link || "/products"}
-            className="col-span-2 row-span-2 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-2xl shadow-[#6c5ce7]/30"
+            className="col-span-2 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-xl shadow-[#6c5ce7]/25 md:shadow-2xl md:shadow-[#6c5ce7]/30 active:scale-[0.99] transition-transform"
           >
             {heroCfg.imageUrl ? (
               <>
@@ -119,24 +119,24 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               </>
             )}
 
-            <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-12 text-white">
+            <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 md:p-12 text-white">
               {heroCfg.badgeVisible !== false && (
-                <span className="inline-flex w-fit items-center gap-2 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase mb-3 md:mb-6">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="inline-flex w-fit items-center gap-1.5 sm:gap-2 bg-white/15 backdrop-blur px-2.5 py-1 sm:px-3 rounded-full text-[9px] sm:text-[10px] md:text-xs font-bold tracking-[0.18em] sm:tracking-[0.2em] uppercase mb-2 sm:mb-3 md:mb-6">
+                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-pulse" />
                   {heroCfg.badge || "Darzo Marketplace"}
                 </span>
               )}
               <h1
-                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4"
+                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-2 sm:mb-3 md:mb-4"
                 style={titleStyle("hero", heroCfg.textStyle)}
               >
                 {heroCfg.title || "The New Standard"}
               </h1>
-              <p className="font-medium opacity-90 max-w-sm mb-4 md:mb-6" style={subtitleStyle("hero", heroCfg.textStyle)}>
+              <p className="font-medium opacity-90 max-w-sm mb-3 sm:mb-4 md:mb-6 line-clamp-2 sm:line-clamp-none" style={subtitleStyle("hero", heroCfg.textStyle)}>
                 {heroCfg.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
               </p>
               {heroCfg.ctaText !== "" && (
-                <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase group-hover:scale-105 transition-transform shadow-xl">
+                <span className="w-fit bg-white text-[#6c5ce7] px-4 py-2 sm:px-5 sm:py-3 md:px-8 md:py-4 rounded-full font-bold text-[9px] sm:text-[10px] md:text-xs tracking-[0.18em] sm:tracking-[0.2em] uppercase group-hover:scale-105 transition-transform shadow-lg md:shadow-xl">
                   {heroCfg.ctaText || "Explore Darzo"}
                 </span>
               )}
@@ -149,33 +149,33 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("flash") && (
           <Link
             to={flashCfg.link || "/products?filter=flash-sale"}
-            className="col-span-2 row-span-1 rounded-[1.75rem] md:rounded-[2rem] bg-card border border-border p-4 md:p-6 flex items-center justify-between shadow-xl shadow-black/5 hover:-translate-y-1 transition-transform overflow-hidden relative"
+            className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2rem] bg-card border border-border p-3 sm:p-4 md:p-6 flex items-center justify-between shadow-md md:shadow-xl shadow-black/5 hover:-translate-y-1 active:scale-[0.99] transition-transform overflow-hidden relative"
           >
             {flashCfg.imageUrl && (
               <img src={flashCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-30" style={imgStyle(flashCfg)} />
             )}
 
             <div className="flex flex-col min-w-0 relative z-10">
-              <div className="flex items-center gap-2 mb-1 md:mb-2">
-                <span className="w-2 h-2 rounded-full bg-[#e84393] animate-pulse" />
-                <span className="text-[#e84393] font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em] tabular-nums">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1 md:mb-2">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#e84393] animate-pulse" />
+                <span className="text-[#e84393] font-bold text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] tabular-nums">
                   Ends in {countdown}
                 </span>
               </div>
               <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.title || "Flash Deals"}
               </h2>
-              <p className="text-muted-foreground font-bold uppercase tracking-widest mt-1" style={subtitleStyle("flash", flashCfg.textStyle)}>
+              <p className="text-muted-foreground font-bold uppercase tracking-wider sm:tracking-widest mt-0.5 sm:mt-1 line-clamp-1" style={subtitleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.subtitle || "Up to 70% Off"}
               </p>
             </div>
-            <div className="flex gap-2 md:gap-3 shrink-0 relative z-10">
+            <div className="flex gap-1.5 sm:gap-2 md:gap-3 shrink-0 relative z-10">
               {flashItems.length > 0
                 ? flashItems.map((p, i) => (
                     <div
                       key={p.id}
-                      className={`w-16 h-16 md:w-20 md:h-20 bg-muted rounded-2xl overflow-hidden shadow-lg transition-transform ${
-                        i === 0 ? "hover:rotate-2" : "-rotate-2 hover:rotate-0 hidden sm:block"
+                      className={`w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-muted rounded-xl sm:rounded-2xl overflow-hidden shadow-md sm:shadow-lg transition-transform ${
+                        i === 0 ? "hover:rotate-2" : "-rotate-2 hover:rotate-0 hidden xs:block sm:block"
                       }`}
                     >
                       <img src={p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
@@ -183,8 +183,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                   ))
                 : (
                   <>
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-2xl shadow-lg" />
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#6c5ce7] to-[#e84393] rounded-2xl shadow-lg -rotate-2 hidden sm:block" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#6c5ce7] to-[#e84393] rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg -rotate-2 hidden sm:block" />
                   </>
                 )}
             </div>
@@ -198,7 +198,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             <Link
               key={id}
               to={c.link || to}
-              className={`col-span-1 row-span-1 rounded-[1.75rem] md:rounded-[2rem] ${c.imageUrl ? "" : bg} p-4 md:p-6 text-white flex flex-col justify-between shadow-lg ${shadow} group cursor-pointer overflow-hidden relative hover:-translate-y-1 transition-transform`}
+              className={`col-span-1 row-span-1 rounded-[1.25rem] md:rounded-[2rem] ${c.imageUrl ? "" : bg} p-3 sm:p-4 md:p-6 text-white flex flex-col justify-between shadow-md md:shadow-lg ${shadow} group cursor-pointer overflow-hidden relative hover:-translate-y-1 active:scale-[0.98] transition-transform`}
             >
               {c.imageUrl && (
                 <>
@@ -208,16 +208,16 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               )}
 
               <div className="relative z-10">
-                <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm mb-3 md:mb-4">
-                  <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                <div className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm mb-2 sm:mb-3 md:mb-4">
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
                 </div>
                 <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", c.textStyle)}>
                   {c.title || name}<br /><span style={subtitleStyle("category", c.textStyle)}>{c.subtitle || sub}</span>
                 </h3>
               </div>
               {!c.imageUrl && (
-                <div className="absolute -bottom-4 -right-4 opacity-15 group-hover:scale-110 transition-transform">
-                  <Icon className="w-20 h-20 md:w-24 md:h-24" />
+                <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 opacity-15 group-hover:scale-110 transition-transform">
+                  <Icon className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
                 </div>
               )}
             </Link>
@@ -226,19 +226,19 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
 
         {/* For You */}
         {isVisible("foryou") && (
-          <div className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-card border border-border p-5 md:p-8 shadow-xl shadow-black/5">
-            <h3 className="font-['Bebas_Neue'] text-foreground mb-4 md:mb-6" style={titleStyle("foryou", foryouCfg.textStyle)}>
+          <div className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-card border border-border p-4 sm:p-5 md:p-8 shadow-md md:shadow-xl shadow-black/5">
+            <h3 className="font-['Bebas_Neue'] text-foreground mb-3 sm:mb-4 md:mb-6" style={titleStyle("foryou", foryouCfg.textStyle)}>
               {foryouCfg.title || "For You"}
             </h3>
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-3 sm:space-y-4 md:space-y-6">
               {forYouItems.length > 0 ? (
                 forYouItems.map((p) => (
                   <Link
                     key={p.id}
                     to={`/product/${p.slug}`}
-                    className="flex items-center gap-3 md:gap-4 group"
+                    className="flex items-center gap-3 md:gap-4 group active:opacity-70"
                   >
-                    <div className="w-12 h-12 md:w-14 md:h-14 bg-muted rounded-xl overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-muted rounded-xl overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
                       <img src={p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -254,7 +254,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               ) : (
                 [1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-3 md:gap-4">
-                    <div className="w-12 h-12 md:w-14 md:h-14 bg-muted rounded-xl shrink-0" />
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-muted rounded-xl shrink-0" />
                     <div className="flex-1 space-y-1.5">
                       <div className="h-3 bg-muted rounded w-3/4" />
                       <div className="h-2.5 bg-muted rounded w-1/3" />
@@ -265,7 +265,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             </div>
             <Link
               to={foryouCfg.link || "/products"}
-              className="mt-6 md:mt-8 w-full border border-border py-2.5 md:py-3 rounded-2xl text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] hover:bg-muted transition-colors flex items-center justify-center"
+              className="mt-4 sm:mt-6 md:mt-8 w-full border border-border py-2.5 md:py-3 rounded-xl sm:rounded-2xl text-[10px] font-bold text-muted-foreground uppercase tracking-[0.18em] sm:tracking-[0.2em] hover:bg-muted transition-colors flex items-center justify-center"
             >
               {foryouCfg.subtitle || "Personalize Feed"}
             </Link>
@@ -276,7 +276,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("trending") && (
           <Link
             to={trendingCfg.link || (trend ? `/product/${trend.slug}` : "/products?sort=trending")}
-            className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-neutral-200 overflow-hidden relative group shadow-lg"
+            className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-neutral-200 overflow-hidden relative group shadow-md md:shadow-lg active:scale-[0.99] transition-transform"
           >
             {trendingCfg.imageUrl ? (
               <img src={trendingCfg.imageUrl} alt="" className="w-full h-full group-hover:scale-110 transition-transform duration-1000" style={imgStyle(trendingCfg)} loading="lazy" />
@@ -287,15 +287,15 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             )}
             <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trendingCfg.overlay ?? 60)/100, 0.4)}), transparent)` }} />
 
-            <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white">
-              <span className="font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest" style={subtitleStyle("trending", trendingCfg.textStyle)}>
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-8 text-white">
+              <span className="inline-block font-bold bg-[#ff6b35] px-2.5 py-1 sm:px-3 rounded-full uppercase tracking-wider sm:tracking-widest text-[9px] sm:text-[10px]" style={subtitleStyle("trending", trendingCfg.textStyle)}>
                 {trendingCfg.subtitle || "Trending"}
               </span>
-              <h3 className="font-['Bebas_Neue'] mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trendingCfg.textStyle)}>
+              <h3 className="font-['Bebas_Neue'] mt-1.5 sm:mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trendingCfg.textStyle)}>
                 {trendingCfg.title || trend?.name || "Capture Purity"}
               </h3>
               {trend && !trendingCfg.title && (
-                <p className="text-base md:text-lg font-bold mt-1.5 md:mt-2 text-[#f7931e]">
+                <p className="text-sm sm:text-base md:text-lg font-bold mt-1 sm:mt-1.5 md:mt-2 text-[#f7931e]">
                   ৳ {trend.price.toLocaleString("en-IN")}
                 </p>
               )}
@@ -305,23 +305,23 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
 
         {/* Marketplace trust */}
         {isVisible("vendors") && (
-          <div className="col-span-2 row-span-1 rounded-[2rem] md:rounded-[2.5rem] bg-muted/50 border border-border p-5 md:p-8 flex flex-col md:flex-row items-center gap-4 md:gap-8 justify-between overflow-hidden relative">
+          <div className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2.5rem] bg-muted/50 border border-border p-3.5 sm:p-5 md:p-8 flex flex-row md:flex-row items-center gap-3 sm:gap-4 md:gap-8 justify-between overflow-hidden relative">
             {vendorsCfg.imageUrl && (
               <img src={vendorsCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-40" style={imgStyle(vendorsCfg)} />
             )}
 
-            <div className="flex flex-col text-center md:text-left relative z-10">
-              <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1.5 md:mb-2" style={titleStyle("vendors", vendorsCfg.textStyle)}>
+            <div className="flex flex-col text-left relative z-10 min-w-0 flex-1">
+              <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1 sm:mb-1.5 md:mb-2 line-clamp-1" style={titleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.title || "Multi-Vendor Power"}
               </h4>
-              <p className="text-muted-foreground font-medium" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
+              <p className="text-muted-foreground font-medium line-clamp-2" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.subtitle || "Supporting 1,200+ local artisans and premium global brands across Bangladesh."}
               </p>
             </div>
-            <div className="flex -space-x-3 md:-space-x-4 shrink-0 relative z-10">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-background bg-card shadow-sm flex items-center justify-center font-bold text-muted-foreground italic">D</div>
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-background bg-[#6c5ce7] shadow-sm flex items-center justify-center font-bold text-white">Z</div>
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-background bg-[#e84393] shadow-sm flex items-center justify-center font-bold text-white italic">A</div>
+            <div className="flex -space-x-2 sm:-space-x-3 md:-space-x-4 shrink-0 relative z-10">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-card shadow-sm flex items-center justify-center font-bold text-muted-foreground italic text-sm sm:text-base">D</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-[#6c5ce7] shadow-sm flex items-center justify-center font-bold text-white text-sm sm:text-base">Z</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-[#e84393] shadow-sm flex items-center justify-center font-bold text-white italic text-sm sm:text-base">A</div>
             </div>
           </div>
         )}
