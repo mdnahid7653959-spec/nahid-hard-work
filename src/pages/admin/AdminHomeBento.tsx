@@ -448,7 +448,7 @@ export default function AdminHomeBento() {
         <div className="flex flex-wrap items-center justify-between gap-3 bg-card border rounded-2xl p-4 sticky top-0 z-40">
           <div>
             <h1 className="text-xl font-bold">Visual Site Editor</h1>
-            <p className="text-xs text-muted-foreground">Hover any tile → upload, adjust, edit or hide. Add extra sections below.</p>
+            <p className="text-xs text-muted-foreground">Edits apply only to the selected device. Switch <b>Desktop / Mobile</b> to edit each independently.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {/* Device toggle */}
