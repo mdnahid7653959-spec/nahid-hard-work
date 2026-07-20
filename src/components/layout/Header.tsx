@@ -61,7 +61,7 @@ interface HeaderConfig {
 }
 
 const defaultHeaderConfig: HeaderConfig = {
-  logo_url: "/lovable-uploads/f37448fb-4b8d-40a2-9709-70766997626f.jpg",
+  logo_url: "/darzo-logo.png",
   logo_text: "Darzo",
   show_search: true,
   show_categories_bar: true,
