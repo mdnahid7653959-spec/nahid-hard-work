@@ -198,7 +198,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             <Link
               key={id}
               to={c.link || to}
-              className={`col-span-1 row-span-1 rounded-[1.75rem] md:rounded-[2rem] ${c.imageUrl ? "" : bg} p-4 md:p-6 text-white flex flex-col justify-between shadow-lg ${shadow} group cursor-pointer overflow-hidden relative hover:-translate-y-1 transition-transform`}
+              className={`col-span-1 row-span-1 rounded-[1.25rem] md:rounded-[2rem] ${c.imageUrl ? "" : bg} p-3 sm:p-4 md:p-6 text-white flex flex-col justify-between shadow-md md:shadow-lg ${shadow} group cursor-pointer overflow-hidden relative hover:-translate-y-1 active:scale-[0.98] transition-transform`}
             >
               {c.imageUrl && (
                 <>
@@ -208,16 +208,16 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               )}
 
               <div className="relative z-10">
-                <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm mb-3 md:mb-4">
-                  <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                <div className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm mb-2 sm:mb-3 md:mb-4">
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
                 </div>
                 <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", c.textStyle)}>
                   {c.title || name}<br /><span style={subtitleStyle("category", c.textStyle)}>{c.subtitle || sub}</span>
                 </h3>
               </div>
               {!c.imageUrl && (
-                <div className="absolute -bottom-4 -right-4 opacity-15 group-hover:scale-110 transition-transform">
-                  <Icon className="w-20 h-20 md:w-24 md:h-24" />
+                <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 opacity-15 group-hover:scale-110 transition-transform">
+                  <Icon className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
                 </div>
               )}
             </Link>
