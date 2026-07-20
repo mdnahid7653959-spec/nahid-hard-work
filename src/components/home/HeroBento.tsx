@@ -153,10 +153,10 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                   Ends in {countdown}
                 </span>
               </div>
-              <h2 className="font-['Bebas_Neue'] text-3xl md:text-4xl text-foreground leading-none">
+              <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.title || "Flash Deals"}
               </h2>
-              <p className="text-[10px] md:text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">
+              <p className="text-muted-foreground font-bold uppercase tracking-widest mt-1" style={subtitleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.subtitle || "Up to 70% Off"}
               </p>
             </div>
