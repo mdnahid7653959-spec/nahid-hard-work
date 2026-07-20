@@ -316,26 +316,30 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
 
         {/* Marketplace trust */}
         {isVisible("vendors") && (
-          <div className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2.5rem] bg-muted/50 border border-border p-3.5 sm:p-5 md:p-8 flex flex-row md:flex-row items-center gap-3 sm:gap-4 md:gap-8 justify-between overflow-hidden relative">
+          <div className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2.5rem] bg-gradient-to-br from-[#0f0f1a] via-[#1a1830] to-[#2a1533] md:bg-muted/50 border border-white/10 md:border-border p-3.5 sm:p-5 md:p-8 flex flex-row items-center gap-3 sm:gap-4 md:gap-8 justify-between overflow-hidden relative">
             {vendorsCfg.imageUrl && (
               <img src={vendorsCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-40" style={imgStyle(vendorsCfg)} />
             )}
+            {/* Mobile-only aurora accent */}
+            <div className="md:hidden absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#ff6b35]/30 blur-3xl" />
+            <div className="md:hidden absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[#6c5ce7]/30 blur-3xl" />
 
             <div className="flex flex-col text-left relative z-10 min-w-0 flex-1">
-              <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1 sm:mb-1.5 md:mb-2 line-clamp-1" style={titleStyle("vendors", vendorsCfg.textStyle)}>
+              <h4 className="font-['Bebas_Neue'] text-white md:text-foreground leading-none mb-1 sm:mb-1.5 md:mb-2 line-clamp-1" style={titleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.title || "Multi-Vendor Power"}
               </h4>
-              <p className="text-muted-foreground font-medium line-clamp-2" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
+              <p className="text-white/70 md:text-muted-foreground font-medium line-clamp-2" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.subtitle || "Supporting 1,200+ local artisans and premium global brands across Bangladesh."}
               </p>
             </div>
             <div className="flex -space-x-2 sm:-space-x-3 md:-space-x-4 shrink-0 relative z-10">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-card shadow-sm flex items-center justify-center font-bold text-muted-foreground italic text-sm sm:text-base">D</div>
-              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-[#6c5ce7] shadow-sm flex items-center justify-center font-bold text-white text-sm sm:text-base">Z</div>
-              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-[#e84393] shadow-sm flex items-center justify-center font-bold text-white italic text-sm sm:text-base">A</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-[#1a1830] md:border-background bg-white shadow-sm flex items-center justify-center font-bold text-[#6c5ce7] italic text-sm sm:text-base m-float">D</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-[#1a1830] md:border-background bg-[#6c5ce7] shadow-sm flex items-center justify-center font-bold text-white text-sm sm:text-base m-float" style={{ animationDelay: "0.6s" }}>Z</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-[#1a1830] md:border-background bg-[#e84393] shadow-sm flex items-center justify-center font-bold text-white italic text-sm sm:text-base m-float" style={{ animationDelay: "1.2s" }}>A</div>
             </div>
           </div>
         )}
+
       </div>
 
       {/* Admin-defined custom sections */}
