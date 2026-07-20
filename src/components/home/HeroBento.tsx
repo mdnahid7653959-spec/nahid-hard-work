@@ -202,8 +202,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                 <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm mb-3 md:mb-4">
                   <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                 </div>
-                <h3 className="font-['Bebas_Neue'] text-xl md:text-2xl leading-none tracking-wide">
-                  {c.title || name}<br />{c.subtitle || sub}
+                <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", c.textStyle)}>
+                  {c.title || name}<br /><span style={subtitleStyle("category", c.textStyle)}>{c.subtitle || sub}</span>
                 </h3>
               </div>
               {!c.imageUrl && (
