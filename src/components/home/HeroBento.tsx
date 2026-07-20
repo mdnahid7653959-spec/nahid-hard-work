@@ -100,8 +100,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
           >
             {heroCfg.imageUrl ? (
               <>
-                <img src={heroCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <img src={heroCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(heroCfg)} />
+                <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((heroCfg.overlay ?? 50)/100, 0.35)}), transparent)` }} />
               </>
             ) : (
               <>
@@ -110,6 +110,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                 <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#f7931e]/30 rounded-full blur-3xl" />
               </>
             )}
+
             <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-12 text-white">
               <span className="inline-flex w-fit items-center gap-2 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase mb-3 md:mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
