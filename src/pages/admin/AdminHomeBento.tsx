@@ -598,8 +598,43 @@ export default function AdminHomeBento() {
                 </div>
               </EditableTile>
             </div>
-          </div>
         </div>
+
+        {/* Mobile preview — live iframe of the storefront at 390px width */}
+        {viewMode === "mobile" && (
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border rounded-3xl p-4 md:p-8 flex flex-col items-center gap-4">
+            <div className="flex items-center justify-between w-full max-w-[430px]">
+              <div>
+                <p className="text-xs font-semibold text-white">Mobile preview (390×780)</p>
+                <p className="text-[10px] text-white/60">Reflects last saved changes. Save first to see edits here.</p>
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => setMobileFrameKey((k) => k + 1)}>
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
+              </Button>
+            </div>
+            {/* Phone frame */}
+            <div
+              className="relative rounded-[2.5rem] bg-black p-3 shadow-2xl"
+              style={{ width: 414 }}
+            >
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-10" />
+              <iframe
+                key={mobileFrameKey}
+                src="/?adminPreview=1"
+                title="Mobile preview"
+                style={{ width: 390, height: 780 }}
+                className="rounded-[1.75rem] bg-white block"
+              />
+            </div>
+            {dirty && (
+              <p className="text-[11px] text-amber-400 font-medium">
+                You have unsaved changes — click "Save Changes" then "Refresh" to update the mobile preview.
+              </p>
+            )}
+          </div>
+        )}
+
+
 
         {/* Custom sections */}
         <div className="bg-card border rounded-3xl p-5 space-y-4">
