@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { StaffProvider } from "@/contexts/StaffContext";
+import { StaffProtectedRoute } from "@/components/staff/StaffProtectedRoute";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
