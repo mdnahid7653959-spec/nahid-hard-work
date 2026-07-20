@@ -149,33 +149,33 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("flash") && (
           <Link
             to={flashCfg.link || "/products?filter=flash-sale"}
-            className="col-span-2 row-span-1 rounded-[1.75rem] md:rounded-[2rem] bg-card border border-border p-4 md:p-6 flex items-center justify-between shadow-xl shadow-black/5 hover:-translate-y-1 transition-transform overflow-hidden relative"
+            className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2rem] bg-card border border-border p-3 sm:p-4 md:p-6 flex items-center justify-between shadow-md md:shadow-xl shadow-black/5 hover:-translate-y-1 active:scale-[0.99] transition-transform overflow-hidden relative"
           >
             {flashCfg.imageUrl && (
               <img src={flashCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-30" style={imgStyle(flashCfg)} />
             )}
 
             <div className="flex flex-col min-w-0 relative z-10">
-              <div className="flex items-center gap-2 mb-1 md:mb-2">
-                <span className="w-2 h-2 rounded-full bg-[#e84393] animate-pulse" />
-                <span className="text-[#e84393] font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em] tabular-nums">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1 md:mb-2">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#e84393] animate-pulse" />
+                <span className="text-[#e84393] font-bold text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] tabular-nums">
                   Ends in {countdown}
                 </span>
               </div>
               <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.title || "Flash Deals"}
               </h2>
-              <p className="text-muted-foreground font-bold uppercase tracking-widest mt-1" style={subtitleStyle("flash", flashCfg.textStyle)}>
+              <p className="text-muted-foreground font-bold uppercase tracking-wider sm:tracking-widest mt-0.5 sm:mt-1 line-clamp-1" style={subtitleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.subtitle || "Up to 70% Off"}
               </p>
             </div>
-            <div className="flex gap-2 md:gap-3 shrink-0 relative z-10">
+            <div className="flex gap-1.5 sm:gap-2 md:gap-3 shrink-0 relative z-10">
               {flashItems.length > 0
                 ? flashItems.map((p, i) => (
                     <div
                       key={p.id}
-                      className={`w-16 h-16 md:w-20 md:h-20 bg-muted rounded-2xl overflow-hidden shadow-lg transition-transform ${
-                        i === 0 ? "hover:rotate-2" : "-rotate-2 hover:rotate-0 hidden sm:block"
+                      className={`w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-muted rounded-xl sm:rounded-2xl overflow-hidden shadow-md sm:shadow-lg transition-transform ${
+                        i === 0 ? "hover:rotate-2" : "-rotate-2 hover:rotate-0 hidden xs:block sm:block"
                       }`}
                     >
                       <img src={p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
@@ -183,8 +183,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                   ))
                 : (
                   <>
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-2xl shadow-lg" />
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#6c5ce7] to-[#e84393] rounded-2xl shadow-lg -rotate-2 hidden sm:block" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#6c5ce7] to-[#e84393] rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg -rotate-2 hidden sm:block" />
                   </>
                 )}
             </div>
