@@ -2,6 +2,7 @@ import { memo, lazy, Suspense, useEffect, useState, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroBanner } from "@/components/home/HeroBanner";
+import { HeroBento } from "@/components/home/HeroBento";
 import { PromoBanners } from "@/components/home/PromoBanners";
 import { useHomeProducts } from "@/hooks/useHomeProducts";
 import { useCJSettings } from "@/hooks/useCJSettings";
@@ -138,8 +139,14 @@ function SectionRenderer({
   switch (section.id) {
     case "hero_banner":
       return (
-        <section className="w-full px-3 sm:px-4 py-2 sm:py-3" style={sectionStyle}>
-          <div className="max-w-7xl mx-auto"><MemoizedHeroBanner /></div>
+        <section className="w-full px-3 sm:px-4 py-3 sm:py-5" style={sectionStyle}>
+          <div className="max-w-7xl mx-auto">
+            <HeroBento
+              forYou={data?.recommended}
+              flashSale={data?.flashSale}
+              trending={data?.trending}
+            />
+          </div>
         </section>
       );
 
