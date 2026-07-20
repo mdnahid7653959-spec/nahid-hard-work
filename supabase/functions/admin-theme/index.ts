@@ -11,6 +11,60 @@ function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
+// --- Validation helpers ---
+const SAFE_URL_RE = /^(https?:\/\/|\/)/i;
+const UNSAFE_URL_RE = /^\s*(javascript|data|vbscript|file):/i;
+function isSafeUrl(u: unknown): boolean {
+  if (u === undefined || u === null || u === "") return true;
+  if (typeof u !== "string" || u.length > 2048) return false;
+  if (UNSAFE_URL_RE.test(u)) return false;
+  return SAFE_URL_RE.test(u);
+}
+function isStr(v: unknown, max = 500): boolean {
+  return v === undefined || v === null || (typeof v === "string" && v.length <= max);
+}
+function validateTile(t: any, i: number): string | null {
+  if (!t || typeof t !== "object") return `tile[${i}] not object`;
+  if (typeof t.id !== "string" || t.id.length > 64) return `tile[${i}].id invalid`;
+  if (typeof t.visible !== "boolean") return `tile[${i}].visible invalid`;
+  if (!isStr(t.title, 300) || !isStr(t.subtitle, 1000) || !isStr(t.label, 200)) return `tile[${i}] text too long`;
+  if (!isStr(t.badge, 200) || !isStr(t.ctaText, 200)) return `tile[${i}] cta/badge too long`;
+  if (!isSafeUrl(t.link)) return `tile[${i}].link unsafe`;
+  if (!isSafeUrl(t.imageUrl)) return `tile[${i}].imageUrl unsafe`;
+  return null;
+}
+function validateSection(s: any, i: number): string | null {
+  if (!s || typeof s !== "object") return `section[${i}] not object`;
+  if (typeof s.id !== "string" || s.id.length > 64) return `section[${i}].id invalid`;
+  if (typeof s.visible !== "boolean") return `section[${i}].visible invalid`;
+  if (!isStr(s.title, 300) || !isStr(s.subtitle, 1000)) return `section[${i}] text too long`;
+  if (!isSafeUrl(s.link) || !isSafeUrl(s.imageUrl)) return `section[${i}] unsafe url`;
+  return null;
+}
+function validateHomeBento(v: any): string | null {
+  if (!v || typeof v !== "object") return "root not object";
+  if (!Array.isArray(v.tiles)) return "tiles must be array";
+  if (v.tiles.length > 64) return "too many tiles";
+  for (let i = 0; i < v.tiles.length; i++) { const e = validateTile(v.tiles[i], i); if (e) return e; }
+  if (v.sections !== undefined) {
+    if (!Array.isArray(v.sections)) return "sections must be array";
+    if (v.sections.length > 64) return "too many sections";
+    for (let i = 0; i < v.sections.length; i++) { const e = validateSection(v.sections[i], i); if (e) return e; }
+  }
+  if (v.mobile !== undefined && v.mobile !== null) {
+    if (typeof v.mobile !== "object") return "mobile must be object";
+    if (v.mobile.tiles !== undefined) {
+      if (!Array.isArray(v.mobile.tiles) || v.mobile.tiles.length > 64) return "mobile.tiles invalid";
+      for (let i = 0; i < v.mobile.tiles.length; i++) { const e = validateTile(v.mobile.tiles[i], i); if (e) return `mobile.${e}`; }
+    }
+    if (v.mobile.sections !== undefined) {
+      if (!Array.isArray(v.mobile.sections) || v.mobile.sections.length > 64) return "mobile.sections invalid";
+      for (let i = 0; i < v.mobile.sections.length; i++) { const e = validateSection(v.mobile.sections[i], i); if (e) return `mobile.${e}`; }
+    }
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
