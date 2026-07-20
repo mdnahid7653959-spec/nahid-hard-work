@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { Cpu, Shirt, Home as HomeIcon, Sparkles as SparklesIcon } from "lucide-react";
 import type { Product } from "@/components/products/ProductCard";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { titleStyle, subtitleStyle, type TextStyle } from "@/lib/bentoText";
+
 
 interface HeroBentoProps {
   forYou?: Product[];
@@ -78,10 +80,20 @@ function useCountdown(hours = 4) {
 
 function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: HeroBentoProps) {
   const countdown = useCountdown(4);
-  const { config } = useSiteConfig<{ tiles?: BentoTileCfg[]; sections?: CustomSection[] }>("home_bento", {});
+  const isMobile = useIsMobile();
+  const { config } = useSiteConfig<{
+    tiles?: BentoTileCfg[];
+    sections?: CustomSection[];
+    mobile?: { tiles?: BentoTileCfg[]; sections?: CustomSection[] } | null;
+  }>("home_bento", {});
+
+  const activeTiles = (isMobile && config?.mobile?.tiles?.length ? config.mobile.tiles : config?.tiles) ?? [];
+  const activeSections = (isMobile && config?.mobile?.sections ? config.mobile.sections : config?.sections) ?? [];
+
   const tileMap: Record<string, BentoTileCfg> = {};
-  (config?.tiles ?? []).forEach((t) => (tileMap[t.id] = t));
-  const customSections = (config?.sections ?? []).filter((s) => s.visible !== false);
+  activeTiles.forEach((t) => (tileMap[t.id] = t));
+  const customSections = activeSections.filter((s) => s.visible !== false);
+
 
   const isVisible = (id: string) => tileMap[id]?.visible !== false;
   const cfg = (id: string): BentoTileCfg => tileMap[id] ?? { id, visible: true };
