@@ -104,6 +104,15 @@ const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
 const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
+const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+
+// Staff Portal
+const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
+const StaffActivate = lazy(() => import("./pages/staff/StaffActivate"));
+const StaffIndex = lazy(() => import("./pages/staff/StaffIndex"));
+const StaffTasks = lazy(() => import("./pages/staff/StaffTasks"));
+const StaffMessages = lazy(() => import("./pages/staff/StaffMessages"));
+const StaffProfile = lazy(() => import("./pages/staff/StaffProfile"));
 
 // Minimal loading fallback - instant display
 const PageLoader = () => (
