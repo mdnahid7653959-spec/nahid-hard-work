@@ -104,7 +104,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("hero") && (
           <Link
             to={heroCfg.link || "/products"}
-            className="col-span-2 row-span-2 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-2xl shadow-[#6c5ce7]/30"
+            className="col-span-2 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-xl shadow-[#6c5ce7]/25 md:shadow-2xl md:shadow-[#6c5ce7]/30 active:scale-[0.99] transition-transform"
           >
             {heroCfg.imageUrl ? (
               <>
@@ -119,24 +119,24 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               </>
             )}
 
-            <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-12 text-white">
+            <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 md:p-12 text-white">
               {heroCfg.badgeVisible !== false && (
-                <span className="inline-flex w-fit items-center gap-2 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase mb-3 md:mb-6">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="inline-flex w-fit items-center gap-1.5 sm:gap-2 bg-white/15 backdrop-blur px-2.5 py-1 sm:px-3 rounded-full text-[9px] sm:text-[10px] md:text-xs font-bold tracking-[0.18em] sm:tracking-[0.2em] uppercase mb-2 sm:mb-3 md:mb-6">
+                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-pulse" />
                   {heroCfg.badge || "Darzo Marketplace"}
                 </span>
               )}
               <h1
-                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4"
+                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-2 sm:mb-3 md:mb-4"
                 style={titleStyle("hero", heroCfg.textStyle)}
               >
                 {heroCfg.title || "The New Standard"}
               </h1>
-              <p className="font-medium opacity-90 max-w-sm mb-4 md:mb-6" style={subtitleStyle("hero", heroCfg.textStyle)}>
+              <p className="font-medium opacity-90 max-w-sm mb-3 sm:mb-4 md:mb-6 line-clamp-2 sm:line-clamp-none" style={subtitleStyle("hero", heroCfg.textStyle)}>
                 {heroCfg.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
               </p>
               {heroCfg.ctaText !== "" && (
-                <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase group-hover:scale-105 transition-transform shadow-xl">
+                <span className="w-fit bg-white text-[#6c5ce7] px-4 py-2 sm:px-5 sm:py-3 md:px-8 md:py-4 rounded-full font-bold text-[9px] sm:text-[10px] md:text-xs tracking-[0.18em] sm:tracking-[0.2em] uppercase group-hover:scale-105 transition-transform shadow-lg md:shadow-xl">
                   {heroCfg.ctaText || "Explore Darzo"}
                 </span>
               )}
