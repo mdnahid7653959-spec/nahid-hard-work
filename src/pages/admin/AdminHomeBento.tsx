@@ -312,8 +312,11 @@ function TextStyleEditor({ value, onChange }: { value?: TextStyle; onChange: (ts
 /* ---------- Main page ---------- */
 
 export default function AdminHomeBento() {
-  const [tiles, setTiles] = useState<BentoTile[]>(DEFAULT_TILES);
-  const [sections, setSections] = useState<CustomSection[]>([]);
+  const [desktopTiles, setDesktopTiles] = useState<BentoTile[]>(DEFAULT_TILES);
+  const [desktopSections, setDesktopSections] = useState<CustomSection[]>([]);
+  // null = mobile inherits desktop (no separate config yet)
+  const [mobileTiles, setMobileTiles] = useState<BentoTile[] | null>(null);
+  const [mobileSections, setMobileSections] = useState<CustomSection[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
@@ -323,45 +326,88 @@ export default function AdminHomeBento() {
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [mobileFrameKey, setMobileFrameKey] = useState(0);
 
+  // Active state — what the editor writes to based on device mode
+  const isMobile = viewMode === "mobile";
+  const tiles: BentoTile[] = isMobile ? (mobileTiles ?? desktopTiles) : desktopTiles;
+  const sections: CustomSection[] = isMobile ? (mobileSections ?? desktopSections) : desktopSections;
 
   useEffect(() => {
     loadConfig()
       .then((saved) => {
         if (saved?.tiles?.length) {
-          setTiles(DEFAULT_TILES.map((d) => ({ ...d, ...(saved.tiles!.find((s) => s.id === d.id) ?? {}) })));
+          setDesktopTiles(DEFAULT_TILES.map((d) => ({ ...d, ...(saved.tiles!.find((s) => s.id === d.id) ?? {}) })));
         }
-        if (saved?.sections?.length) setSections(saved.sections);
+        if (saved?.sections?.length) setDesktopSections(saved.sections);
+        if (saved?.mobile?.tiles?.length) {
+          setMobileTiles(DEFAULT_TILES.map((d) => ({ ...d, ...(saved.mobile!.tiles.find((s) => s.id === d.id) ?? {}) })));
+        }
+        if (saved?.mobile?.sections) setMobileSections(saved.mobile.sections);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   const get = (id: string) => tiles.find((t) => t.id === id)!;
+
   const update = (id: string, patch: Partial<BentoTile>) => {
-    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    if (isMobile) {
+      setMobileTiles((prev) => {
+        const base = prev ?? desktopTiles.map((t) => ({ ...t }));
+        return base.map((t) => (t.id === id ? { ...t, ...patch } : t));
+      });
+    } else {
+      setDesktopTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    }
     setDirty(true);
   };
+
   const handleUpload = async (id: string, file: File) => {
     setUploadingId(id);
     try {
       const url = await uploadImage(file);
       update(id, { imageUrl: url });
-      toast({ title: "Banner uploaded — hover & Edit to adjust position" });
+      toast({ title: `Banner uploaded — ${isMobile ? "mobile" : "desktop"} only` });
     } catch (e: any) {
       toast({ title: "Upload failed", description: e.message, variant: "destructive" });
     } finally { setUploadingId(null); }
   };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveConfig({ tiles, sections });
+      await saveConfig({
+        tiles: desktopTiles,
+        sections: desktopSections,
+        mobile: mobileTiles || mobileSections
+          ? { tiles: mobileTiles ?? desktopTiles, sections: mobileSections ?? desktopSections }
+          : null,
+      });
       setDirty(false);
-      toast({ title: "Saved", description: "Home page updated." });
+      toast({ title: "Saved", description: "Desktop & mobile layouts updated." });
     } catch (e: any) {
       toast({ title: "Save failed", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
   };
-  const resetAll = () => { setTiles(DEFAULT_TILES); setSections([]); setDirty(true); toast({ title: "Reset to defaults" }); };
+
+  const resetAll = () => {
+    if (isMobile) {
+      setMobileTiles(null); setMobileSections(null);
+      toast({ title: "Mobile reset", description: "Mobile now inherits desktop." });
+    } else {
+      setDesktopTiles(DEFAULT_TILES); setDesktopSections([]);
+      toast({ title: "Desktop reset to defaults" });
+    }
+    setDirty(true);
+  };
+
+  const setSectionsActive = (updater: (prev: CustomSection[]) => CustomSection[]) => {
+    if (isMobile) {
+      setMobileSections((prev) => updater(prev ?? desktopSections.map((s) => ({ ...s }))));
+    } else {
+      setDesktopSections((prev) => updater(prev));
+    }
+    setDirty(true);
+  };
 
   const addSection = () => {
     const s: CustomSection = {
@@ -372,16 +418,20 @@ export default function AdminHomeBento() {
       visible: true,
       overlay: 40, focalX: 50, focalY: 50,
     };
-    setSections((p) => [...p, s]); setDirty(true); setEditingSection(s);
+    setSectionsActive((p) => [...p, s]);
+    setEditingSection(s);
   };
   const updateSection = (id: string, patch: Partial<CustomSection>) => {
-    setSections((p) => p.map((s) => (s.id === id ? { ...s, ...patch } : s))); setDirty(true);
+    setSectionsActive((p) => p.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   };
-  const removeSection = (id: string) => { setSections((p) => p.filter((s) => s.id !== id)); setDirty(true); };
+  const removeSection = (id: string) => {
+    setSectionsActive((p) => p.filter((s) => s.id !== id));
+  };
   const uploadSectionImage = async (id: string, file: File) => {
     try { const url = await uploadImage(file); updateSection(id, { imageUrl: url }); toast({ title: "Section image uploaded" }); }
     catch (e: any) { toast({ title: "Upload failed", description: e.message, variant: "destructive" }); }
   };
+
 
   if (loading) {
     return <AdminLayout title="Home Bento Manager"><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AdminLayout>;
