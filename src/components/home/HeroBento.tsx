@@ -226,19 +226,19 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
 
         {/* For You */}
         {isVisible("foryou") && (
-          <div className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-card border border-border p-5 md:p-8 shadow-xl shadow-black/5">
-            <h3 className="font-['Bebas_Neue'] text-foreground mb-4 md:mb-6" style={titleStyle("foryou", foryouCfg.textStyle)}>
+          <div className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-card border border-border p-4 sm:p-5 md:p-8 shadow-md md:shadow-xl shadow-black/5">
+            <h3 className="font-['Bebas_Neue'] text-foreground mb-3 sm:mb-4 md:mb-6" style={titleStyle("foryou", foryouCfg.textStyle)}>
               {foryouCfg.title || "For You"}
             </h3>
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-3 sm:space-y-4 md:space-y-6">
               {forYouItems.length > 0 ? (
                 forYouItems.map((p) => (
                   <Link
                     key={p.id}
                     to={`/product/${p.slug}`}
-                    className="flex items-center gap-3 md:gap-4 group"
+                    className="flex items-center gap-3 md:gap-4 group active:opacity-70"
                   >
-                    <div className="w-12 h-12 md:w-14 md:h-14 bg-muted rounded-xl overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-muted rounded-xl overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
                       <img src={p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -254,7 +254,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               ) : (
                 [1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-3 md:gap-4">
-                    <div className="w-12 h-12 md:w-14 md:h-14 bg-muted rounded-xl shrink-0" />
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-muted rounded-xl shrink-0" />
                     <div className="flex-1 space-y-1.5">
                       <div className="h-3 bg-muted rounded w-3/4" />
                       <div className="h-2.5 bg-muted rounded w-1/3" />
@@ -265,7 +265,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             </div>
             <Link
               to={foryouCfg.link || "/products"}
-              className="mt-6 md:mt-8 w-full border border-border py-2.5 md:py-3 rounded-2xl text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] hover:bg-muted transition-colors flex items-center justify-center"
+              className="mt-4 sm:mt-6 md:mt-8 w-full border border-border py-2.5 md:py-3 rounded-xl sm:rounded-2xl text-[10px] font-bold text-muted-foreground uppercase tracking-[0.18em] sm:tracking-[0.2em] hover:bg-muted transition-colors flex items-center justify-center"
             >
               {foryouCfg.subtitle || "Personalize Feed"}
             </Link>
