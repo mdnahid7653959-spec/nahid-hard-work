@@ -34,7 +34,11 @@ interface BentoTile {
   zoom?: number;
   textStyle?: TextStyle;
   kind?: TileKind;
+  badge?: string;
+  badgeVisible?: boolean;
+  ctaText?: string;
 }
+
 
 interface CustomSection {
   id: string;
