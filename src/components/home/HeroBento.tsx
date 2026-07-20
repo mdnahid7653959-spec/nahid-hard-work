@@ -99,7 +99,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
 
   return (
     <div className="w-full font-['Barlow',sans-serif]">
-      <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[200px] gap-3 md:gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[128px] sm:auto-rows-[150px] md:auto-rows-[200px] gap-2.5 sm:gap-3 md:gap-5">
         {/* Hero brand moment */}
         {isVisible("hero") && (
           <Link
