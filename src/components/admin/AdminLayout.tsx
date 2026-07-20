@@ -61,6 +61,7 @@ const menuItems = [
   { icon: MessageSquare, label: "Reviews", href: "/admin/reviews" },
   { icon: Bell, label: "Push Notifications", href: "/admin/push-notifications" },
   { icon: Palette, label: "Theme Builder", href: "/admin/theme-builder" },
+  { icon: LayoutDashboard, label: "Home Bento", href: "/admin/home-bento" },
   { icon: Settings, label: "CJ Settings", href: "/admin/cj-settings" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];

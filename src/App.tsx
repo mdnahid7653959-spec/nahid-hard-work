@@ -99,6 +99,7 @@ const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
 const AdminCMS = lazy(() => import("./pages/admin/AdminCMS"));
 const AdminConsignments = lazy(() => import("./pages/admin/AdminConsignments"));
 const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
+const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 
@@ -231,6 +232,7 @@ const App = () => (
                           <Route path="/admin/cms" element={<AdminProtectedRoute><AdminCMS /></AdminProtectedRoute>} />
                           <Route path="/admin/consignments" element={<AdminProtectedRoute><AdminConsignments /></AdminProtectedRoute>} />
                           <Route path="/admin/warehouses" element={<AdminProtectedRoute><AdminWarehouses /></AdminProtectedRoute>} />
+                          <Route path="/admin/home-bento" element={<AdminProtectedRoute><AdminHomeBento /></AdminProtectedRoute>} />
                           <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
                           <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
                           <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
