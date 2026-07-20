@@ -11,8 +11,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, Upload, Pencil, Eye, EyeOff, Trash2, RotateCcw, Save, Check, Cpu, Shirt,
-  Home as HomeIcon, Sparkles, ImagePlus, Plus, Move, Maximize2, Palette,
+  Home as HomeIcon, Sparkles, ImagePlus, Plus, Move, Maximize2, Palette, Type,
+  AlignLeft, AlignCenter, AlignRight,
 } from "lucide-react";
+import { titleStyle, subtitleStyle, TEXT_TEMPLATES, FONT_OPTIONS, type TextStyle, type TileKind } from "@/lib/bentoText";
 
 type FitMode = "cover" | "contain" | "fill";
 
@@ -24,13 +26,14 @@ interface BentoTile {
   title?: string;
   subtitle?: string;
   link?: string;
-  // Image adjustment
   objectFit?: FitMode;
-  focalX?: number;   // 0-100 (%)
-  focalY?: number;   // 0-100 (%)
-  overlay?: number;  // 0-100 (%) dark overlay strength
-  bgColor?: string;  // hex, used when no image or with contain
-  zoom?: number;     // 100-200 (%)
+  focalX?: number;
+  focalY?: number;
+  overlay?: number;
+  bgColor?: string;
+  zoom?: number;
+  textStyle?: TextStyle;
+  kind?: TileKind;
 }
 
 interface CustomSection {
@@ -45,6 +48,7 @@ interface CustomSection {
   focalX?: number;
   focalY?: number;
   visible: boolean;
+  textStyle?: TextStyle;
 }
 
 const DEFAULT_TILES: BentoTile[] = [
