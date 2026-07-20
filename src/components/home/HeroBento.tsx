@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Cpu, Shirt, Home as HomeIcon, Sparkles as SparklesIcon } from "lucide-react";
 import type { Product } from "@/components/products/ProductCard";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { titleStyle, subtitleStyle, type TextStyle } from "@/lib/bentoText";
 
 interface HeroBentoProps {
   forYou?: Product[];
@@ -23,6 +24,7 @@ interface BentoTileCfg {
   overlay?: number;
   bgColor?: string;
   zoom?: number;
+  textStyle?: TextStyle;
 }
 
 interface CustomSection {
@@ -37,6 +39,7 @@ interface CustomSection {
   focalX?: number;
   focalY?: number;
   visible: boolean;
+  textStyle?: TextStyle;
 }
 
 function imgStyle(t: Partial<BentoTileCfg>): React.CSSProperties {
@@ -47,6 +50,7 @@ function imgStyle(t: Partial<BentoTileCfg>): React.CSSProperties {
     transformOrigin: `${t.focalX ?? 50}% ${t.focalY ?? 50}%`,
   };
 }
+
 
 
 const CATEGORIES = [
@@ -118,11 +122,11 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               </span>
               <h1
                 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4"
-                style={{ fontSize: "clamp(2.5rem, 7vw, 6rem)" }}
+                style={titleStyle("hero", heroCfg.textStyle)}
               >
                 {heroCfg.title || "The New Standard"}
               </h1>
-              <p className="text-sm md:text-xl font-medium opacity-90 max-w-sm mb-4 md:mb-6">
+              <p className="font-medium opacity-90 max-w-sm mb-4 md:mb-6" style={subtitleStyle("hero", heroCfg.textStyle)}>
                 {heroCfg.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
               </p>
               <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase group-hover:scale-105 transition-transform shadow-xl">
@@ -149,10 +153,10 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                   Ends in {countdown}
                 </span>
               </div>
-              <h2 className="font-['Bebas_Neue'] text-3xl md:text-4xl text-foreground leading-none">
+              <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.title || "Flash Deals"}
               </h2>
-              <p className="text-[10px] md:text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">
+              <p className="text-muted-foreground font-bold uppercase tracking-widest mt-1" style={subtitleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.subtitle || "Up to 70% Off"}
               </p>
             </div>
@@ -198,8 +202,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                 <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm mb-3 md:mb-4">
                   <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                 </div>
-                <h3 className="font-['Bebas_Neue'] text-xl md:text-2xl leading-none tracking-wide">
-                  {c.title || name}<br />{c.subtitle || sub}
+                <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", c.textStyle)}>
+                  {c.title || name}<br /><span style={subtitleStyle("category", c.textStyle)}>{c.subtitle || sub}</span>
                 </h3>
               </div>
               {!c.imageUrl && (
@@ -214,7 +218,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {/* For You */}
         {isVisible("foryou") && (
           <div className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-card border border-border p-5 md:p-8 shadow-xl shadow-black/5">
-            <h3 className="font-['Bebas_Neue'] text-2xl md:text-3xl text-foreground mb-4 md:mb-6">
+            <h3 className="font-['Bebas_Neue'] text-foreground mb-4 md:mb-6" style={titleStyle("foryou", foryouCfg.textStyle)}>
               {foryouCfg.title || "For You"}
             </h3>
             <div className="space-y-4 md:space-y-6">
@@ -275,10 +279,10 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trendingCfg.overlay ?? 60)/100, 0.4)}), transparent)` }} />
 
             <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white">
-              <span className="text-[9px] md:text-[10px] font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest">
+              <span className="font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest" style={subtitleStyle("trending", trendingCfg.textStyle)}>
                 {trendingCfg.subtitle || "Trending"}
               </span>
-              <h3 className="font-['Bebas_Neue'] text-2xl md:text-3xl mt-2 md:mt-3 leading-none tracking-wider line-clamp-2">
+              <h3 className="font-['Bebas_Neue'] mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trendingCfg.textStyle)}>
                 {trendingCfg.title || trend?.name || "Capture Purity"}
               </h3>
               {trend && !trendingCfg.title && (
@@ -298,10 +302,10 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             )}
 
             <div className="flex flex-col text-center md:text-left relative z-10">
-              <h4 className="font-['Bebas_Neue'] text-xl md:text-2xl text-foreground leading-none mb-1.5 md:mb-2">
+              <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1.5 md:mb-2" style={titleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.title || "Multi-Vendor Power"}
               </h4>
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
+              <p className="text-muted-foreground font-medium" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.subtitle || "Supporting 1,200+ local artisans and premium global brands across Bangladesh."}
               </p>
             </div>
@@ -325,8 +329,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                   : <div className="absolute inset-0" style={{ background: s.bgColor || "linear-gradient(135deg,#6c5ce7,#e84393)" }} />}
                 <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(s.overlay ?? 40)/100})` }} />
                 <div className="relative z-10 p-6 md:p-10 text-white min-h-[180px] md:min-h-[240px] flex flex-col justify-center">
-                  <h3 className="font-['Bebas_Neue'] text-3xl md:text-5xl leading-none">{s.title}</h3>
-                  {s.subtitle && <p className="text-sm md:text-base mt-2 opacity-90 max-w-xl">{s.subtitle}</p>}
+                  <h3 className="font-['Bebas_Neue'] leading-none" style={titleStyle("section", s.textStyle)}>{s.title}</h3>
+                  {s.subtitle && <p className="mt-2 opacity-90 max-w-xl" style={subtitleStyle("section", s.textStyle)}>{s.subtitle}</p>}
                 </div>
               </div>
             );

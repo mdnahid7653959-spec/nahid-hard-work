@@ -11,8 +11,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, Upload, Pencil, Eye, EyeOff, Trash2, RotateCcw, Save, Check, Cpu, Shirt,
-  Home as HomeIcon, Sparkles, ImagePlus, Plus, Move, Maximize2, Palette,
+  Home as HomeIcon, Sparkles, ImagePlus, Plus, Move, Maximize2, Palette, Type,
+  AlignLeft, AlignCenter, AlignRight,
 } from "lucide-react";
+import { titleStyle, subtitleStyle, TEXT_TEMPLATES, FONT_OPTIONS, type TextStyle, type TileKind } from "@/lib/bentoText";
 
 type FitMode = "cover" | "contain" | "fill";
 
@@ -24,13 +26,14 @@ interface BentoTile {
   title?: string;
   subtitle?: string;
   link?: string;
-  // Image adjustment
   objectFit?: FitMode;
-  focalX?: number;   // 0-100 (%)
-  focalY?: number;   // 0-100 (%)
-  overlay?: number;  // 0-100 (%) dark overlay strength
-  bgColor?: string;  // hex, used when no image or with contain
-  zoom?: number;     // 100-200 (%)
+  focalX?: number;
+  focalY?: number;
+  overlay?: number;
+  bgColor?: string;
+  zoom?: number;
+  textStyle?: TextStyle;
+  kind?: TileKind;
 }
 
 interface CustomSection {
@@ -45,18 +48,19 @@ interface CustomSection {
   focalX?: number;
   focalY?: number;
   visible: boolean;
+  textStyle?: TextStyle;
 }
 
 const DEFAULT_TILES: BentoTile[] = [
-  { id: "hero", label: "Main Hero", visible: true, title: "The New Standard", subtitle: "Bangladesh's curated multi-vendor destination for the bold.", link: "/products", objectFit: "cover", focalX: 50, focalY: 50, overlay: 50, zoom: 100 },
-  { id: "flash", label: "Flash Deals", visible: true, title: "Flash Deals", subtitle: "Up to 70% Off", link: "/products?filter=flash-sale", objectFit: "cover", focalX: 50, focalY: 50, overlay: 20, zoom: 100 },
-  { id: "cat_tech", label: "Tech", visible: true, title: "Tech", subtitle: "Gadgets", link: "/categories?c=electronics", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
-  { id: "cat_lifestyle", label: "Lifestyle", visible: true, title: "Lifestyle", subtitle: "Fashion", link: "/categories?c=fashion", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
-  { id: "cat_home", label: "Home", visible: true, title: "Home", subtitle: "Living", link: "/categories?c=home", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
-  { id: "cat_beauty", label: "Beauty", visible: true, title: "Beauty", subtitle: "Skincare", link: "/categories?c=beauty", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
-  { id: "foryou", label: "For You", visible: true, title: "For You", subtitle: "Personalize Feed", objectFit: "cover", focalX: 50, focalY: 50, overlay: 0, zoom: 100 },
-  { id: "trending", label: "Trending", visible: true, objectFit: "cover", focalX: 50, focalY: 50, overlay: 60, zoom: 100 },
-  { id: "vendors", label: "Vendors Banner", visible: true, title: "Multi-Vendor Power", subtitle: "Supporting 1,200+ local artisans and premium global brands across Bangladesh.", objectFit: "cover", focalX: 50, focalY: 50, overlay: 30, zoom: 100 },
+  { id: "hero", kind: "hero", label: "Main Hero", visible: true, title: "The New Standard", subtitle: "Bangladesh's curated multi-vendor destination for the bold.", link: "/products", objectFit: "cover", focalX: 50, focalY: 50, overlay: 50, zoom: 100 },
+  { id: "flash", kind: "flash", label: "Flash Deals", visible: true, title: "Flash Deals", subtitle: "Up to 70% Off", link: "/products?filter=flash-sale", objectFit: "cover", focalX: 50, focalY: 50, overlay: 20, zoom: 100 },
+  { id: "cat_tech", kind: "category", label: "Tech", visible: true, title: "Tech", subtitle: "Gadgets", link: "/categories?c=electronics", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
+  { id: "cat_lifestyle", kind: "category", label: "Lifestyle", visible: true, title: "Lifestyle", subtitle: "Fashion", link: "/categories?c=fashion", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
+  { id: "cat_home", kind: "category", label: "Home", visible: true, title: "Home", subtitle: "Living", link: "/categories?c=home", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
+  { id: "cat_beauty", kind: "category", label: "Beauty", visible: true, title: "Beauty", subtitle: "Skincare", link: "/categories?c=beauty", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
+  { id: "foryou", kind: "foryou", label: "For You", visible: true, title: "For You", subtitle: "Personalize Feed", objectFit: "cover", focalX: 50, focalY: 50, overlay: 0, zoom: 100 },
+  { id: "trending", kind: "trending", label: "Trending", visible: true, objectFit: "cover", focalX: 50, focalY: 50, overlay: 60, zoom: 100 },
+  { id: "vendors", kind: "vendors", label: "Vendors Banner", visible: true, title: "Multi-Vendor Power", subtitle: "Supporting 1,200+ local artisans and premium global brands across Bangladesh.", objectFit: "cover", focalX: 50, focalY: 50, overlay: 30, zoom: 100 },
 ];
 
 const CATEGORY_META: Record<string, { bg: string; icon: any }> = {
@@ -208,6 +212,93 @@ function FocalPicker({ imageUrl, x, y, onChange }: { imageUrl?: string; x: numbe
   );
 }
 
+/* ---------- Text style editor ---------- */
+function TextStyleEditor({ value, onChange }: { value?: TextStyle; onChange: (ts: TextStyle) => void }) {
+  const ts = value || {};
+  const set = (patch: Partial<TextStyle>) => onChange({ ...ts, ...patch });
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label className="text-xs flex items-center gap-1"><Sparkles className="h-3 w-3" /> Templates</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {TEXT_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => onChange(tpl.style)}
+              className="text-left border rounded-lg p-2 hover:border-primary hover:bg-muted/40 transition-colors"
+            >
+              <div style={{ fontFamily: tpl.style.fontFamily, fontWeight: tpl.style.titleWeight, letterSpacing: tpl.style.letterSpacing != null ? `${tpl.style.letterSpacing/100}em` : undefined, textTransform: tpl.style.uppercase ? "uppercase" : "none", fontStyle: tpl.style.italic ? "italic" : undefined }} className="text-base leading-none truncate">
+                {tpl.name}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1 truncate">{tpl.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs">Font family</Label>
+        <select
+          value={ts.fontFamily ?? ""}
+          onChange={(e) => set({ fontFamily: e.target.value || undefined })}
+          className="w-full h-9 rounded-md border bg-background px-2 text-xs"
+        >
+          <option value="">Default</option>
+          {FONT_OPTIONS.map((f) => <option key={f.label} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>)}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Title size ({ts.titleScale ?? 100}%)</Label>
+          <Slider value={[ts.titleScale ?? 100]} min={50} max={250} step={5} onValueChange={([v]) => set({ titleScale: v })} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Subtitle size ({ts.subtitleScale ?? 100}%)</Label>
+          <Slider value={[ts.subtitleScale ?? 100]} min={50} max={250} step={5} onValueChange={([v]) => set({ subtitleScale: v })} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Title color</Label>
+          <Input type="color" value={ts.titleColor ?? "#ffffff"} onChange={(e) => set({ titleColor: e.target.value })} className="h-9 w-full" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Subtitle color</Label>
+          <Input type="color" value={ts.subtitleColor ?? "#ffffff"} onChange={(e) => set({ subtitleColor: e.target.value })} className="h-9 w-full" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Weight ({ts.titleWeight ?? 700})</Label>
+          <Slider value={[ts.titleWeight ?? 700]} min={300} max={900} step={100} onValueChange={([v]) => set({ titleWeight: v })} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Letter spacing ({(ts.letterSpacing ?? 0) / 100}em)</Label>
+          <Slider value={[ts.letterSpacing ?? 0]} min={-5} max={30} step={1} onValueChange={([v]) => set({ letterSpacing: v })} />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Label className="text-xs mr-2">Align</Label>
+        {([{v:"left",I:AlignLeft},{v:"center",I:AlignCenter},{v:"right",I:AlignRight}] as const).map(({v,I}) => (
+          <Button key={v} type="button" size="sm" variant={ts.align === v ? "default" : "outline"} onClick={() => set({ align: v })}><I className="h-3.5 w-3.5" /></Button>
+        ))}
+        <div className="flex-1" />
+        <Button type="button" size="sm" variant={ts.uppercase ? "default" : "outline"} onClick={() => set({ uppercase: !ts.uppercase })}>AA</Button>
+        <Button type="button" size="sm" variant={ts.italic ? "default" : "outline"} onClick={() => set({ italic: !ts.italic })} className="italic">I</Button>
+      </div>
+
+      <Button type="button" variant="ghost" size="sm" className="w-full" onClick={() => onChange({})}>
+        <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reset text style
+      </Button>
+    </div>
+  );
+}
+
 /* ---------- Main page ---------- */
 
 export default function AdminHomeBento() {
@@ -333,10 +424,10 @@ export default function AdminHomeBento() {
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                     Darzo Marketplace
                   </span>
-                  <h1 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4" style={{ fontSize: "clamp(2rem, 5vw, 4.5rem)" }}>
+                  <h1 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4" style={titleStyle("hero", hero.textStyle)}>
                     {hero.title || "The New Standard"}
                   </h1>
-                  <p className="text-sm md:text-lg font-medium opacity-90 max-w-sm mb-4 md:mb-6">
+                  <p className="font-medium opacity-90 max-w-sm mb-4 md:mb-6" style={subtitleStyle("hero", hero.textStyle)}>
                     {hero.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
                   </p>
                   <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase shadow-xl">
@@ -360,8 +451,8 @@ export default function AdminHomeBento() {
                       <span className="w-2 h-2 rounded-full bg-[#e84393] animate-pulse" />
                       <span className="text-[#e84393] font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em] tabular-nums">Ends in 03:59:58</span>
                     </div>
-                    <h2 className="font-['Bebas_Neue'] text-3xl md:text-4xl text-foreground leading-none">{flash.title || "Flash Deals"}</h2>
-                    <p className="text-[10px] md:text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">{flash.subtitle || "Up to 70% Off"}</p>
+                    <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flash.textStyle)}>{flash.title || "Flash Deals"}</h2>
+                    <p className="text-muted-foreground font-bold uppercase tracking-widest mt-1" style={subtitleStyle("flash", flash.textStyle)}>{flash.subtitle || "Up to 70% Off"}</p>
                   </div>
                   <div className="flex gap-2 md:gap-3 shrink-0">
                     <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-2xl shadow-lg" />
@@ -389,8 +480,8 @@ export default function AdminHomeBento() {
                       <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       </div>
-                      <h3 className="font-['Bebas_Neue'] text-xl md:text-2xl leading-none tracking-wide">
-                        {t.title}<br />{t.subtitle}
+                      <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", t.textStyle)}>
+                        {t.title}<br /><span style={subtitleStyle("category", t.textStyle)}>{t.subtitle}</span>
                       </h3>
                     </div>
                     {!t.imageUrl && (
@@ -410,7 +501,7 @@ export default function AdminHomeBento() {
                 onRemoveImage={() => update("foryou", { imageUrl: undefined })} uploading={uploadingId === "foryou"}>
                 {renderImg(foryou)}
                 <div className="relative z-10 h-full p-5 md:p-8 flex flex-col">
-                  <h3 className="font-['Bebas_Neue'] text-2xl md:text-3xl text-foreground mb-4 md:mb-6">{foryou.title || "For You"}</h3>
+                  <h3 className="font-['Bebas_Neue'] text-foreground mb-4 md:mb-6" style={titleStyle("foryou", foryou.textStyle)}>{foryou.title || "For You"}</h3>
                   <div className="space-y-4 md:space-y-6 flex-1">
                     {[1,2,3].map((i) => (
                       <div key={i} className="flex items-center gap-3 md:gap-4">
@@ -441,10 +532,10 @@ export default function AdminHomeBento() {
                 )}
                 <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trending.overlay ?? 60)/100, 0.4)}), transparent)` }} />
                 <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white">
-                  <span className="text-[9px] md:text-[10px] font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest">
+                  <span className="font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest" style={subtitleStyle("trending", trending.textStyle)}>
                     {trending.subtitle || "Trending"}
                   </span>
-                  <h3 className="font-['Bebas_Neue'] text-2xl md:text-3xl mt-2 md:mt-3 leading-none tracking-wider line-clamp-2">
+                  <h3 className="font-['Bebas_Neue'] mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trending.textStyle)}>
                     {trending.title || "Capture Purity"}
                   </h3>
                 </div>
@@ -461,10 +552,10 @@ export default function AdminHomeBento() {
                 )}
                 <div className="relative z-10 h-full p-5 md:p-8 flex flex-col md:flex-row items-center gap-4 md:gap-8 justify-between">
                   <div className="flex flex-col text-center md:text-left">
-                    <h4 className="font-['Bebas_Neue'] text-xl md:text-2xl text-foreground leading-none mb-1.5 md:mb-2">
+                    <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1.5 md:mb-2" style={titleStyle("vendors", vendors.textStyle)}>
                       {vendors.title || "Multi-Vendor Power"}
                     </h4>
-                    <p className="text-xs md:text-sm text-muted-foreground font-medium">
+                    <p className="text-muted-foreground font-medium" style={subtitleStyle("vendors", vendors.textStyle)}>
                       {vendors.subtitle || "Supporting 1,200+ local artisans and premium global brands across Bangladesh."}
                     </p>
                   </div>
@@ -499,7 +590,10 @@ export default function AdminHomeBento() {
                   : <div className="absolute inset-0" style={{ background: s.bgColor || "linear-gradient(135deg,#6c5ce7,#e84393)" }} />}
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${(s.overlay ?? 40) / 100})` }} />
                 <div className="relative z-10 h-full flex items-center p-6 text-white">
-                  <div><h3 className="font-['Bebas_Neue'] text-3xl">{s.title}</h3><p className="text-sm opacity-90 mt-1 line-clamp-2 max-w-md">{s.subtitle}</p></div>
+                  <div className="max-w-md">
+                    <h3 className="font-['Bebas_Neue'] leading-none" style={titleStyle("section", s.textStyle)}>{s.title}</h3>
+                    <p className="opacity-90 mt-1 line-clamp-2" style={subtitleStyle("section", s.textStyle)}>{s.subtitle}</p>
+                  </div>
                 </div>
                 <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button size="sm" variant="secondary" className="h-8" onClick={() => setEditingSection(s)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -522,9 +616,10 @@ export default function AdminHomeBento() {
           <DialogHeader><DialogTitle>Edit — {editing?.label}</DialogTitle></DialogHeader>
           {editing && (
             <Tabs defaultValue="text" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="text"><Pencil className="h-3.5 w-3.5 mr-1.5" />Text & Link</TabsTrigger>
-                <TabsTrigger value="image"><Maximize2 className="h-3.5 w-3.5 mr-1.5" />Image Adjust</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="text"><Pencil className="h-3.5 w-3.5 mr-1.5" />Content</TabsTrigger>
+                <TabsTrigger value="style"><Type className="h-3.5 w-3.5 mr-1.5" />Text Style</TabsTrigger>
+                <TabsTrigger value="image"><Maximize2 className="h-3.5 w-3.5 mr-1.5" />Image</TabsTrigger>
               </TabsList>
               <TabsContent value="text" className="space-y-3 mt-4">
                 <div className="space-y-1"><Label className="text-xs">Title</Label>
@@ -533,6 +628,9 @@ export default function AdminHomeBento() {
                   <Textarea value={editing.subtitle ?? ""} onChange={(e) => setEditing({ ...editing, subtitle: e.target.value })} rows={2} /></div>
                 <div className="space-y-1"><Label className="text-xs">Link URL</Label>
                   <Input value={editing.link ?? ""} onChange={(e) => setEditing({ ...editing, link: e.target.value })} placeholder="/products or https://..." /></div>
+              </TabsContent>
+              <TabsContent value="style" className="mt-4">
+                <TextStyleEditor value={editing.textStyle} onChange={(ts) => setEditing({ ...editing, textStyle: ts })} />
               </TabsContent>
               <TabsContent value="image" className="space-y-4 mt-4">
                 <div className="space-y-2">
@@ -608,6 +706,10 @@ export default function AdminHomeBento() {
               <div className="space-y-1">
                 <Label className="text-xs">Background color (no image)</Label>
                 <Input type="color" value={editingSection.bgColor ?? "#6c5ce7"} onChange={(e) => setEditingSection({ ...editingSection, bgColor: e.target.value })} className="h-9 w-full" />
+              </div>
+              <div className="pt-3 border-t">
+                <Label className="text-xs flex items-center gap-1 mb-3"><Type className="h-3 w-3" /> Text Style & Templates</Label>
+                <TextStyleEditor value={editingSection.textStyle} onChange={(ts) => setEditingSection({ ...editingSection, textStyle: ts })} />
               </div>
             </div>
           )}
