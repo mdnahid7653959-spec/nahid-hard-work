@@ -669,10 +669,10 @@ export default function AdminHomeBento() {
               <span className="text-[10px] text-white/60">Live · no reload needed</span>
             </div>
 
-            {/* Phone frame */}
-            <div className="relative rounded-[2.5rem] bg-black p-3 shadow-2xl" style={{ width: 414 }}>
+            {/* Phone frame — scaled to fit viewport, inner scrollable */}
+            <div className="relative rounded-[2.5rem] bg-black p-3 shadow-2xl mx-auto origin-top scale-[0.72] sm:scale-90 md:scale-100" style={{ width: 414 }}>
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-10" />
-              <div className="rounded-[1.75rem] bg-background overflow-hidden" style={{ width: 390, minHeight: 780 }}>
+              <div className="rounded-[1.75rem] bg-background overflow-y-auto overscroll-contain" style={{ width: 390, height: "min(78vh, 780px)" }}>
                 <div className="p-3 font-['Barlow',sans-serif]">
                   <div className="grid grid-cols-2 grid-rows-[repeat(6,128px)] gap-2.5">
 
