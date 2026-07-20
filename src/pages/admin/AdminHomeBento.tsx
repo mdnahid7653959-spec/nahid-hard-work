@@ -337,10 +337,10 @@ export default function AdminHomeBento() {
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                     Darzo Marketplace
                   </span>
-                  <h1 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4" style={{ fontSize: "clamp(2rem, 5vw, 4.5rem)" }}>
+                  <h1 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-3 md:mb-4" style={titleStyle("hero", hero.textStyle)}>
                     {hero.title || "The New Standard"}
                   </h1>
-                  <p className="text-sm md:text-lg font-medium opacity-90 max-w-sm mb-4 md:mb-6">
+                  <p className="font-medium opacity-90 max-w-sm mb-4 md:mb-6" style={subtitleStyle("hero", hero.textStyle)}>
                     {hero.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
                   </p>
                   <span className="w-fit bg-white text-[#6c5ce7] px-5 py-3 md:px-8 md:py-4 rounded-full font-bold text-[10px] md:text-xs tracking-[0.2em] uppercase shadow-xl">
