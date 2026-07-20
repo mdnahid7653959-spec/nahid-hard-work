@@ -81,7 +81,13 @@ function getAdminId() {
   try { return JSON.parse(localStorage.getItem("megamart_admin_session") || "{}").admin?.id || null; } catch { return null; }
 }
 
-async function saveConfig(payload: { tiles: BentoTile[]; sections: CustomSection[] }) {
+interface BentoPayload {
+  tiles: BentoTile[];
+  sections: CustomSection[];
+  mobile?: { tiles: BentoTile[]; sections: CustomSection[] } | null;
+}
+
+async function saveConfig(payload: BentoPayload) {
   const res = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-theme?action=save-site-config`,
     {
@@ -97,7 +103,7 @@ async function saveConfig(payload: { tiles: BentoTile[]; sections: CustomSection
   if (!res.ok) throw new Error((await res.json()).error || "Save failed");
 }
 
-async function loadConfig(): Promise<{ tiles?: BentoTile[]; sections?: CustomSection[] } | null> {
+async function loadConfig(): Promise<Partial<BentoPayload> | null> {
   const res = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-theme?action=site-config&key=home_bento`,
     { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
