@@ -70,12 +70,14 @@ function useCountdown(hours = 4) {
 
 function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: HeroBentoProps) {
   const countdown = useCountdown(4);
-  const { config } = useSiteConfig<{ tiles?: BentoTileCfg[] }>("home_bento", {});
+  const { config } = useSiteConfig<{ tiles?: BentoTileCfg[]; sections?: CustomSection[] }>("home_bento", {});
   const tileMap: Record<string, BentoTileCfg> = {};
   (config?.tiles ?? []).forEach((t) => (tileMap[t.id] = t));
+  const customSections = (config?.sections ?? []).filter((s) => s.visible !== false);
 
   const isVisible = (id: string) => tileMap[id]?.visible !== false;
-  const cfg = (id: string) => tileMap[id] ?? { id, visible: true };
+  const cfg = (id: string): BentoTileCfg => tileMap[id] ?? { id, visible: true };
+
 
   const forYouItems = forYou.slice(0, 3);
   const flashItems = flashSale.slice(0, 2);
