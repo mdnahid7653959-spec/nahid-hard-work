@@ -414,7 +414,7 @@ export default function AdminHomeBento() {
                 onRemoveImage={() => update("foryou", { imageUrl: undefined })} uploading={uploadingId === "foryou"}>
                 {renderImg(foryou)}
                 <div className="relative z-10 h-full p-5 md:p-8 flex flex-col">
-                  <h3 className="font-['Bebas_Neue'] text-2xl md:text-3xl text-foreground mb-4 md:mb-6">{foryou.title || "For You"}</h3>
+                  <h3 className="font-['Bebas_Neue'] text-foreground mb-4 md:mb-6" style={titleStyle("foryou", foryou.textStyle)}>{foryou.title || "For You"}</h3>
                   <div className="space-y-4 md:space-y-6 flex-1">
                     {[1,2,3].map((i) => (
                       <div key={i} className="flex items-center gap-3 md:gap-4">
