@@ -616,9 +616,10 @@ export default function AdminHomeBento() {
           <DialogHeader><DialogTitle>Edit — {editing?.label}</DialogTitle></DialogHeader>
           {editing && (
             <Tabs defaultValue="text" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="text"><Pencil className="h-3.5 w-3.5 mr-1.5" />Text & Link</TabsTrigger>
-                <TabsTrigger value="image"><Maximize2 className="h-3.5 w-3.5 mr-1.5" />Image Adjust</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="text"><Pencil className="h-3.5 w-3.5 mr-1.5" />Content</TabsTrigger>
+                <TabsTrigger value="style"><Type className="h-3.5 w-3.5 mr-1.5" />Text Style</TabsTrigger>
+                <TabsTrigger value="image"><Maximize2 className="h-3.5 w-3.5 mr-1.5" />Image</TabsTrigger>
               </TabsList>
               <TabsContent value="text" className="space-y-3 mt-4">
                 <div className="space-y-1"><Label className="text-xs">Title</Label>
@@ -627,6 +628,9 @@ export default function AdminHomeBento() {
                   <Textarea value={editing.subtitle ?? ""} onChange={(e) => setEditing({ ...editing, subtitle: e.target.value })} rows={2} /></div>
                 <div className="space-y-1"><Label className="text-xs">Link URL</Label>
                   <Input value={editing.link ?? ""} onChange={(e) => setEditing({ ...editing, link: e.target.value })} placeholder="/products or https://..." /></div>
+              </TabsContent>
+              <TabsContent value="style" className="mt-4">
+                <TextStyleEditor value={editing.textStyle} onChange={(ts) => setEditing({ ...editing, textStyle: ts })} />
               </TabsContent>
               <TabsContent value="image" className="space-y-4 mt-4">
                 <div className="space-y-2">
