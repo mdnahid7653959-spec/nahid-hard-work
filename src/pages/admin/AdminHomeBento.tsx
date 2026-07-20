@@ -707,6 +707,10 @@ export default function AdminHomeBento() {
                 <Label className="text-xs">Background color (no image)</Label>
                 <Input type="color" value={editingSection.bgColor ?? "#6c5ce7"} onChange={(e) => setEditingSection({ ...editingSection, bgColor: e.target.value })} className="h-9 w-full" />
               </div>
+              <div className="pt-3 border-t">
+                <Label className="text-xs flex items-center gap-1 mb-3"><Type className="h-3 w-3" /> Text Style & Templates</Label>
+                <TextStyleEditor value={editingSection.textStyle} onChange={(ts) => setEditingSection({ ...editingSection, textStyle: ts })} />
+              </div>
             </div>
           )}
           <DialogFooter>
