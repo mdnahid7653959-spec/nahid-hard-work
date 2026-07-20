@@ -87,6 +87,25 @@ interface BentoPayload {
   mobile?: { tiles: BentoTile[]; sections: CustomSection[] } | null;
 }
 
+// Reject javascript:/data:/vbscript: URLs before persisting.
+const UNSAFE_URL_RE = /^\s*(javascript|data|vbscript|file):/i;
+function sanitizeUrl(u?: string): string | undefined {
+  if (!u) return u;
+  return UNSAFE_URL_RE.test(u) ? undefined : u;
+}
+function sanitizeTile<T extends { link?: string; imageUrl?: string }>(t: T): T {
+  return { ...t, link: sanitizeUrl(t.link), imageUrl: sanitizeUrl(t.imageUrl) };
+}
+function sanitizePayload(p: BentoPayload): BentoPayload {
+  return {
+    tiles: p.tiles.map(sanitizeTile),
+    sections: p.sections.map(sanitizeTile),
+    mobile: p.mobile
+      ? { tiles: p.mobile.tiles.map(sanitizeTile), sections: p.mobile.sections.map(sanitizeTile) }
+      : p.mobile,
+  };
+}
+
 async function saveConfig(payload: BentoPayload) {
   const res = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-theme?action=save-site-config`,
@@ -97,7 +116,7 @@ async function saveConfig(payload: BentoPayload) {
         "x-admin-token": getAdminToken() || "",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ key: "home_bento", value: payload }),
+      body: JSON.stringify({ key: "home_bento", value: sanitizePayload(payload) }),
     }
   );
   if (!res.ok) throw new Error((await res.json()).error || "Save failed");
@@ -334,18 +353,32 @@ export default function AdminHomeBento() {
   useEffect(() => {
     loadConfig()
       .then((saved) => {
-        if (saved?.tiles?.length) {
-          setDesktopTiles(DEFAULT_TILES.map((d) => ({ ...d, ...(saved.tiles!.find((s) => s.id === d.id) ?? {}) })));
-        }
+        // Compute desktop tiles first so mobile can inherit accurately.
+        const desktopMerged = saved?.tiles?.length
+          ? DEFAULT_TILES.map((d) => ({ ...d, ...(saved.tiles!.find((s) => s.id === d.id) ?? {}) }))
+          : DEFAULT_TILES;
+        if (saved?.tiles?.length) setDesktopTiles(desktopMerged);
         if (saved?.sections?.length) setDesktopSections(saved.sections);
         if (saved?.mobile?.tiles?.length) {
-          setMobileTiles(DEFAULT_TILES.map((d) => ({ ...d, ...(saved.mobile!.tiles.find((s) => s.id === d.id) ?? {}) })));
+          // Mobile overrides layer on top of desktop, not DEFAULT_TILES,
+          // so unmodified mobile tiles reflect the current desktop config.
+          setMobileTiles(
+            desktopMerged.map((d) => ({ ...d, ...(saved.mobile!.tiles.find((s) => s.id === d.id) ?? {}) }))
+          );
         }
         if (saved?.mobile?.sections) setMobileSections(saved.mobile.sections);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  // Warn before unloading with unsaved changes (data-loss guard).
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   const get = (id: string) => tiles.find((t) => t.id === id)!;
 
