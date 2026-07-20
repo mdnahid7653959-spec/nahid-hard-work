@@ -43,7 +43,7 @@ export default function AdminStaff() {
   useEffect(() => { load(); }, []);
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Staff Management">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Staff Management</h1>
