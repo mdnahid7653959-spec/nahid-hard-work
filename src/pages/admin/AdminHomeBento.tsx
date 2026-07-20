@@ -393,8 +393,8 @@ export default function AdminHomeBento() {
                       <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       </div>
-                      <h3 className="font-['Bebas_Neue'] text-xl md:text-2xl leading-none tracking-wide">
-                        {t.title}<br />{t.subtitle}
+                      <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", t.textStyle)}>
+                        {t.title}<br /><span style={subtitleStyle("category", t.textStyle)}>{t.subtitle}</span>
                       </h3>
                     </div>
                     {!t.imageUrl && (
