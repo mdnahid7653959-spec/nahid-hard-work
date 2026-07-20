@@ -302,10 +302,10 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             )}
 
             <div className="flex flex-col text-center md:text-left relative z-10">
-              <h4 className="font-['Bebas_Neue'] text-xl md:text-2xl text-foreground leading-none mb-1.5 md:mb-2">
+              <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1.5 md:mb-2" style={titleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.title || "Multi-Vendor Power"}
               </h4>
-              <p className="text-xs md:text-sm text-muted-foreground font-medium">
+              <p className="text-muted-foreground font-medium" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.subtitle || "Supporting 1,200+ local artisans and premium global brands across Bangladesh."}
               </p>
             </div>
