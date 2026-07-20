@@ -104,7 +104,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("hero") && (
           <Link
             to={heroCfg.link || "/products"}
-            className="col-span-2 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-xl shadow-[#6c5ce7]/25 md:shadow-2xl md:shadow-[#6c5ce7]/30 active:scale-[0.99] transition-transform"
+            className="col-span-2 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-[0_20px_60px_-15px_rgba(108,92,231,0.55)] md:shadow-2xl md:shadow-[#6c5ce7]/30 active:scale-[0.99] transition-transform ring-1 ring-white/10 md:ring-0"
           >
             {heroCfg.imageUrl ? (
               <>
@@ -114,20 +114,29 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             ) : (
               <>
                 <div className="absolute inset-0 bg-gradient-to-br from-[#6c5ce7] via-[#e84393] to-[#ff6b35]" />
-                <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-                <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#f7931e]/30 rounded-full blur-3xl" />
+                {/* Mobile-only cinematic aurora + noise */}
+                <div className="md:hidden">
+                  <div className="m-hero-aurora-a" />
+                  <div className="m-hero-aurora-b" />
+                  <div className="m-hero-noise" />
+                </div>
+                <div className="hidden md:block absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+                <div className="hidden md:block absolute -bottom-24 -left-24 w-72 h-72 bg-[#f7931e]/30 rounded-full blur-3xl" />
               </>
             )}
 
+            {/* Mobile-only sheen sweep across hero */}
+            <div className="md:hidden m-hero-sheen" />
+
             <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 md:p-12 text-white">
               {heroCfg.badgeVisible !== false && (
-                <span className="inline-flex w-fit items-center gap-1.5 sm:gap-2 bg-white/15 backdrop-blur px-2.5 py-1 sm:px-3 rounded-full text-[9px] sm:text-[10px] md:text-xs font-bold tracking-[0.18em] sm:tracking-[0.2em] uppercase mb-2 sm:mb-3 md:mb-6">
-                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="inline-flex w-fit items-center gap-1.5 sm:gap-2 m-glass md:bg-white/15 md:backdrop-blur md:border-0 px-2.5 py-1 sm:px-3 rounded-full text-[9px] sm:text-[10px] md:text-xs font-bold tracking-[0.18em] sm:tracking-[0.2em] uppercase mb-2 sm:mb-3 md:mb-6 shadow-lg md:shadow-none">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white m-ring-pulse md:animate-pulse" />
                   {heroCfg.badge || "Darzo Marketplace"}
                 </span>
               )}
               <h1
-                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-2 sm:mb-3 md:mb-4"
+                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-2 sm:mb-3 md:mb-4 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] md:drop-shadow-none"
                 style={titleStyle("hero", heroCfg.textStyle)}
               >
                 {heroCfg.title || "The New Standard"}
@@ -136,14 +145,16 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                 {heroCfg.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
               </p>
               {heroCfg.ctaText !== "" && (
-                <span className="w-fit bg-white text-[#6c5ce7] px-4 py-2 sm:px-5 sm:py-3 md:px-8 md:py-4 rounded-full font-bold text-[9px] sm:text-[10px] md:text-xs tracking-[0.18em] sm:tracking-[0.2em] uppercase group-hover:scale-105 transition-transform shadow-lg md:shadow-xl">
+                <span className="w-fit inline-flex items-center gap-1.5 bg-white text-[#6c5ce7] px-4 py-2 sm:px-5 sm:py-3 md:px-8 md:py-4 rounded-full font-bold text-[9px] sm:text-[10px] md:text-xs tracking-[0.18em] sm:tracking-[0.2em] uppercase group-hover:scale-105 transition-transform m-cta-glow md:m-cta-glow-none md:shadow-xl">
                   {heroCfg.ctaText || "Explore Darzo"}
+                  <span className="md:hidden">→</span>
                 </span>
               )}
             </div>
 
           </Link>
         )}
+
 
         {/* Flash deals */}
         {isVisible("flash") && (
@@ -305,26 +316,30 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
 
         {/* Marketplace trust */}
         {isVisible("vendors") && (
-          <div className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2.5rem] bg-muted/50 border border-border p-3.5 sm:p-5 md:p-8 flex flex-row md:flex-row items-center gap-3 sm:gap-4 md:gap-8 justify-between overflow-hidden relative">
+          <div className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2.5rem] bg-gradient-to-br from-[#0f0f1a] via-[#1a1830] to-[#2a1533] md:bg-muted/50 border border-white/10 md:border-border p-3.5 sm:p-5 md:p-8 flex flex-row items-center gap-3 sm:gap-4 md:gap-8 justify-between overflow-hidden relative">
             {vendorsCfg.imageUrl && (
               <img src={vendorsCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-40" style={imgStyle(vendorsCfg)} />
             )}
+            {/* Mobile-only aurora accent */}
+            <div className="md:hidden absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#ff6b35]/30 blur-3xl" />
+            <div className="md:hidden absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[#6c5ce7]/30 blur-3xl" />
 
             <div className="flex flex-col text-left relative z-10 min-w-0 flex-1">
-              <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1 sm:mb-1.5 md:mb-2 line-clamp-1" style={titleStyle("vendors", vendorsCfg.textStyle)}>
+              <h4 className="font-['Bebas_Neue'] text-white md:text-foreground leading-none mb-1 sm:mb-1.5 md:mb-2 line-clamp-1" style={titleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.title || "Multi-Vendor Power"}
               </h4>
-              <p className="text-muted-foreground font-medium line-clamp-2" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
+              <p className="text-white/70 md:text-muted-foreground font-medium line-clamp-2" style={subtitleStyle("vendors", vendorsCfg.textStyle)}>
                 {vendorsCfg.subtitle || "Supporting 1,200+ local artisans and premium global brands across Bangladesh."}
               </p>
             </div>
             <div className="flex -space-x-2 sm:-space-x-3 md:-space-x-4 shrink-0 relative z-10">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-card shadow-sm flex items-center justify-center font-bold text-muted-foreground italic text-sm sm:text-base">D</div>
-              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-[#6c5ce7] shadow-sm flex items-center justify-center font-bold text-white text-sm sm:text-base">Z</div>
-              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-background bg-[#e84393] shadow-sm flex items-center justify-center font-bold text-white italic text-sm sm:text-base">A</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-[#1a1830] md:border-background bg-white shadow-sm flex items-center justify-center font-bold text-[#6c5ce7] italic text-sm sm:text-base m-float">D</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-[#1a1830] md:border-background bg-[#6c5ce7] shadow-sm flex items-center justify-center font-bold text-white text-sm sm:text-base m-float" style={{ animationDelay: "0.6s" }}>Z</div>
+              <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-2 sm:border-4 border-[#1a1830] md:border-background bg-[#e84393] shadow-sm flex items-center justify-center font-bold text-white italic text-sm sm:text-base m-float" style={{ animationDelay: "1.2s" }}>A</div>
             </div>
           </div>
         )}
+
       </div>
 
       {/* Admin-defined custom sections */}

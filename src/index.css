@@ -518,3 +518,79 @@ img {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* ============================================================
+   MOBILE-ONLY cinematic hero effects (<=767px)
+   Desktop layout untouched.
+   ============================================================ */
+@media (max-width: 767px) {
+  @keyframes heroAurora {
+    0%,100% { transform: translate3d(0,0,0) scale(1); opacity: .55; }
+    50%    { transform: translate3d(8%,-6%,0) scale(1.25); opacity: .85; }
+  }
+  @keyframes heroAurora2 {
+    0%,100% { transform: translate3d(0,0,0) scale(1.1); opacity: .5; }
+    50%    { transform: translate3d(-10%,8%,0) scale(1.35); opacity: .8; }
+  }
+  @keyframes heroSheen {
+    0%   { transform: translateX(-120%) skewX(-18deg); }
+    60%  { transform: translateX(160%) skewX(-18deg); }
+    100% { transform: translateX(160%) skewX(-18deg); }
+  }
+  @keyframes floatY {
+    0%,100% { transform: translateY(0); }
+    50%    { transform: translateY(-4px); }
+  }
+  @keyframes marqueeX {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes ringPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,.45); }
+    50%    { box-shadow: 0 0 0 8px rgba(255,255,255,0); }
+  }
+
+  .m-hero-aurora-a,
+  .m-hero-aurora-b {
+    position: absolute; border-radius: 9999px; filter: blur(40px);
+    pointer-events: none; will-change: transform, opacity;
+  }
+  .m-hero-aurora-a {
+    width: 70%; height: 70%; top: -20%; right: -20%;
+    background: radial-gradient(circle, rgba(255,214,145,.9), rgba(232,67,147,.35) 55%, transparent 70%);
+    animation: heroAurora 9s ease-in-out infinite;
+  }
+  .m-hero-aurora-b {
+    width: 75%; height: 75%; bottom: -25%; left: -25%;
+    background: radial-gradient(circle, rgba(108,92,231,.85), rgba(255,107,53,.35) 55%, transparent 70%);
+    animation: heroAurora2 11s ease-in-out infinite;
+  }
+  .m-hero-noise {
+    position: absolute; inset: 0; pointer-events: none; opacity: .08; mix-blend-mode: overlay;
+    background-image: radial-gradient(rgba(255,255,255,.9) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+  .m-hero-sheen {
+    position: absolute; top: 0; bottom: 0; width: 40%; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+    animation: heroSheen 5.5s ease-in-out infinite;
+  }
+  .m-float { animation: floatY 4s ease-in-out infinite; }
+  .m-ring-pulse { animation: ringPulse 2.4s ease-out infinite; }
+
+  .m-marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .m-marquee-track {
+    display: flex; gap: .5rem; width: max-content;
+    animation: marqueeX 22s linear infinite;
+  }
+
+  .m-glass {
+    background: rgba(255,255,255,.14);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(255,255,255,.22);
+  }
+  .m-cta-glow {
+    box-shadow: 0 8px 28px -6px rgba(255,107,53,.55), 0 0 0 1px rgba(255,255,255,.35) inset;
+  }
+}
