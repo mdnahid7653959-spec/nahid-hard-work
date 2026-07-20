@@ -2073,6 +2073,13 @@ export type Database = {
             foreignKeyName: "seller_earnings_seller_id_fkey"
             columns: ["seller_id"]
             isOneToOne: false
+            referencedRelation: "public_sellers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_earnings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
             referencedRelation: "sellers"
             referencedColumns: ["id"]
           },
@@ -2134,6 +2141,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "seller_payouts_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "public_sellers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "seller_payouts_seller_id_fkey"
             columns: ["seller_id"]
@@ -2788,6 +2802,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_sellers: {
+        Row: {
+          approval_status: string | null
+          business_name: string | null
+          business_type: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_verified: boolean | null
+          logo_url: string | null
+          rating: number | null
+          rating_average: number | null
+          rating_count: number | null
+          shop_banner: string | null
+          shop_description: string | null
+          shop_logo: string | null
+          shop_name: string | null
+          shop_slug: string | null
+          status: string | null
+          total_orders: number | null
+          total_products: number | null
+          total_sales: number | null
+          user_id: string | null
+        }
+        Insert: {
+          approval_status?: string | null
+          business_name?: string | null
+          business_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          rating?: number | null
+          rating_average?: number | null
+          rating_count?: number | null
+          shop_banner?: string | null
+          shop_description?: string | null
+          shop_logo?: string | null
+          shop_name?: string | null
+          shop_slug?: string | null
+          status?: string | null
+          total_orders?: number | null
+          total_products?: number | null
+          total_sales?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          approval_status?: string | null
+          business_name?: string | null
+          business_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          rating?: number | null
+          rating_average?: number | null
+          rating_count?: number | null
+          shop_banner?: string | null
+          shop_description?: string | null
+          shop_logo?: string | null
+          shop_name?: string | null
+          shop_slug?: string | null
+          status?: string | null
+          total_orders?: number | null
+          total_products?: number | null
+          total_sales?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
