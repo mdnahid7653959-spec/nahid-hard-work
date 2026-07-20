@@ -250,6 +250,16 @@ const App = () => (
                           <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
                           <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
                           <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
+                          <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
+
+                          {/* Staff Portal */}
+                          <Route path="/staff/login" element={<StaffLogin />} />
+                          <Route path="/staff/activate" element={<StaffActivate />} />
+                          <Route path="/staff" element={<StaffProtectedRoute><StaffIndex /></StaffProtectedRoute>} />
+                          <Route path="/staff/dashboard" element={<StaffProtectedRoute><StaffIndex /></StaffProtectedRoute>} />
+                          <Route path="/staff/tasks" element={<StaffProtectedRoute><StaffTasks /></StaffProtectedRoute>} />
+                          <Route path="/staff/messages" element={<StaffProtectedRoute><StaffMessages /></StaffProtectedRoute>} />
+                          <Route path="/staff/profile" element={<StaffProtectedRoute><StaffProfile /></StaffProtectedRoute>} />
                           
                           {/* Catch-all */}
                           <Route path="*" element={<NotFound />} />
