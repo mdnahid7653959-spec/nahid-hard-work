@@ -465,10 +465,10 @@ export default function AdminHomeBento() {
                 )}
                 <div className="relative z-10 h-full p-5 md:p-8 flex flex-col md:flex-row items-center gap-4 md:gap-8 justify-between">
                   <div className="flex flex-col text-center md:text-left">
-                    <h4 className="font-['Bebas_Neue'] text-xl md:text-2xl text-foreground leading-none mb-1.5 md:mb-2">
+                    <h4 className="font-['Bebas_Neue'] text-foreground leading-none mb-1.5 md:mb-2" style={titleStyle("vendors", vendors.textStyle)}>
                       {vendors.title || "Multi-Vendor Power"}
                     </h4>
-                    <p className="text-xs md:text-sm text-muted-foreground font-medium">
+                    <p className="text-muted-foreground font-medium" style={subtitleStyle("vendors", vendors.textStyle)}>
                       {vendors.subtitle || "Supporting 1,200+ local artisans and premium global brands across Bangladesh."}
                     </p>
                   </div>
