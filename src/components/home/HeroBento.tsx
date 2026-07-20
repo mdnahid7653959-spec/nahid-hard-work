@@ -17,7 +17,37 @@ interface BentoTileCfg {
   title?: string;
   subtitle?: string;
   link?: string;
+  objectFit?: "cover" | "contain" | "fill";
+  focalX?: number;
+  focalY?: number;
+  overlay?: number;
+  bgColor?: string;
+  zoom?: number;
 }
+
+interface CustomSection {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  link?: string;
+  layout: "full" | "split-left" | "split-right";
+  bgColor?: string;
+  overlay?: number;
+  focalX?: number;
+  focalY?: number;
+  visible: boolean;
+}
+
+function imgStyle(t: Partial<BentoTileCfg>): React.CSSProperties {
+  return {
+    objectFit: (t.objectFit ?? "cover") as any,
+    objectPosition: `${t.focalX ?? 50}% ${t.focalY ?? 50}%`,
+    transform: `scale(${(t.zoom ?? 100) / 100})`,
+    transformOrigin: `${t.focalX ?? 50}% ${t.focalY ?? 50}%`,
+  };
+}
+
 
 const CATEGORIES = [
   { id: "cat_tech", name: "Tech", sub: "Gadgets", to: "/categories?c=electronics", bg: "bg-[#f7931e]", icon: Cpu, shadow: "shadow-[#f7931e]/25" },
@@ -40,12 +70,14 @@ function useCountdown(hours = 4) {
 
 function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: HeroBentoProps) {
   const countdown = useCountdown(4);
-  const { config } = useSiteConfig<{ tiles?: BentoTileCfg[] }>("home_bento", {});
+  const { config } = useSiteConfig<{ tiles?: BentoTileCfg[]; sections?: CustomSection[] }>("home_bento", {});
   const tileMap: Record<string, BentoTileCfg> = {};
   (config?.tiles ?? []).forEach((t) => (tileMap[t.id] = t));
+  const customSections = (config?.sections ?? []).filter((s) => s.visible !== false);
 
   const isVisible = (id: string) => tileMap[id]?.visible !== false;
-  const cfg = (id: string) => tileMap[id] ?? { id, visible: true };
+  const cfg = (id: string): BentoTileCfg => tileMap[id] ?? { id, visible: true };
+
 
   const forYouItems = forYou.slice(0, 3);
   const flashItems = flashSale.slice(0, 2);
@@ -68,8 +100,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
           >
             {heroCfg.imageUrl ? (
               <>
-                <img src={heroCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <img src={heroCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(heroCfg)} />
+                <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((heroCfg.overlay ?? 50)/100, 0.35)}), transparent)` }} />
               </>
             ) : (
               <>
@@ -78,6 +110,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                 <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#f7931e]/30 rounded-full blur-3xl" />
               </>
             )}
+
             <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-12 text-white">
               <span className="inline-flex w-fit items-center gap-2 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase mb-3 md:mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -106,8 +139,9 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             className="col-span-2 row-span-1 rounded-[1.75rem] md:rounded-[2rem] bg-card border border-border p-4 md:p-6 flex items-center justify-between shadow-xl shadow-black/5 hover:-translate-y-1 transition-transform overflow-hidden relative"
           >
             {flashCfg.imageUrl && (
-              <img src={flashCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+              <img src={flashCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-30" style={imgStyle(flashCfg)} />
             )}
+
             <div className="flex flex-col min-w-0 relative z-10">
               <div className="flex items-center gap-2 mb-1 md:mb-2">
                 <span className="w-2 h-2 rounded-full bg-[#e84393] animate-pulse" />
@@ -155,10 +189,11 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             >
               {c.imageUrl && (
                 <>
-                  <img src={c.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <img src={c.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(c)} />
+                  <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(c.overlay ?? 40)/100})` }} />
                 </>
               )}
+
               <div className="relative z-10">
                 <div className="h-9 w-9 md:h-10 md:w-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm mb-3 md:mb-4">
                   <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
@@ -231,13 +266,14 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-neutral-200 overflow-hidden relative group shadow-lg"
           >
             {trendingCfg.imageUrl ? (
-              <img src={trendingCfg.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
+              <img src={trendingCfg.imageUrl} alt="" className="w-full h-full group-hover:scale-110 transition-transform duration-1000" style={imgStyle(trendingCfg)} loading="lazy" />
             ) : trend ? (
               <img src={trend.image} alt={trend.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-[#ff6b35] via-[#e84393] to-[#6c5ce7]" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trendingCfg.overlay ?? 60)/100, 0.4)}), transparent)` }} />
+
             <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white">
               <span className="text-[9px] md:text-[10px] font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest">
                 {trendingCfg.subtitle || "Trending"}
@@ -258,8 +294,9 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("vendors") && (
           <div className="col-span-2 row-span-1 rounded-[2rem] md:rounded-[2.5rem] bg-muted/50 border border-border p-5 md:p-8 flex flex-col md:flex-row items-center gap-4 md:gap-8 justify-between overflow-hidden relative">
             {vendorsCfg.imageUrl && (
-              <img src={vendorsCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+              <img src={vendorsCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-40" style={imgStyle(vendorsCfg)} />
             )}
+
             <div className="flex flex-col text-center md:text-left relative z-10">
               <h4 className="font-['Bebas_Neue'] text-xl md:text-2xl text-foreground leading-none mb-1.5 md:mb-2">
                 {vendorsCfg.title || "Multi-Vendor Power"}
@@ -276,8 +313,32 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
           </div>
         )}
       </div>
+
+      {/* Admin-defined custom sections */}
+      {customSections.length > 0 && (
+        <div className="mt-6 md:mt-8 space-y-4 md:space-y-6">
+          {customSections.map((s) => {
+            const inner = (
+              <div className="relative w-full overflow-hidden rounded-[1.75rem] md:rounded-[2.5rem] shadow-lg" style={{ minHeight: 180 }}>
+                {s.imageUrl
+                  ? <img src={s.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(s)} />
+                  : <div className="absolute inset-0" style={{ background: s.bgColor || "linear-gradient(135deg,#6c5ce7,#e84393)" }} />}
+                <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(s.overlay ?? 40)/100})` }} />
+                <div className="relative z-10 p-6 md:p-10 text-white min-h-[180px] md:min-h-[240px] flex flex-col justify-center">
+                  <h3 className="font-['Bebas_Neue'] text-3xl md:text-5xl leading-none">{s.title}</h3>
+                  {s.subtitle && <p className="text-sm md:text-base mt-2 opacity-90 max-w-xl">{s.subtitle}</p>}
+                </div>
+              </div>
+            );
+            return s.link
+              ? <Link key={s.id} to={s.link} className="block hover:-translate-y-1 transition-transform">{inner}</Link>
+              : <div key={s.id}>{inner}</div>;
+          })}
+        </div>
+      )}
     </div>
   );
 }
+
 
 export const HeroBento = memo(HeroBentoComponent);
