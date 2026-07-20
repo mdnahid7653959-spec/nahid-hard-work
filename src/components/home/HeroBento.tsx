@@ -139,8 +139,9 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             className="col-span-2 row-span-1 rounded-[1.75rem] md:rounded-[2rem] bg-card border border-border p-4 md:p-6 flex items-center justify-between shadow-xl shadow-black/5 hover:-translate-y-1 transition-transform overflow-hidden relative"
           >
             {flashCfg.imageUrl && (
-              <img src={flashCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+              <img src={flashCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-30" style={imgStyle(flashCfg)} />
             )}
+
             <div className="flex flex-col min-w-0 relative z-10">
               <div className="flex items-center gap-2 mb-1 md:mb-2">
                 <span className="w-2 h-2 rounded-full bg-[#e84393] animate-pulse" />
