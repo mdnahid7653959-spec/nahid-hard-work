@@ -56,7 +56,7 @@ interface CustomSection {
 }
 
 const DEFAULT_TILES: BentoTile[] = [
-  { id: "hero", kind: "hero", label: "Main Hero", visible: true, title: "The New Standard", subtitle: "Bangladesh's curated multi-vendor destination for the bold.", link: "/products", objectFit: "cover", focalX: 50, focalY: 50, overlay: 50, zoom: 100 },
+  { id: "hero", kind: "hero", label: "Main Hero", visible: true, title: "The New Standard", subtitle: "Bangladesh's curated multi-vendor destination for the bold.", link: "/products", objectFit: "cover", focalX: 50, focalY: 50, overlay: 50, zoom: 100, badge: "Darzo Marketplace", badgeVisible: true, ctaText: "Explore Darzo" },
   { id: "flash", kind: "flash", label: "Flash Deals", visible: true, title: "Flash Deals", subtitle: "Up to 70% Off", link: "/products?filter=flash-sale", objectFit: "cover", focalX: 50, focalY: 50, overlay: 20, zoom: 100 },
   { id: "cat_tech", kind: "category", label: "Tech", visible: true, title: "Tech", subtitle: "Gadgets", link: "/categories?c=electronics", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
   { id: "cat_lifestyle", kind: "category", label: "Lifestyle", visible: true, title: "Lifestyle", subtitle: "Fashion", link: "/categories?c=fashion", objectFit: "cover", focalX: 50, focalY: 50, overlay: 40, zoom: 100 },
