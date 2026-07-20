@@ -833,6 +833,26 @@ export default function AdminHomeBento() {
                     </EditableTile>
 
                   </div>
+
+                  {/* Custom sections inside phone preview */}
+                  {sections.filter((s) => s.visible).length > 0 && (
+                    <div className="mt-3 space-y-2.5">
+                      {sections.filter((s) => s.visible).map((s) => (
+                        <div key={s.id} className="relative rounded-2xl overflow-hidden shadow-md" style={{ height: 140 }}>
+                          {s.imageUrl
+                            ? <img src={s.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(s)} />
+                            : <div className="absolute inset-0" style={{ background: s.bgColor || "linear-gradient(135deg,#6c5ce7,#e84393)" }} />}
+                          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(s.overlay ?? 40) / 100})` }} />
+                          <div className="relative z-10 h-full flex items-center p-4 text-white">
+                            <div>
+                              <h3 className="font-['Bebas_Neue'] leading-none" style={titleStyle("section", s.textStyle)}>{s.title}</h3>
+                              <p className="opacity-90 mt-1 text-xs line-clamp-2" style={subtitleStyle("section", s.textStyle)}>{s.subtitle}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
