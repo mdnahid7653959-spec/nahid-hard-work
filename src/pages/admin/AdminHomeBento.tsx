@@ -503,7 +503,10 @@ export default function AdminHomeBento() {
                   : <div className="absolute inset-0" style={{ background: s.bgColor || "linear-gradient(135deg,#6c5ce7,#e84393)" }} />}
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${(s.overlay ?? 40) / 100})` }} />
                 <div className="relative z-10 h-full flex items-center p-6 text-white">
-                  <div><h3 className="font-['Bebas_Neue'] text-3xl">{s.title}</h3><p className="text-sm opacity-90 mt-1 line-clamp-2 max-w-md">{s.subtitle}</p></div>
+                  <div className="max-w-md">
+                    <h3 className="font-['Bebas_Neue'] leading-none" style={titleStyle("section", s.textStyle)}>{s.title}</h3>
+                    <p className="opacity-90 mt-1 line-clamp-2" style={subtitleStyle("section", s.textStyle)}>{s.subtitle}</p>
+                  </div>
                 </div>
                 <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button size="sm" variant="secondary" className="h-8" onClick={() => setEditingSection(s)}><Pencil className="h-3.5 w-3.5" /></Button>
