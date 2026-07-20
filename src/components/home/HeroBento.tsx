@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { Cpu, Shirt, Home as HomeIcon, Sparkles as SparklesIcon } from "lucide-react";
 import type { Product } from "@/components/products/ProductCard";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { titleStyle, subtitleStyle, type TextStyle } from "@/lib/bentoText";
+
 
 interface HeroBentoProps {
   forYou?: Product[];
