@@ -218,7 +218,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {/* For You */}
         {isVisible("foryou") && (
           <div className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-card border border-border p-5 md:p-8 shadow-xl shadow-black/5">
-            <h3 className="font-['Bebas_Neue'] text-2xl md:text-3xl text-foreground mb-4 md:mb-6">
+            <h3 className="font-['Bebas_Neue'] text-foreground mb-4 md:mb-6" style={titleStyle("foryou", foryouCfg.textStyle)}>
               {foryouCfg.title || "For You"}
             </h3>
             <div className="space-y-4 md:space-y-6">
