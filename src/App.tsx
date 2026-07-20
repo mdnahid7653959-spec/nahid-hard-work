@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { StaffProvider } from "@/contexts/StaffContext";
+import { StaffProtectedRoute } from "@/components/staff/StaffProtectedRoute";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
@@ -102,6 +104,15 @@ const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
 const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
+const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+
+// Staff Portal
+const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
+const StaffActivate = lazy(() => import("./pages/staff/StaffActivate"));
+const StaffIndex = lazy(() => import("./pages/staff/StaffIndex"));
+const StaffTasks = lazy(() => import("./pages/staff/StaffTasks"));
+const StaffMessages = lazy(() => import("./pages/staff/StaffMessages"));
+const StaffProfile = lazy(() => import("./pages/staff/StaffProfile"));
 
 // Minimal loading fallback - instant display
 const PageLoader = () => (
@@ -133,6 +144,7 @@ const App = () => (
             <AuthProvider>
               <ThemeProvider>
               <AdminAuthProvider>
+                <StaffProvider>
                 <CartProvider>
                   <WishlistProvider>
                     <AppLayout>
@@ -238,6 +250,16 @@ const App = () => (
                           <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
                           <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
                           <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
+                          <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
+
+                          {/* Staff Portal */}
+                          <Route path="/staff/login" element={<StaffLogin />} />
+                          <Route path="/staff/activate" element={<StaffActivate />} />
+                          <Route path="/staff" element={<StaffProtectedRoute><StaffIndex /></StaffProtectedRoute>} />
+                          <Route path="/staff/dashboard" element={<StaffProtectedRoute><StaffIndex /></StaffProtectedRoute>} />
+                          <Route path="/staff/tasks" element={<StaffProtectedRoute><StaffTasks /></StaffProtectedRoute>} />
+                          <Route path="/staff/messages" element={<StaffProtectedRoute><StaffMessages /></StaffProtectedRoute>} />
+                          <Route path="/staff/profile" element={<StaffProtectedRoute><StaffProfile /></StaffProtectedRoute>} />
                           
                           {/* Catch-all */}
                           <Route path="*" element={<NotFound />} />
@@ -246,6 +268,7 @@ const App = () => (
                     </AppLayout>
                   </WishlistProvider>
                 </CartProvider>
+                </StaffProvider>
               </AdminAuthProvider>
               </ThemeProvider>
             </AuthProvider>

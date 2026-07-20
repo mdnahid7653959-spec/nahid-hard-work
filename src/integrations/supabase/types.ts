@@ -2454,6 +2454,351 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          metadata: Json | null
+          staff_id: string | null
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          metadata?: Json | null
+          staff_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          metadata?: Json | null
+          staff_id?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_audit_logs_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_departments: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_invitations: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          staff_id: string
+          token_hash: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          staff_id: string
+          token_hash: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          staff_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invitations_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_members: {
+        Row: {
+          activated_at: string | null
+          avatar_url: string | null
+          created_at: string
+          department_id: string | null
+          email: string
+          full_name: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          joining_date: string | null
+          monthly_salary: number | null
+          phone: string | null
+          role_id: string | null
+          status: Database["public"]["Enums"]["staff_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          department_id?: string | null
+          email: string
+          full_name: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          joining_date?: string | null
+          monthly_salary?: number | null
+          phone?: string | null
+          role_id?: string | null
+          status?: Database["public"]["Enums"]["staff_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          department_id?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          joining_date?: string | null
+          monthly_salary?: number | null
+          phone?: string | null
+          role_id?: string | null
+          status?: Database["public"]["Enums"]["staff_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "staff_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_members_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_messages: {
+        Row: {
+          body: string
+          created_at: string
+          from_admin_id: string | null
+          id: string
+          read_at: string | null
+          subject: string
+          to_staff_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          from_admin_id?: string | null
+          id?: string
+          read_at?: string | null
+          subject: string
+          to_staff_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          from_admin_id?: string | null
+          id?: string
+          read_at?: string | null
+          subject?: string
+          to_staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_messages_to_staff_id_fkey"
+            columns: ["to_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_permissions: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          permission_key: string
+          staff_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          permission_key: string
+          staff_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          permission_key?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_permissions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_roles: {
+        Row: {
+          created_at: string
+          dashboard_key: string
+          default_permissions: Json
+          department_id: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dashboard_key?: string
+          default_permissions?: Json
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dashboard_key?: string
+          default_permissions?: Json
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_roles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "staff_departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_tasks: {
+        Row: {
+          assigned_by: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          staff_id: string
+          status: Database["public"]["Enums"]["staff_task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          staff_id: string
+          status?: Database["public"]["Enums"]["staff_task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          staff_id?: string
+          status?: Database["public"]["Enums"]["staff_task_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_tasks_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       theme_config: {
         Row: {
           config: Json
@@ -2791,6 +3136,7 @@ export type Database = {
       }
     }
     Functions: {
+      current_staff_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2800,6 +3146,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_seller_or_admin: { Args: never; Returns: boolean }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
       resolve_product_seller: {
         Args: { _product_seller_id: string }
         Returns: {
@@ -2811,9 +3158,19 @@ export type Database = {
           shop_name: string
         }[]
       }
+      staff_effective_permissions: {
+        Args: { _staff_id: string }
+        Returns: string[]
+      }
+      staff_has_permission: {
+        Args: { _key: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "seller" | "customer"
+      app_role: "admin" | "moderator" | "seller" | "customer" | "staff"
+      staff_status: "invited" | "active" | "suspended" | "deleted"
+      staff_task_status: "todo" | "in_progress" | "done" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2941,7 +3298,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "seller", "customer"],
+      app_role: ["admin", "moderator", "seller", "customer", "staff"],
+      staff_status: ["invited", "active", "suspended", "deleted"],
+      staff_task_status: ["todo", "in_progress", "done", "cancelled"],
     },
   },
 } as const
