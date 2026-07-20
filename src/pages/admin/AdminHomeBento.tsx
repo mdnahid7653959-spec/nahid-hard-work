@@ -598,7 +598,9 @@ export default function AdminHomeBento() {
                 </div>
               </EditableTile>
             </div>
+          </div>
         </div>
+
 
         {/* Mobile preview — live iframe of the storefront at 390px width */}
         {viewMode === "mobile" && (
