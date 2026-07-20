@@ -394,13 +394,31 @@ export default function AdminHomeBento() {
             <h1 className="text-xl font-bold">Visual Site Editor</h1>
             <p className="text-xs text-muted-foreground">Hover any tile → upload, adjust, edit or hide. Add extra sections below.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Device toggle */}
+            <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode("desktop")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${viewMode === "desktop" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              >
+                Desktop
+              </button>
+              <button
+                type="button"
+                onClick={() => { setViewMode("mobile"); setMobileFrameKey((k) => k + 1); }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${viewMode === "mobile" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              >
+                Mobile
+              </button>
+            </div>
             {dirty && <span className="text-xs text-amber-600 font-medium">Unsaved changes</span>}
             <Button variant="outline" size="sm" onClick={resetAll}><RotateCcw className="h-4 w-4 mr-1.5" />Reset</Button>
             <Button size="sm" onClick={handleSave} disabled={saving || !dirty}>
               {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save Changes
             </Button>
           </div>
+
         </div>
 
         {/* Bento preview — mirrors HeroBento exactly */}
