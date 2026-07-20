@@ -314,6 +314,9 @@ export default function AdminHomeBento() {
   const [editing, setEditing] = useState<BentoTile | null>(null);
   const [editingSection, setEditingSection] = useState<CustomSection | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+  const [mobileFrameKey, setMobileFrameKey] = useState(0);
+
 
   useEffect(() => {
     loadConfig()
@@ -391,17 +394,36 @@ export default function AdminHomeBento() {
             <h1 className="text-xl font-bold">Visual Site Editor</h1>
             <p className="text-xs text-muted-foreground">Hover any tile → upload, adjust, edit or hide. Add extra sections below.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Device toggle */}
+            <div className="inline-flex rounded-lg border bg-muted/40 p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode("desktop")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${viewMode === "desktop" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              >
+                Desktop
+              </button>
+              <button
+                type="button"
+                onClick={() => { setViewMode("mobile"); setMobileFrameKey((k) => k + 1); }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${viewMode === "mobile" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              >
+                Mobile
+              </button>
+            </div>
             {dirty && <span className="text-xs text-amber-600 font-medium">Unsaved changes</span>}
             <Button variant="outline" size="sm" onClick={resetAll}><RotateCcw className="h-4 w-4 mr-1.5" />Reset</Button>
             <Button size="sm" onClick={handleSave} disabled={saving || !dirty}>
               {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save Changes
             </Button>
           </div>
+
         </div>
 
         {/* Bento preview — mirrors HeroBento exactly */}
-        <div className="bg-muted/30 border rounded-3xl p-4 md:p-6">
+        <div className={`bg-muted/30 border rounded-3xl p-4 md:p-6 ${viewMode === "desktop" ? "" : "hidden"}`}>
+
           <div className="w-full font-['Barlow',sans-serif]">
             <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[200px] gap-3 md:gap-5">
 
@@ -578,6 +600,43 @@ export default function AdminHomeBento() {
             </div>
           </div>
         </div>
+
+
+        {/* Mobile preview — live iframe of the storefront at 390px width */}
+        {viewMode === "mobile" && (
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border rounded-3xl p-4 md:p-8 flex flex-col items-center gap-4">
+            <div className="flex items-center justify-between w-full max-w-[430px]">
+              <div>
+                <p className="text-xs font-semibold text-white">Mobile preview (390×780)</p>
+                <p className="text-[10px] text-white/60">Reflects last saved changes. Save first to see edits here.</p>
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => setMobileFrameKey((k) => k + 1)}>
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
+              </Button>
+            </div>
+            {/* Phone frame */}
+            <div
+              className="relative rounded-[2.5rem] bg-black p-3 shadow-2xl"
+              style={{ width: 414 }}
+            >
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-10" />
+              <iframe
+                key={mobileFrameKey}
+                src="/?adminPreview=1"
+                title="Mobile preview"
+                style={{ width: 390, height: 780 }}
+                className="rounded-[1.75rem] bg-white block"
+              />
+            </div>
+            {dirty && (
+              <p className="text-[11px] text-amber-400 font-medium">
+                You have unsaved changes — click "Save Changes" then "Refresh" to update the mobile preview.
+              </p>
+            )}
+          </div>
+        )}
+
+
 
         {/* Custom sections */}
         <div className="bg-card border rounded-3xl p-5 space-y-4">
