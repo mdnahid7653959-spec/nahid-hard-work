@@ -78,7 +78,20 @@ serve(async (req) => {
       // Site config upsert
       if (action === "save-site-config") {
         const { key, value } = body;
-        if (!key) return jsonResponse({ error: "Missing key" }, 400);
+        if (!key || typeof key !== "string" || key.length > 64) {
+          return jsonResponse({ error: "Invalid key" }, 400);
+        }
+        // Payload size guard (~256 KB after serialization)
+        let serialized: string;
+        try { serialized = JSON.stringify(value); } catch { return jsonResponse({ error: "Invalid value" }, 400); }
+        if (!serialized || serialized.length > 256 * 1024) {
+          return jsonResponse({ error: "Payload too large" }, 413);
+        }
+        // Schema validation for home_bento
+        if (key === "home_bento") {
+          const err = validateHomeBento(value);
+          if (err) return jsonResponse({ error: `Invalid home_bento: ${err}` }, 400);
+        }
         const { data, error } = await supabase
           .from("site_config")
           .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" })
