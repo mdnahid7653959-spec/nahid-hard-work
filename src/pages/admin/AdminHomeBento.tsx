@@ -364,8 +364,8 @@ export default function AdminHomeBento() {
                       <span className="w-2 h-2 rounded-full bg-[#e84393] animate-pulse" />
                       <span className="text-[#e84393] font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em] tabular-nums">Ends in 03:59:58</span>
                     </div>
-                    <h2 className="font-['Bebas_Neue'] text-3xl md:text-4xl text-foreground leading-none">{flash.title || "Flash Deals"}</h2>
-                    <p className="text-[10px] md:text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">{flash.subtitle || "Up to 70% Off"}</p>
+                    <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flash.textStyle)}>{flash.title || "Flash Deals"}</h2>
+                    <p className="text-muted-foreground font-bold uppercase tracking-widest mt-1" style={subtitleStyle("flash", flash.textStyle)}>{flash.subtitle || "Up to 70% Off"}</p>
                   </div>
                   <div className="flex gap-2 md:gap-3 shrink-0">
                     <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-2xl shadow-lg" />
