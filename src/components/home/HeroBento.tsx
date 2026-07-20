@@ -313,8 +313,32 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
           </div>
         )}
       </div>
+
+      {/* Admin-defined custom sections */}
+      {customSections.length > 0 && (
+        <div className="mt-6 md:mt-8 space-y-4 md:space-y-6">
+          {customSections.map((s) => {
+            const inner = (
+              <div className="relative w-full overflow-hidden rounded-[1.75rem] md:rounded-[2.5rem] shadow-lg" style={{ minHeight: 180 }}>
+                {s.imageUrl
+                  ? <img src={s.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(s)} />
+                  : <div className="absolute inset-0" style={{ background: s.bgColor || "linear-gradient(135deg,#6c5ce7,#e84393)" }} />}
+                <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(s.overlay ?? 40)/100})` }} />
+                <div className="relative z-10 p-6 md:p-10 text-white min-h-[180px] md:min-h-[240px] flex flex-col justify-center">
+                  <h3 className="font-['Bebas_Neue'] text-3xl md:text-5xl leading-none">{s.title}</h3>
+                  {s.subtitle && <p className="text-sm md:text-base mt-2 opacity-90 max-w-xl">{s.subtitle}</p>}
+                </div>
+              </div>
+            );
+            return s.link
+              ? <Link key={s.id} to={s.link} className="block hover:-translate-y-1 transition-transform">{inner}</Link>
+              : <div key={s.id}>{inner}</div>;
+          })}
+        </div>
+      )}
     </div>
   );
 }
+
 
 export const HeroBento = memo(HeroBentoComponent);
