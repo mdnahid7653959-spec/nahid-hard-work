@@ -17,7 +17,37 @@ interface BentoTileCfg {
   title?: string;
   subtitle?: string;
   link?: string;
+  objectFit?: "cover" | "contain" | "fill";
+  focalX?: number;
+  focalY?: number;
+  overlay?: number;
+  bgColor?: string;
+  zoom?: number;
 }
+
+interface CustomSection {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  link?: string;
+  layout: "full" | "split-left" | "split-right";
+  bgColor?: string;
+  overlay?: number;
+  focalX?: number;
+  focalY?: number;
+  visible: boolean;
+}
+
+function imgStyle(t: Partial<BentoTileCfg>): React.CSSProperties {
+  return {
+    objectFit: (t.objectFit ?? "cover") as any,
+    objectPosition: `${t.focalX ?? 50}% ${t.focalY ?? 50}%`,
+    transform: `scale(${(t.zoom ?? 100) / 100})`,
+    transformOrigin: `${t.focalX ?? 50}% ${t.focalY ?? 50}%`,
+  };
+}
+
 
 const CATEGORIES = [
   { id: "cat_tech", name: "Tech", sub: "Gadgets", to: "/categories?c=electronics", bg: "bg-[#f7931e]", icon: Cpu, shadow: "shadow-[#f7931e]/25" },
