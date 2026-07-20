@@ -25,7 +25,11 @@ interface BentoTileCfg {
   bgColor?: string;
   zoom?: number;
   textStyle?: TextStyle;
+  badge?: string;
+  badgeVisible?: boolean;
+  ctaText?: string;
 }
+
 
 interface CustomSection {
   id: string;
