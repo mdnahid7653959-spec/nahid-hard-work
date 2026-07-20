@@ -276,7 +276,7 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {isVisible("trending") && (
           <Link
             to={trendingCfg.link || (trend ? `/product/${trend.slug}` : "/products?sort=trending")}
-            className="col-span-2 md:col-span-1 row-span-2 rounded-[2rem] md:rounded-[2.5rem] bg-neutral-200 overflow-hidden relative group shadow-lg"
+            className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-neutral-200 overflow-hidden relative group shadow-md md:shadow-lg active:scale-[0.99] transition-transform"
           >
             {trendingCfg.imageUrl ? (
               <img src={trendingCfg.imageUrl} alt="" className="w-full h-full group-hover:scale-110 transition-transform duration-1000" style={imgStyle(trendingCfg)} loading="lazy" />
@@ -287,15 +287,15 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             )}
             <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trendingCfg.overlay ?? 60)/100, 0.4)}), transparent)` }} />
 
-            <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white">
-              <span className="font-bold bg-[#ff6b35] px-3 py-1 rounded-full uppercase tracking-widest" style={subtitleStyle("trending", trendingCfg.textStyle)}>
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-8 text-white">
+              <span className="inline-block font-bold bg-[#ff6b35] px-2.5 py-1 sm:px-3 rounded-full uppercase tracking-wider sm:tracking-widest text-[9px] sm:text-[10px]" style={subtitleStyle("trending", trendingCfg.textStyle)}>
                 {trendingCfg.subtitle || "Trending"}
               </span>
-              <h3 className="font-['Bebas_Neue'] mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trendingCfg.textStyle)}>
+              <h3 className="font-['Bebas_Neue'] mt-1.5 sm:mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trendingCfg.textStyle)}>
                 {trendingCfg.title || trend?.name || "Capture Purity"}
               </h3>
               {trend && !trendingCfg.title && (
-                <p className="text-base md:text-lg font-bold mt-1.5 md:mt-2 text-[#f7931e]">
+                <p className="text-sm sm:text-base md:text-lg font-bold mt-1 sm:mt-1.5 md:mt-2 text-[#f7931e]">
                   ৳ {trend.price.toLocaleString("en-IN")}
                 </p>
               )}
