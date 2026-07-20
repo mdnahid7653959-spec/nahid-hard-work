@@ -144,6 +144,7 @@ const App = () => (
             <AuthProvider>
               <ThemeProvider>
               <AdminAuthProvider>
+                <StaffProvider>
                 <CartProvider>
                   <WishlistProvider>
                     <AppLayout>
