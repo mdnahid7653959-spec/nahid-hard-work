@@ -602,36 +602,187 @@ export default function AdminHomeBento() {
         </div>
 
 
-        {/* Mobile preview — live iframe of the storefront at 390px width */}
+        {/* Mobile visual editor — interactive, full editing on a phone-sized canvas */}
         {viewMode === "mobile" && (
           <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border rounded-3xl p-4 md:p-8 flex flex-col items-center gap-4">
             <div className="flex items-center justify-between w-full max-w-[430px]">
               <div>
-                <p className="text-xs font-semibold text-white">Mobile preview (390×780)</p>
-                <p className="text-[10px] text-white/60">Reflects last saved changes. Save first to see edits here.</p>
+                <p className="text-xs font-semibold text-white">Mobile Visual Editor (390px)</p>
+                <p className="text-[10px] text-white/60">Hover any tile → upload, edit text/style, hide. Changes apply to both desktop &amp; mobile.</p>
               </div>
-              <Button size="sm" variant="secondary" onClick={() => setMobileFrameKey((k) => k + 1)}>
-                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Refresh
-              </Button>
+              <span className="text-[10px] text-white/60">Live · no reload needed</span>
             </div>
+
             {/* Phone frame */}
-            <div
-              className="relative rounded-[2.5rem] bg-black p-3 shadow-2xl"
-              style={{ width: 414 }}
-            >
+            <div className="relative rounded-[2.5rem] bg-black p-3 shadow-2xl" style={{ width: 414 }}>
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-10" />
-              <iframe
-                key={mobileFrameKey}
-                src="/?adminPreview=1"
-                title="Mobile preview"
-                style={{ width: 390, height: 780 }}
-                className="rounded-[1.75rem] bg-white block"
-              />
+              <div className="rounded-[1.75rem] bg-background overflow-hidden" style={{ width: 390, minHeight: 780 }}>
+                <div className="p-3 font-['Barlow',sans-serif]">
+                  <div className="grid grid-cols-2 grid-rows-[repeat(6,128px)] gap-2.5">
+
+                    {/* Hero */}
+                    <EditableTile tile={hero}
+                      className="col-span-2 row-span-2 rounded-[1.5rem] overflow-hidden shadow-[0_20px_60px_-15px_rgba(108,92,231,0.55)] ring-1 ring-white/10"
+                      onEdit={() => setEditing(hero)} onUpload={(f) => handleUpload("hero", f)}
+                      onToggleVisible={() => update("hero", { visible: !hero.visible })}
+                      onRemoveImage={() => update("hero", { imageUrl: undefined })} uploading={uploadingId === "hero"}>
+                      {hero.imageUrl ? (
+                        <>
+                          <img src={hero.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(hero)} />
+                          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((hero.overlay ?? 50)/100, 0.35)}), transparent)` }} />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#6c5ce7] via-[#e84393] to-[#ff6b35]" />
+                      )}
+                      <div className="relative z-10 h-full flex flex-col justify-end p-4 text-white">
+                        {hero.badgeVisible !== false && (
+                          <span className="inline-flex w-fit items-center gap-1.5 bg-white/15 backdrop-blur px-2.5 py-1 rounded-full text-[9px] font-bold tracking-[0.18em] uppercase mb-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            {hero.badge || "Darzo Marketplace"}
+                          </span>
+                        )}
+                        <h1 className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-2 line-clamp-2" style={titleStyle("hero", hero.textStyle)}>
+                          {hero.title || "The New Standard"}
+                        </h1>
+                        <p className="font-medium opacity-90 mb-3 text-[11px] line-clamp-2" style={subtitleStyle("hero", hero.textStyle)}>
+                          {hero.subtitle || "Bangladesh's curated multi-vendor destination."}
+                        </p>
+                        {hero.ctaText !== "" && (
+                          <span className="w-fit bg-white text-[#6c5ce7] px-4 py-2 rounded-full font-bold text-[9px] tracking-[0.18em] uppercase">
+                            {hero.ctaText || "Explore Darzo"} →
+                          </span>
+                        )}
+                      </div>
+                    </EditableTile>
+
+                    {/* Flash */}
+                    <EditableTile tile={flash}
+                      className="col-span-2 row-span-1 rounded-[1.25rem] bg-card border border-border overflow-hidden shadow-md"
+                      onEdit={() => setEditing(flash)} onUpload={(f) => handleUpload("flash", f)}
+                      onToggleVisible={() => update("flash", { visible: !flash.visible })}
+                      onRemoveImage={() => update("flash", { imageUrl: undefined })} uploading={uploadingId === "flash"}>
+                      {flash.imageUrl && <img src={flash.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-30" style={imgStyle(flash)} />}
+                      <div className="relative z-10 h-full flex items-center justify-between p-3">
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#e84393] animate-pulse" />
+                            <span className="text-[#e84393] font-bold text-[8px] uppercase tracking-[0.18em]">Ends in 03:59:58</span>
+                          </div>
+                          <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flash.textStyle)}>{flash.title || "Flash Deals"}</h2>
+                          <p className="text-muted-foreground font-bold uppercase tracking-wider mt-0.5 text-[10px] line-clamp-1" style={subtitleStyle("flash", flash.textStyle)}>{flash.subtitle || "Up to 70% Off"}</p>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-xl shadow-md" />
+                        </div>
+                      </div>
+                    </EditableTile>
+
+                    {/* Categories */}
+                    {(["cat_tech","cat_lifestyle","cat_home","cat_beauty"] as const).map((id) => {
+                      const t = get(id); const meta = CATEGORY_META[id]; const Icon = meta.icon;
+                      return (
+                        <EditableTile key={id} tile={t}
+                          className={`col-span-1 row-span-1 rounded-[1.25rem] ${t.imageUrl ? "" : meta.bg} overflow-hidden shadow-md`}
+                          onEdit={() => setEditing(t)} onUpload={(f) => handleUpload(id, f)}
+                          onToggleVisible={() => update(id, { visible: !t.visible })}
+                          onRemoveImage={() => update(id, { imageUrl: undefined })} uploading={uploadingId === id}>
+                          {t.imageUrl && (
+                            <>
+                              <img src={t.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(t)} />
+                              <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(t.overlay ?? 40)/100})` }} />
+                            </>
+                          )}
+                          <div className="relative z-10 h-full flex flex-col justify-between p-3 text-white">
+                            <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                              <Icon className="w-3.5 h-3.5 text-white" />
+                            </div>
+                            <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", t.textStyle)}>
+                              {t.title}<br /><span style={subtitleStyle("category", t.textStyle)}>{t.subtitle}</span>
+                            </h3>
+                          </div>
+                          {!t.imageUrl && (
+                            <div className="absolute -bottom-3 -right-3 opacity-15 pointer-events-none">
+                              <Icon className="w-16 h-16 text-white" />
+                            </div>
+                          )}
+                        </EditableTile>
+                      );
+                    })}
+
+                    {/* For You */}
+                    <EditableTile tile={foryou}
+                      className="col-span-2 row-span-2 rounded-[1.5rem] bg-card border border-border overflow-hidden shadow-md"
+                      onEdit={() => setEditing(foryou)} onUpload={(f) => handleUpload("foryou", f)}
+                      onToggleVisible={() => update("foryou", { visible: !foryou.visible })}
+                      onRemoveImage={() => update("foryou", { imageUrl: undefined })} uploading={uploadingId === "foryou"}>
+                      {renderImg(foryou)}
+                      <div className="relative z-10 h-full p-4 flex flex-col">
+                        <h3 className="font-['Bebas_Neue'] text-foreground mb-3" style={titleStyle("foryou", foryou.textStyle)}>{foryou.title || "For You"}</h3>
+                        <div className="space-y-3 flex-1">
+                          {[1,2,3].map((i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <div className="w-11 h-11 bg-muted rounded-xl shrink-0" />
+                              <div className="flex-1 space-y-1"><div className="h-2.5 bg-muted rounded w-3/4" /><div className="h-2 bg-muted rounded w-1/3" /></div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 w-full border border-border py-2 rounded-xl text-[9px] font-bold text-muted-foreground uppercase tracking-[0.18em] text-center">
+                          {foryou.subtitle || "Personalize Feed"}
+                        </div>
+                      </div>
+                    </EditableTile>
+
+                    {/* Trending */}
+                    <EditableTile tile={trending}
+                      className="col-span-2 row-span-2 rounded-[1.5rem] bg-neutral-200 overflow-hidden shadow-md"
+                      onEdit={() => setEditing(trending)} onUpload={(f) => handleUpload("trending", f)}
+                      onToggleVisible={() => update("trending", { visible: !trending.visible })}
+                      onRemoveImage={() => update("trending", { imageUrl: undefined })} uploading={uploadingId === "trending"}>
+                      {trending.imageUrl
+                        ? <img src={trending.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(trending)} />
+                        : <div className="absolute inset-0 bg-gradient-to-br from-[#ff6b35] via-[#e84393] to-[#6c5ce7]" />}
+                      <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trending.overlay ?? 60)/100, 0.4)}), transparent)` }} />
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                        <span className="inline-block font-bold bg-[#ff6b35] px-2.5 py-1 rounded-full uppercase tracking-wider text-[9px]" style={subtitleStyle("trending", trending.textStyle)}>
+                          {trending.subtitle || "Trending"}
+                        </span>
+                        <h3 className="font-['Bebas_Neue'] mt-2 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trending.textStyle)}>
+                          {trending.title || "Capture Purity"}
+                        </h3>
+                      </div>
+                    </EditableTile>
+
+                    {/* Vendors */}
+                    <EditableTile tile={vendors}
+                      className="col-span-2 row-span-1 rounded-[1.25rem] bg-gradient-to-br from-[#0f0f1a] via-[#1a1830] to-[#2a1533] border border-white/10 overflow-hidden"
+                      onEdit={() => setEditing(vendors)} onUpload={(f) => handleUpload("vendors", f)}
+                      onToggleVisible={() => update("vendors", { visible: !vendors.visible })}
+                      onRemoveImage={() => update("vendors", { imageUrl: undefined })} uploading={uploadingId === "vendors"}>
+                      {vendors.imageUrl && <img src={vendors.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-40" style={imgStyle(vendors)} />}
+                      <div className="relative z-10 h-full p-3.5 flex flex-row items-center gap-3 justify-between">
+                        <div className="flex flex-col text-left min-w-0 flex-1">
+                          <h4 className="font-['Bebas_Neue'] text-white leading-none mb-1 line-clamp-1" style={titleStyle("vendors", vendors.textStyle)}>
+                            {vendors.title || "Multi-Vendor Power"}
+                          </h4>
+                          <p className="text-white/70 font-medium text-[10px] line-clamp-2" style={subtitleStyle("vendors", vendors.textStyle)}>
+                            {vendors.subtitle || "Supporting 1,200+ local artisans."}
+                          </p>
+                        </div>
+                        <div className="flex -space-x-2 shrink-0">
+                          <div className="w-9 h-9 rounded-full border-2 border-[#1a1830] bg-white flex items-center justify-center font-bold text-[#6c5ce7] italic text-sm">D</div>
+                          <div className="w-9 h-9 rounded-full border-2 border-[#1a1830] bg-[#6c5ce7] flex items-center justify-center font-bold text-white text-sm">Z</div>
+                          <div className="w-9 h-9 rounded-full border-2 border-[#1a1830] bg-[#e84393] flex items-center justify-center font-bold text-white italic text-sm">A</div>
+                        </div>
+                      </div>
+                    </EditableTile>
+
+                  </div>
+                </div>
+              </div>
             </div>
+
             {dirty && (
-              <p className="text-[11px] text-amber-400 font-medium">
-                You have unsaved changes — click "Save Changes" then "Refresh" to update the mobile preview.
-              </p>
+              <p className="text-[11px] text-amber-400 font-medium">Unsaved changes — click "Save Changes" to publish.</p>
             )}
           </div>
         )}
