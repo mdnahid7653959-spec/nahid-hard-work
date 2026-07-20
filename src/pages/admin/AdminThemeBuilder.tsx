@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -1008,6 +1009,13 @@ export default function AdminThemeBuilder() {
             <Badge variant="secondary" className="text-[10px]">True Drag & Drop</Badge>
           </div>
           <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm" className="gap-1 border-primary/40 text-primary hover:bg-primary/10">
+              <Link to="/admin/home-bento">
+                <Layout className="h-4 w-4" />
+                <span className="hidden md:inline">Home Bento Manager</span>
+                <span className="md:hidden">Bento</span>
+              </Link>
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => setShowPreview(!showPreview)} className="gap-1">
               <PanelLeft className="h-4 w-4" />
               <span className="hidden md:inline">{showPreview ? "Hide" : "Show"} Preview</span>
