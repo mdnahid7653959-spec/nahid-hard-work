@@ -159,6 +159,7 @@ const App = () => (
                           <Route path="/checkout" element={<Checkout />} />
                           <Route path="/payment/callback" element={<PaymentCallback />} />
                           <Route path="/account" element={<Account />} />
+                          <Route path="/profile" element={<Account />} />
                           <Route path="/orders" element={<Orders />} />
                           <Route path="/orders/:id" element={<OrderDetail />} />
                           <Route path="/wishlist" element={<Wishlist />} />
@@ -177,6 +178,7 @@ const App = () => (
                           <Route path="/press" element={<Press />} />
                           <Route path="/affiliate" element={<Affiliate />} />
                           <Route path="/seller" element={<Seller />} />
+                          <Route path="/seller/:id" element={<Seller />} />
                           <Route path="/seller/register" element={<SellerRegister />} />
                           <Route path="/seller/dashboard" element={<SellerDashboard />} />
                           <Route path="/seller/pending" element={<SellerPending />} />
