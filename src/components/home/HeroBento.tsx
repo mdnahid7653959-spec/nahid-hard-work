@@ -329,8 +329,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                   : <div className="absolute inset-0" style={{ background: s.bgColor || "linear-gradient(135deg,#6c5ce7,#e84393)" }} />}
                 <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(s.overlay ?? 40)/100})` }} />
                 <div className="relative z-10 p-6 md:p-10 text-white min-h-[180px] md:min-h-[240px] flex flex-col justify-center">
-                  <h3 className="font-['Bebas_Neue'] text-3xl md:text-5xl leading-none">{s.title}</h3>
-                  {s.subtitle && <p className="text-sm md:text-base mt-2 opacity-90 max-w-xl">{s.subtitle}</p>}
+                  <h3 className="font-['Bebas_Neue'] leading-none" style={titleStyle("section", s.textStyle)}>{s.title}</h3>
+                  {s.subtitle && <p className="mt-2 opacity-90 max-w-xl" style={subtitleStyle("section", s.textStyle)}>{s.subtitle}</p>}
                 </div>
               </div>
             );
