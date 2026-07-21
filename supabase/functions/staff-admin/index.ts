@@ -26,11 +26,19 @@ async function verifyAdmin(req: Request): Promise<{ ok: boolean; adminId?: strin
   if (token) {
     const { data } = await sb
       .from("admin_sessions")
-      .select("id, admin_id, expires_at")
+      .select("id, admin_id, expires_at, is_valid")
       .eq("session_token", token)
+      .eq("is_valid", true)
       .maybeSingle();
     if (data && new Date(data.expires_at) > new Date()) {
-      return { ok: true, adminId: data.admin_id };
+      // Confirm admin account is still active
+      const { data: adm } = await sb
+        .from("admin_credentials")
+        .select("id")
+        .eq("id", data.admin_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (adm) return { ok: true, adminId: data.admin_id };
     }
   }
 

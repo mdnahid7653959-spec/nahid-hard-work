@@ -6,24 +6,29 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_SESSION_KEY = "megamart_admin_session";
 
-function getAdminId(): string | null {
+function getAdminSession(): { id: string | null; token: string | null } {
   try {
     const raw = localStorage.getItem(ADMIN_SESSION_KEY);
-    if (!raw) return null;
+    if (!raw) return { id: null, token: null };
     const s = JSON.parse(raw);
-    return s?.admin?.id ?? null;
+    return { id: s?.admin?.id ?? null, token: s?.token ?? null };
   } catch {
-    return null;
+    return { id: null, token: null };
   }
+}
+
+function getAdminId(): string | null {
+  return getAdminSession().id;
 }
 
 type Filter = { col: string; op?: "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "in" | "is" | "ilike" | "like" | "contains"; value: any };
 
 async function invoke(body: Record<string, any>) {
-  const adminId = getAdminId();
+  const { id: adminId, token } = getAdminSession();
   if (!adminId) return { data: null, error: new Error("Not authenticated as admin") };
   const { data, error } = await supabase.functions.invoke("admin-db", {
     body: { ...body, adminId },
+    headers: token ? { "x-admin-token": token } : undefined,
   });
   if (error) return { data: null, error };
   if (data?.error) return { data: null, error: new Error(data.error) };

@@ -8,7 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-token",
 };
 
 // Tables the admin panel is allowed to touch through this generic router.
@@ -62,7 +62,33 @@ const FILTER_OPS = new Set([
   "eq", "neq", "gt", "gte", "lt", "lte", "in", "is", "ilike", "like", "contains",
 ]);
 
-async function verifyAdmin(supabase: any, adminId: string): Promise<boolean> {
+async function verifyAdminBySession(
+  supabase: any,
+  token: string | null,
+): Promise<{ ok: boolean; adminId?: string }> {
+  if (!token || typeof token !== "string" || token.length < 16) return { ok: false };
+  const { data: session } = await supabase
+    .from("admin_sessions")
+    .select("admin_id, expires_at, is_valid")
+    .eq("session_token", token)
+    .eq("is_valid", true)
+    .maybeSingle();
+  if (!session) return { ok: false };
+  if (new Date(session.expires_at) <= new Date()) return { ok: false };
+  const { data: adm } = await supabase
+    .from("admin_credentials")
+    .select("id")
+    .eq("id", session.admin_id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!adm) return { ok: false };
+  return { ok: true, adminId: session.admin_id };
+}
+
+// Legacy fallback — kept for backward compatibility only when no session token is
+// supplied. Body-supplied adminId alone is NOT trusted for identity; it just gates
+// the request until all callers send the session token.
+async function verifyAdminLegacy(supabase: any, adminId: string): Promise<boolean> {
   if (!adminId || typeof adminId !== "string") return false;
   const { data, error } = await supabase
     .from("admin_credentials")
@@ -102,12 +128,27 @@ serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({}));
-    const { adminId, op, table } = body as {
+    const { adminId: bodyAdminId, op, table } = body as {
       adminId?: string; op?: string; table?: string;
     };
 
-    if (!(await verifyAdmin(supabase, adminId ?? ""))) {
-      return json({ error: "Unauthorized" }, 401);
+    // Prefer session-token auth (secure). Fall back to legacy body adminId only
+    // if no token is present, and require the body id match a real active admin.
+    const token = req.headers.get("x-admin-token");
+    let authedAdminId: string | null = null;
+    if (token) {
+      const s = await verifyAdminBySession(supabase, token);
+      if (!s.ok) return json({ error: "Unauthorized" }, 401);
+      authedAdminId = s.adminId!;
+      // If the caller also sent a body adminId, it must match the session.
+      if (bodyAdminId && bodyAdminId !== authedAdminId) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+    } else {
+      if (!(await verifyAdminLegacy(supabase, bodyAdminId ?? ""))) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+      authedAdminId = bodyAdminId ?? null;
     }
 
     if (!op || !ALLOWED_OPS.has(op)) return json({ error: "Invalid op" }, 400);
