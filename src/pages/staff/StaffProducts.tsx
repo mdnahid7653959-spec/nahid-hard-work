@@ -28,6 +28,18 @@ export default function StaffProducts() {
   const [action, setAction] = useState<{ open: boolean; id: string; kind: "reject" | "ban" }>({ open: false, id: "", kind: "reject" });
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<{ open: boolean; loading: boolean; product: any; images: any[]; seller: any }>({ open: false, loading: false, product: null, images: [], seller: null });
+
+  const openView = async (id: string) => {
+    setView({ open: true, loading: true, product: null, images: [], seller: null });
+    const { data, error } = await supabase.functions.invoke("staff-products", { body: { action: "get", productId: id } });
+    if (error || data?.error) {
+      toast({ title: "Failed", description: error?.message || data?.error, variant: "destructive" });
+      setView({ open: false, loading: false, product: null, images: [], seller: null });
+    } else {
+      setView({ open: true, loading: false, product: data.product, images: data.images || [], seller: data.seller });
+    }
+  };
 
   const canView = can("products.view") || can("products.approve") || can("products.manage");
   const canApprove = can("products.approve");
