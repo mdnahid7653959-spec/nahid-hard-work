@@ -115,6 +115,7 @@ const StaffTasks = lazy(() => import("./pages/staff/StaffTasks"));
 const StaffMessages = lazy(() => import("./pages/staff/StaffMessages"));
 const StaffProfile = lazy(() => import("./pages/staff/StaffProfile"));
 const StaffNotifications = lazy(() => import("./pages/staff/StaffNotifications"));
+const StaffProducts = lazy(() => import("./pages/staff/StaffProducts"));
 
 // Minimal loading fallback - instant display
 const PageLoader = () => (
