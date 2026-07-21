@@ -153,19 +153,24 @@ export default function StaffProducts() {
                       Seller: {p.sellers?.shop_name || "Unknown"} · Stock: {p.stock_quantity} · ৳{p.discount_price ?? p.regular_price}
                     </p>
                   </div>
-                  {canApprove && (p.approval_status || "pending") !== "approved" && (
-                    <div className="flex gap-2 flex-wrap">
-                      <Button size="sm" onClick={() => doApprove(p.id)} disabled={busy}>
-                        <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "reject" }); setReason(""); }} disabled={busy}>
-                        <XCircle className="h-4 w-4 mr-1" /> Reject
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "ban" }); setReason(""); }} disabled={busy}>
-                        <Ban className="h-4 w-4 mr-1" /> Ban
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="sm" variant="outline" onClick={() => openView(p.id)}>
+                      <Eye className="h-4 w-4 mr-1" /> View
+                    </Button>
+                    {canApprove && (p.approval_status || "pending") !== "approved" && (
+                      <>
+                        <Button size="sm" onClick={() => doApprove(p.id)} disabled={busy}>
+                          <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "reject" }); setReason(""); }} disabled={busy}>
+                          <XCircle className="h-4 w-4 mr-1" /> Reject
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "ban" }); setReason(""); }} disabled={busy}>
+                          <Ban className="h-4 w-4 mr-1" /> Ban
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
