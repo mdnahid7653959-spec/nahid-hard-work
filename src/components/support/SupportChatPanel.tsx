@@ -126,14 +126,19 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
     if (!messages.length) return;
     const unread = messages.filter((m) => !m.read_at && m.sender_type !== senderType).map((m) => m.id);
     if (unread.length) {
-      supabase.from("seller_support_messages").update({ read_at: new Date().toISOString() }).in("id", unread).then();
-      // Reset unread counter on ticket
       const patch = senderType === "seller"
         ? { seller_unread_count: 0 }
         : { staff_unread_count: 0 };
-      supabase.from("seller_support_tickets").update(patch).eq("id", ticketId).then();
+      if (senderType === "admin") {
+        adminDb.update("seller_support_messages", { read_at: new Date().toISOString() }, { filters: [{ col: "id", op: "in", value: unread }] });
+        adminDb.update("seller_support_tickets", patch, { id: ticketId });
+      } else {
+        supabase.from("seller_support_messages").update({ read_at: new Date().toISOString() }).in("id", unread).then();
+        supabase.from("seller_support_tickets").update(patch).eq("id", ticketId).then();
+      }
     }
   }, [messages, senderType, ticketId]);
+
 
   const send = async () => {
     if (readOnly) return;
