@@ -114,6 +114,7 @@ const StaffIndex = lazy(() => import("./pages/staff/StaffIndex"));
 const StaffTasks = lazy(() => import("./pages/staff/StaffTasks"));
 const StaffMessages = lazy(() => import("./pages/staff/StaffMessages"));
 const StaffProfile = lazy(() => import("./pages/staff/StaffProfile"));
+const StaffNotifications = lazy(() => import("./pages/staff/StaffNotifications"));
 
 // Minimal loading fallback - instant display
 const PageLoader = () => (
@@ -265,6 +266,7 @@ const App = () => (
                           <Route path="/staff/tasks" element={<StaffProtectedRoute><StaffTasks /></StaffProtectedRoute>} />
                           <Route path="/staff/messages" element={<StaffProtectedRoute><StaffMessages /></StaffProtectedRoute>} />
                           <Route path="/staff/profile" element={<StaffProtectedRoute><StaffProfile /></StaffProtectedRoute>} />
+                          <Route path="/staff/notifications" element={<StaffProtectedRoute><StaffNotifications /></StaffProtectedRoute>} />
                           
                           {/* Catch-all */}
                           <Route path="*" element={<NotFound />} />
