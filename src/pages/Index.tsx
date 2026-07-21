@@ -294,32 +294,38 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <main className="flex-1 pb-20 md:pb-0">
-        {isError && (
-          <section className="w-full px-3 sm:px-4 py-4">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center py-8 bg-card border rounded-xl">
-                <p className="text-muted-foreground">Unable to load products. Please refresh the page.</p>
-              </div>
-            </div>
-          </section>
-        )}
+      {/* Mobile-only redesigned home */}
+      <MobileHome />
 
-        {sections.map((section) => (
-          <SectionRenderer
-            key={section.id}
-            section={section}
-            data={data}
-            isLoading={isLoading}
-            showCJProducts={showCJProducts}
-            cjSectionRef={cjSectionRef}
-            cjInView={cjInView}
-            customSectionsMap={customSectionsMap}
-          />
-        ))}
-      </main>
-      <Footer />
+      {/* Desktop / tablet keeps existing experience */}
+      <div className="hidden md:flex flex-col flex-1">
+        <Header />
+        <main className="flex-1 pb-20 md:pb-0">
+          {isError && (
+            <section className="w-full px-3 sm:px-4 py-4">
+              <div className="max-w-7xl mx-auto">
+                <div className="text-center py-8 bg-card border rounded-xl">
+                  <p className="text-muted-foreground">Unable to load products. Please refresh the page.</p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {sections.map((section) => (
+            <SectionRenderer
+              key={section.id}
+              section={section}
+              data={data}
+              isLoading={isLoading}
+              showCJProducts={showCJProducts}
+              cjSectionRef={cjSectionRef}
+              cjInView={cjInView}
+              customSectionsMap={customSectionsMap}
+            />
+          ))}
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };
