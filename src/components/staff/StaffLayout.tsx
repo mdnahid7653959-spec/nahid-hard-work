@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useStaff } from "@/contexts/StaffContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, LayoutDashboard, ListChecks, Mail, User, Bell, ShieldCheck } from "lucide-react";
+import { LogOut, LayoutDashboard, ListChecks, Mail, User, Bell, ShieldCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NavItem { to: string; icon: any; label: string; requires?: string; }
@@ -10,6 +10,7 @@ interface NavItem { to: string; icon: any; label: string; requires?: string; }
 const NAV: NavItem[] = [
   { to: "/staff", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/staff/tasks", icon: ListChecks, label: "My Tasks", requires: "tasks.view" },
+  { to: "/staff/products", icon: Package, label: "Products", requires: "products.view" },
   { to: "/staff/messages", icon: Mail, label: "Messages", requires: "messages.view" },
   { to: "/staff/notifications", icon: Bell, label: "Notifications" },
   { to: "/staff/profile", icon: User, label: "Profile" },
