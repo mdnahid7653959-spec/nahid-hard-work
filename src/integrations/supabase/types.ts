@@ -2799,6 +2799,68 @@ export type Database = {
           },
         ]
       }
+      studio_theme_versions: {
+        Row: {
+          archived_at: string | null
+          bento_config: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          layout_config: Json
+          name: string
+          parent_version_id: string | null
+          published_at: string | null
+          published_by: string | null
+          status: Database["public"]["Enums"]["studio_theme_status"]
+          theme_config: Json
+          updated_at: string
+          version_number: number
+        }
+        Insert: {
+          archived_at?: string | null
+          bento_config?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          layout_config?: Json
+          name: string
+          parent_version_id?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["studio_theme_status"]
+          theme_config?: Json
+          updated_at?: string
+          version_number?: number
+        }
+        Update: {
+          archived_at?: string | null
+          bento_config?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          layout_config?: Json
+          name?: string
+          parent_version_id?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["studio_theme_status"]
+          theme_config?: Json
+          updated_at?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_theme_versions_parent_version_id_fkey"
+            columns: ["parent_version_id"]
+            isOneToOne: false
+            referencedRelation: "studio_theme_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       theme_config: {
         Row: {
           config: Json
@@ -3171,6 +3233,7 @@ export type Database = {
       app_role: "admin" | "moderator" | "seller" | "customer" | "staff"
       staff_status: "invited" | "active" | "suspended" | "deleted"
       staff_task_status: "todo" | "in_progress" | "done" | "cancelled"
+      studio_theme_status: "draft" | "preview" | "published" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3301,6 +3364,7 @@ export const Constants = {
       app_role: ["admin", "moderator", "seller", "customer", "staff"],
       staff_status: ["invited", "active", "suspended", "deleted"],
       staff_task_status: ["todo", "in_progress", "done", "cancelled"],
+      studio_theme_status: ["draft", "preview", "published", "archived"],
     },
   },
 } as const
