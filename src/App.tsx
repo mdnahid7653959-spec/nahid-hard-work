@@ -118,6 +118,7 @@ const StaffMessages = lazy(() => import("./pages/staff/StaffMessages"));
 const StaffProfile = lazy(() => import("./pages/staff/StaffProfile"));
 const StaffNotifications = lazy(() => import("./pages/staff/StaffNotifications"));
 const StaffProducts = lazy(() => import("./pages/staff/StaffProducts"));
+const StaffSellers = lazy(() => import("./pages/staff/StaffSellers"));
 
 // Minimal loading fallback - instant display
 const PageLoader = () => (
@@ -273,6 +274,7 @@ const App = () => (
                           <Route path="/staff/profile" element={<StaffProtectedRoute><StaffProfile /></StaffProtectedRoute>} />
                           <Route path="/staff/notifications" element={<StaffProtectedRoute><StaffNotifications /></StaffProtectedRoute>} />
                           <Route path="/staff/products" element={<StaffProtectedRoute><StaffProducts /></StaffProtectedRoute>} />
+                          <Route path="/staff/sellers" element={<StaffProtectedRoute><StaffSellers /></StaffProtectedRoute>} />
                           
                           {/* Catch-all */}
                           <Route path="*" element={<NotFound />} />
