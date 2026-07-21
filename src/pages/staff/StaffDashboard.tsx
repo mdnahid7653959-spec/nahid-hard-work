@@ -20,7 +20,8 @@ const DASHBOARD_TITLES: Record<string, string> = {
 
 const QUICK_ACTIONS: { key: string; label: string; to: string }[] = [
   { key: "sellers.view", label: "Review Sellers", to: "/admin/sellers" },
-  { key: "products.approve", label: "Approve Products", to: "/admin/products" },
+  { key: "products.approve", label: "Approve Products", to: "/staff/products" },
+  { key: "products.view", label: "View Products", to: "/staff/products" },
   { key: "orders.view", label: "View Orders", to: "/admin/orders" },
   { key: "delivery.assign", label: "Assign Delivery", to: "/admin/consignments" },
   { key: "finance.view_reports", label: "Finance Reports", to: "/admin/reports" },
