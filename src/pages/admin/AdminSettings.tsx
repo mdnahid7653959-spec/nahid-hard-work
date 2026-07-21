@@ -198,7 +198,7 @@ export default function AdminSettings() {
           <p className="text-muted-foreground">Manage your store and account settings</p>
         </div>
 
-        <Tabs defaultValue="store" className="space-y-6">
+        <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") || "store"} className="space-y-6">
           <TabsList className="flex-wrap">
             <TabsTrigger value="store" className="gap-2">
               <Store className="h-4 w-4" />
