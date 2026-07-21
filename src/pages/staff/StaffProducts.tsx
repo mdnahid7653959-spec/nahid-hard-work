@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, CheckCircle2, XCircle, Ban, Search, PackageX } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, Ban, Search, PackageX, Eye } from "lucide-react";
 
 interface Row {
   id: string; name: string; slug: string; regular_price: number; discount_price: number | null;
