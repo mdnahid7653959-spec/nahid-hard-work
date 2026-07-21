@@ -2,6 +2,8 @@ import { ReactNode, useEffect, useState, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { Loader2 } from "lucide-react";
+import { isAdminGateUnlocked } from "./AdminGate";
+import NotFound from "@/pages/NotFound";
 
 interface AdminProtectedRouteProps {
   children: ReactNode;
@@ -13,6 +15,9 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   const [validating, setValidating] = useState(true);
   const [isValid, setIsValid] = useState(false);
   const hasValidated = useRef(false);
+
+  // Security gate: unless the secret unlock URL was visited this session, pretend the route doesn't exist.
+  if (!isAdminGateUnlocked()) return <NotFound />;
 
   useEffect(() => {
     // Only validate once per mount, not on every render
