@@ -61,6 +61,7 @@ const menuItems = [
   { icon: FileText, label: "CMS", href: "/admin/cms" },
   { icon: MessageSquare, label: "Reviews", href: "/admin/reviews" },
   { icon: Bell, label: "Push Notifications", href: "/admin/push-notifications" },
+  { icon: Palette, label: "Theme Studio", href: "/admin/studio" },
   { icon: Palette, label: "Theme Builder", href: "/admin/theme-builder" },
   { icon: Settings, label: "CJ Settings", href: "/admin/cj-settings" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
