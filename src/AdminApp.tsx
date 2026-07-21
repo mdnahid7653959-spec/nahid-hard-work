@@ -35,6 +35,7 @@ const AdminConsignments = lazy(() => import("./pages/admin/AdminConsignments"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 const AdminStudio = lazy(() => import("./pages/admin/AdminStudio"));
+const AdminHomePromos = lazy(() => import("./pages/admin/AdminHomePromos"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
