@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,6 +9,7 @@ import { Paperclip, Send, Mic, Square, Loader2, MessageSquare, FileText, Image a
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
 
 export interface SupportAttachment {
   url: string;
@@ -124,14 +126,19 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
     if (!messages.length) return;
     const unread = messages.filter((m) => !m.read_at && m.sender_type !== senderType).map((m) => m.id);
     if (unread.length) {
-      supabase.from("seller_support_messages").update({ read_at: new Date().toISOString() }).in("id", unread).then();
-      // Reset unread counter on ticket
       const patch = senderType === "seller"
         ? { seller_unread_count: 0 }
         : { staff_unread_count: 0 };
-      supabase.from("seller_support_tickets").update(patch).eq("id", ticketId).then();
+      if (senderType === "admin") {
+        adminDb.update("seller_support_messages", { read_at: new Date().toISOString() }, { filters: [{ col: "id", op: "in", value: unread }] });
+        adminDb.update("seller_support_tickets", patch, { id: ticketId });
+      } else {
+        supabase.from("seller_support_messages").update({ read_at: new Date().toISOString() }).in("id", unread).then();
+        supabase.from("seller_support_tickets").update(patch).eq("id", ticketId).then();
+      }
     }
   }, [messages, senderType, ticketId]);
+
 
   const send = async () => {
     if (readOnly) return;
@@ -141,24 +148,32 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
       const uploads: SupportAttachment[] = [];
       for (const f of pendingFiles) uploads.push(await uploadFile(f, ticketId));
       const preview = text.trim() || (uploads[0]?.kind === "image" ? "📷 Photo" : uploads[0]?.kind === "audio" ? "🎤 Voice message" : uploads[0] ? `📎 ${uploads[0].name}` : "");
-      const { error } = await supabase.from("seller_support_messages").insert({
+      const isAdmin = senderType === "admin";
+      const msgPayload = {
         ticket_id: ticketId,
         sender_type: senderType,
         sender_id: senderId,
         sender_name: senderName,
         content: text.trim() || null,
         attachments: uploads as any,
-      });
-      if (error) throw error;
-      const counterPatch = senderType === "seller"
-        ? { staff_unread_count: (undefined as any) }
-        : { seller_unread_count: (undefined as any) };
+      };
+      if (isAdmin) {
+        const { error } = await adminDb.insert("seller_support_messages", msgPayload);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("seller_support_messages").insert(msgPayload);
+        if (error) throw error;
+      }
       // fetch current and increment
       const { data: t } = await supabase.from("seller_support_tickets").select("staff_unread_count,seller_unread_count").eq("id", ticketId).single();
       const updates: any = { last_message_at: new Date().toISOString(), last_message_preview: preview.slice(0, 120), status: "open" };
       if (senderType === "seller") updates.staff_unread_count = (t?.staff_unread_count || 0) + 1;
       else updates.seller_unread_count = (t?.seller_unread_count || 0) + 1;
-      await supabase.from("seller_support_tickets").update(updates).eq("id", ticketId);
+      if (isAdmin) {
+        await adminDb.update("seller_support_tickets", updates, { id: ticketId });
+      } else {
+        await supabase.from("seller_support_tickets").update(updates).eq("id", ticketId);
+      }
       setText("");
       setPendingFiles([]);
     } catch (e: any) {
@@ -167,6 +182,7 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
       setSending(false);
     }
   };
+
 
   const startRecording = async () => {
     try {

@@ -54,7 +54,10 @@ const ALLOWED_TABLES = new Set<string>([
   "messages",
   "cj_settings",
   "cj_category_mappings",
+  "seller_support_tickets",
+  "seller_support_messages",
 ]);
+
 
 const ALLOWED_OPS = new Set(["select", "insert", "update", "delete", "upsert", "count"]);
 
