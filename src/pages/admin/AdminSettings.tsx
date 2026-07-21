@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { Save, Key, Store, Globe, Bell, Shield, Facebook, Search, Loader2 } from "lucide-react";
+import { Save, Key, Store, Globe, Bell, Shield, Facebook, Search, Loader2, LifeBuoy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
