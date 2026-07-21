@@ -60,6 +60,7 @@ const menuItems = [
   { icon: Shield, label: "Security", href: "/admin/security" },
   { icon: FileText, label: "CMS", href: "/admin/cms" },
   { icon: MessageSquare, label: "Reviews", href: "/admin/reviews" },
+  { icon: MessageSquare, label: "Seller Support", href: "/admin/seller-support" },
   { icon: Bell, label: "Push Notifications", href: "/admin/push-notifications" },
   { icon: Palette, label: "Theme Studio", href: "/admin/studio" },
   { icon: Palette, label: "Theme Builder", href: "/admin/theme-builder" },

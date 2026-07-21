@@ -20,6 +20,7 @@ import {
   Bell,
   HelpCircle,
   Truck,
+  LifeBuoy,
 } from "lucide-react";
 
 interface SellerLayoutProps {
@@ -35,6 +36,7 @@ const menuItems = [
   { icon: DollarSign, label: "Earnings", href: "/seller/earnings" },
   { icon: BarChart3, label: "Analytics", href: "/seller/analytics" },
   { icon: MessageSquare, label: "Messages", href: "/seller/messages" },
+  { icon: LifeBuoy, label: "Support", href: "/seller/support" },
   { icon: Settings, label: "Shop Settings", href: "/seller/settings" },
   { icon: HelpCircle, label: "Help Center", href: "/seller/help" },
 ];

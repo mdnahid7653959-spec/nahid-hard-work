@@ -71,6 +71,7 @@ const SellerEarnings = lazy(() => import("./pages/seller/SellerEarnings"));
 const SellerAnalytics = lazy(() => import("./pages/seller/SellerAnalytics"));
 const SellerSettings = lazy(() => import("./pages/seller/SellerSettings"));
 const SellerMessages = lazy(() => import("./pages/seller/SellerMessages"));
+const SellerSupport = lazy(() => import("./pages/seller/SellerSupport"));
 const BuyerMessages = lazy(() => import("./pages/Messages"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -106,6 +107,7 @@ const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport"));
 
 // Staff Portal
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
@@ -208,6 +210,7 @@ const App = () => (
                           <Route path="/seller/analytics" element={<SellerAnalytics />} />
                           <Route path="/seller/settings" element={<SellerSettings />} />
                           <Route path="/seller/messages" element={<SellerMessages />} />
+                          <Route path="/seller/support" element={<SellerSupport />} />
                           <Route path="/messages" element={<BuyerMessages />} />
                           <Route path="/messages/:conversationId" element={<BuyerMessages />} />
                           <Route path="/privacy" element={<Privacy />} />
@@ -258,6 +261,7 @@ const App = () => (
                           <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
                           <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
                           <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
+                          <Route path="/admin/seller-support" element={<AdminProtectedRoute><AdminSellerSupport /></AdminProtectedRoute>} />
 
                           {/* Staff Portal */}
                           <Route path="/staff/login" element={<StaffLogin />} />
