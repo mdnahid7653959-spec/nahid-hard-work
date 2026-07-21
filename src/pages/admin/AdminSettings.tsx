@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { Save, Key, Store, Globe, Bell, Shield, Facebook, Search, Loader2 } from "lucide-react";
+import { Save, Key, Store, Globe, Bell, Shield, Facebook, Search, Loader2, LifeBuoy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +68,14 @@ export default function AdminSettings() {
     newUsers: false,
   });
 
+  const [autoReply, setAutoReply] = useState({
+    enabled: true,
+    timeout_minutes: 10,
+    message_bn: "",
+    message_en: "",
+  });
+  const [savingAutoReply, setSavingAutoReply] = useState(false);
+
   // Load settings from database
   useEffect(() => {
     if (settings) {
@@ -80,6 +90,41 @@ export default function AdminSettings() {
       }
     }
   }, [settings]);
+
+  // Load auto-reply config from site_settings
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "support_auto_reply")
+        .maybeSingle();
+      if (data?.value) {
+        setAutoReply(prev => ({ ...prev, ...(data.value as any) }));
+      }
+    })();
+  }, []);
+
+  const handleAutoReplySave = async () => {
+    setSavingAutoReply(true);
+    const payload = {
+      enabled: !!autoReply.enabled,
+      timeout_minutes: Math.max(0, Number(autoReply.timeout_minutes) || 0),
+      message_bn: autoReply.message_bn || "",
+      message_en: autoReply.message_en || "",
+    };
+    const { error } = await adminDb.upsert("site_settings", {
+      key: "support_auto_reply",
+      value: payload,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } else {
+      toast({ title: "Auto-reply settings saved" });
+    }
+    setSavingAutoReply(false);
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,6 +215,10 @@ export default function AdminSettings() {
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
               Notifications
+            </TabsTrigger>
+            <TabsTrigger value="support" className="gap-2">
+              <LifeBuoy className="h-4 w-4" />
+              Support Auto-Reply
             </TabsTrigger>
           </TabsList>
 
@@ -615,6 +664,77 @@ export default function AdminSettings() {
                 <Button onClick={handleNotificationsSave}>
                   <Save className="h-4 w-4 mr-2" />
                   Save Preferences
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="support">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LifeBuoy className="h-5 w-5" />
+                  Seller Support Auto-Reply
+                </CardTitle>
+                <CardDescription>
+                  When a seller sends a message and no staff has replied within the timeout, an automatic
+                  "we're busy" message is posted. Configure timing and templates below.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div>
+                    <p className="font-medium">Enable Auto-Reply</p>
+                    <p className="text-sm text-muted-foreground">Turn the automatic busy message on or off.</p>
+                  </div>
+                  <Switch
+                    checked={autoReply.enabled}
+                    onCheckedChange={(c) => setAutoReply({ ...autoReply, enabled: c })}
+                  />
+                </div>
+
+                <div className="max-w-xs">
+                  <Label htmlFor="ar-timeout">Trigger After (minutes of staff silence)</Label>
+                  <Input
+                    id="ar-timeout"
+                    type="number"
+                    min={0}
+                    value={autoReply.timeout_minutes}
+                    onChange={(e) => setAutoReply({ ...autoReply, timeout_minutes: Number(e.target.value) })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If the last staff/admin reply is older than this (or none exists), auto-reply fires.
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="ar-bn">Bangla Message Template</Label>
+                  <Textarea
+                    id="ar-bn"
+                    rows={4}
+                    value={autoReply.message_bn}
+                    onChange={(e) => setAutoReply({ ...autoReply, message_bn: e.target.value })}
+                    placeholder="আমাদের সাপোর্ট টিমের সবাই এই মুহূর্তে ব্যস্ত…"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="ar-en">English Message Template</Label>
+                  <Textarea
+                    id="ar-en"
+                    rows={4}
+                    value={autoReply.message_en}
+                    onChange={(e) => setAutoReply({ ...autoReply, message_en: e.target.value })}
+                    placeholder="Our support team is currently busy…"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Both messages will be sent together, separated by a blank line. Leave one empty to send only the other.
+                  </p>
+                </div>
+
+                <Button onClick={handleAutoReplySave} disabled={savingAutoReply}>
+                  {savingAutoReply ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save Auto-Reply Settings
                 </Button>
               </CardContent>
             </Card>

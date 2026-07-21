@@ -179,28 +179,44 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
 
       // Auto-reply: if seller sends and no recent staff/admin response, send a busy notice
       if (senderType === "seller") {
-        const lastStaff = [...messages].reverse().find((m) => m.sender_type === "staff" || m.sender_type === "admin");
-        const tenMinAgo = Date.now() - 10 * 60 * 1000;
-        const needsAutoReply = !lastStaff || new Date(lastStaff.created_at).getTime() < tenMinAgo;
-        if (needsAutoReply) {
-          setTimeout(async () => {
-            try {
-              await adminDb.insert("seller_support_messages", {
-                ticket_id: ticketId,
-                sender_type: "staff",
-                sender_id: "00000000-0000-0000-0000-000000000000",
-                sender_name: "Darzo Support (Auto)",
-                content: "আমাদের সাপোর্ট টিমের সবাই এই মুহূর্তে ব্যস্ত আছেন 🙏\nআপনার মেসেজ আমরা পেয়েছি — একজন এজেন্ট ফ্রি হলেই আপনাকে রিপ্লাই দেবেন। দয়া করে একটু অপেক্ষা করুন।\n\nOur support team is currently busy. We've received your message and will reply as soon as an agent is free. Thank you for your patience.",
-                attachments: [],
-              });
-              await adminDb.update("seller_support_tickets", {
-                last_message_at: new Date().toISOString(),
-                last_message_preview: "Auto-reply: our team will get back to you shortly",
-              }, { id: ticketId });
-            } catch {}
-          }, 1200);
-        }
+        try {
+          const { data: cfgRow } = await supabase
+            .from("site_settings")
+            .select("value")
+            .eq("key", "support_auto_reply")
+            .maybeSingle();
+          const cfg: any = cfgRow?.value || {};
+          const enabled = cfg.enabled !== false;
+          const timeoutMin = Number(cfg.timeout_minutes) > 0 ? Number(cfg.timeout_minutes) : 10;
+          const messageBn = (cfg.message_bn || "").trim();
+          const messageEn = (cfg.message_en || "").trim();
+          const body = [messageBn, messageEn].filter(Boolean).join("\n\n");
+          if (enabled && body) {
+            const lastStaff = [...messages].reverse().find((m) => m.sender_type === "staff" || m.sender_type === "admin");
+            const cutoff = Date.now() - timeoutMin * 60 * 1000;
+            const needsAutoReply = !lastStaff || new Date(lastStaff.created_at).getTime() < cutoff;
+            if (needsAutoReply) {
+              setTimeout(async () => {
+                try {
+                  await adminDb.insert("seller_support_messages", {
+                    ticket_id: ticketId,
+                    sender_type: "staff",
+                    sender_id: "00000000-0000-0000-0000-000000000000",
+                    sender_name: "Darzo Support (Auto)",
+                    content: body,
+                    attachments: [],
+                  });
+                  await adminDb.update("seller_support_tickets", {
+                    last_message_at: new Date().toISOString(),
+                    last_message_preview: "Auto-reply: our team will get back to you shortly",
+                  }, { id: ticketId });
+                } catch {}
+              }, 1200);
+            }
+          }
+        } catch {}
       }
+
     } catch (e: any) {
       toast.error(e.message || "Failed to send");
     } finally {
