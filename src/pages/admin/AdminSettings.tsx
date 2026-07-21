@@ -68,6 +68,14 @@ export default function AdminSettings() {
     newUsers: false,
   });
 
+  const [autoReply, setAutoReply] = useState({
+    enabled: true,
+    timeout_minutes: 10,
+    message_bn: "",
+    message_en: "",
+  });
+  const [savingAutoReply, setSavingAutoReply] = useState(false);
+
   // Load settings from database
   useEffect(() => {
     if (settings) {
@@ -82,6 +90,41 @@ export default function AdminSettings() {
       }
     }
   }, [settings]);
+
+  // Load auto-reply config from site_settings
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "support_auto_reply")
+        .maybeSingle();
+      if (data?.value) {
+        setAutoReply(prev => ({ ...prev, ...(data.value as any) }));
+      }
+    })();
+  }, []);
+
+  const handleAutoReplySave = async () => {
+    setSavingAutoReply(true);
+    const payload = {
+      enabled: !!autoReply.enabled,
+      timeout_minutes: Math.max(0, Number(autoReply.timeout_minutes) || 0),
+      message_bn: autoReply.message_bn || "",
+      message_en: autoReply.message_en || "",
+    };
+    const { error } = await adminDb.upsert("site_settings", {
+      key: "support_auto_reply",
+      value: payload,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } else {
+      toast({ title: "Auto-reply settings saved" });
+    }
+    setSavingAutoReply(false);
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
