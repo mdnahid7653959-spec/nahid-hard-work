@@ -1,43 +1,41 @@
 import { useState } from "react";
-import { StaffLayout } from "@/components/staff/StaffLayout";
-import { useStaff } from "@/contexts/StaffContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { SupportTicketList } from "@/components/support/SupportTicketList";
 import { SupportChatPanel } from "@/components/support/SupportChatPanel";
+import { useAuth } from "@/contexts/AuthContext";
 import { MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function StaffMessages() {
-  const { staff } = useStaff();
+export default function AdminSellerSupport() {
   const { user } = useAuth();
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
-    <StaffLayout>
-      <div className="flex h-[calc(100vh-100px)] border rounded-lg overflow-hidden bg-card">
+    <AdminLayout title="Seller Support">
+      <div className="flex h-[calc(100vh-160px)] border rounded-lg overflow-hidden bg-card">
         <div className={cn("w-full md:w-80 border-r flex flex-col", selected ? "hidden md:flex" : "flex")}>
-          <SupportTicketList perspective="staff" selectedId={selected} onSelect={setSelected} />
+          <SupportTicketList perspective="admin" selectedId={selected} onSelect={setSelected} />
         </div>
         <div className={cn("flex-1 flex flex-col", !selected ? "hidden md:flex" : "flex")}>
-          {selected && staff && user ? (
+          {selected && user ? (
             <SupportChatPanel
               ticketId={selected}
-              senderType="staff"
+              senderType="admin"
               senderId={user.id}
-              senderName={staff.full_name}
-              headerTitle="Seller Chat"
-              headerSubtitle="Reply to seller support ticket"
+              senderName="Admin"
+              headerTitle="Seller ↔ Staff Conversation"
+              headerSubtitle="Full read/write monitoring"
               onBack={() => setSelected(null)}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
               <MessageSquare className="h-16 w-16 text-muted-foreground/30 mb-4" />
-              <h3 className="font-semibold text-lg">Seller Support Inbox</h3>
-              <p className="text-muted-foreground text-sm mt-1">Select a ticket to reply. Sellers can send text, images, voice notes, and documents.</p>
+              <h3 className="font-semibold text-lg">Monitor Seller Support</h3>
+              <p className="text-muted-foreground text-sm mt-1">See every conversation between sellers and staff. You can also reply directly.</p>
             </div>
           )}
         </div>
       </div>
-    </StaffLayout>
+    </AdminLayout>
   );
 }
