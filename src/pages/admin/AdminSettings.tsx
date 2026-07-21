@@ -668,6 +668,77 @@ export default function AdminSettings() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="support">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LifeBuoy className="h-5 w-5" />
+                  Seller Support Auto-Reply
+                </CardTitle>
+                <CardDescription>
+                  When a seller sends a message and no staff has replied within the timeout, an automatic
+                  "we're busy" message is posted. Configure timing and templates below.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div>
+                    <p className="font-medium">Enable Auto-Reply</p>
+                    <p className="text-sm text-muted-foreground">Turn the automatic busy message on or off.</p>
+                  </div>
+                  <Switch
+                    checked={autoReply.enabled}
+                    onCheckedChange={(c) => setAutoReply({ ...autoReply, enabled: c })}
+                  />
+                </div>
+
+                <div className="max-w-xs">
+                  <Label htmlFor="ar-timeout">Trigger After (minutes of staff silence)</Label>
+                  <Input
+                    id="ar-timeout"
+                    type="number"
+                    min={0}
+                    value={autoReply.timeout_minutes}
+                    onChange={(e) => setAutoReply({ ...autoReply, timeout_minutes: Number(e.target.value) })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If the last staff/admin reply is older than this (or none exists), auto-reply fires.
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="ar-bn">Bangla Message Template</Label>
+                  <Textarea
+                    id="ar-bn"
+                    rows={4}
+                    value={autoReply.message_bn}
+                    onChange={(e) => setAutoReply({ ...autoReply, message_bn: e.target.value })}
+                    placeholder="আমাদের সাপোর্ট টিমের সবাই এই মুহূর্তে ব্যস্ত…"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="ar-en">English Message Template</Label>
+                  <Textarea
+                    id="ar-en"
+                    rows={4}
+                    value={autoReply.message_en}
+                    onChange={(e) => setAutoReply({ ...autoReply, message_en: e.target.value })}
+                    placeholder="Our support team is currently busy…"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Both messages will be sent together, separated by a blank line. Leave one empty to send only the other.
+                  </p>
+                </div>
+
+                <Button onClick={handleAutoReplySave} disabled={savingAutoReply}>
+                  {savingAutoReply ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save Auto-Reply Settings
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
