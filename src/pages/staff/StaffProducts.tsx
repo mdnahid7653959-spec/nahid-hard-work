@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, CheckCircle2, XCircle, Ban, Search, PackageX } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, Ban, Search, PackageX, Eye } from "lucide-react";
 
 interface Row {
   id: string; name: string; slug: string; regular_price: number; discount_price: number | null;
@@ -28,6 +28,18 @@ export default function StaffProducts() {
   const [action, setAction] = useState<{ open: boolean; id: string; kind: "reject" | "ban" }>({ open: false, id: "", kind: "reject" });
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<{ open: boolean; loading: boolean; product: any; images: any[]; seller: any }>({ open: false, loading: false, product: null, images: [], seller: null });
+
+  const openView = async (id: string) => {
+    setView({ open: true, loading: true, product: null, images: [], seller: null });
+    const { data, error } = await supabase.functions.invoke("staff-products", { body: { action: "get", productId: id } });
+    if (error || data?.error) {
+      toast({ title: "Failed", description: error?.message || data?.error, variant: "destructive" });
+      setView({ open: false, loading: false, product: null, images: [], seller: null });
+    } else {
+      setView({ open: true, loading: false, product: data.product, images: data.images || [], seller: data.seller });
+    }
+  };
 
   const canView = can("products.view") || can("products.approve") || can("products.manage");
   const canApprove = can("products.approve");
@@ -141,19 +153,24 @@ export default function StaffProducts() {
                       Seller: {p.sellers?.shop_name || "Unknown"} · Stock: {p.stock_quantity} · ৳{p.discount_price ?? p.regular_price}
                     </p>
                   </div>
-                  {canApprove && (p.approval_status || "pending") !== "approved" && (
-                    <div className="flex gap-2 flex-wrap">
-                      <Button size="sm" onClick={() => doApprove(p.id)} disabled={busy}>
-                        <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "reject" }); setReason(""); }} disabled={busy}>
-                        <XCircle className="h-4 w-4 mr-1" /> Reject
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "ban" }); setReason(""); }} disabled={busy}>
-                        <Ban className="h-4 w-4 mr-1" /> Ban
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="sm" variant="outline" onClick={() => openView(p.id)}>
+                      <Eye className="h-4 w-4 mr-1" /> View
+                    </Button>
+                    {canApprove && (p.approval_status || "pending") !== "approved" && (
+                      <>
+                        <Button size="sm" onClick={() => doApprove(p.id)} disabled={busy}>
+                          <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "reject" }); setReason(""); }} disabled={busy}>
+                          <XCircle className="h-4 w-4 mr-1" /> Reject
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: p.id, kind: "ban" }); setReason(""); }} disabled={busy}>
+                          <Ban className="h-4 w-4 mr-1" /> Ban
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -173,9 +190,79 @@ export default function StaffProducts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={view.open} onOpenChange={(o) => setView((s) => ({ ...s, open: o }))}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{view.product?.name || "Product details"}</DialogTitle>
+          </DialogHeader>
+          {view.loading ? (
+            <div className="p-6 text-center text-muted-foreground">Loading…</div>
+          ) : view.product ? (
+            <div className="space-y-4">
+              {view.images.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {view.images.map((img, i) => (
+                    <img key={i} src={img.image_url} alt={`img-${i}`} className="w-full h-24 object-cover rounded border" />
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <Info label="Status" value={view.product.status} />
+                <Info label="Approval" value={view.product.approval_status || "pending"} />
+                <Info label="Price" value={`৳${view.product.discount_price ?? view.product.regular_price}`} />
+                <Info label="Regular price" value={`৳${view.product.regular_price}`} />
+                <Info label="Stock" value={String(view.product.stock_quantity)} />
+                <Info label="SKU" value={view.product.sku || "—"} />
+                <Info label="Slug" value={view.product.slug} />
+                <Info label="Featured" value={view.product.is_featured ? "Yes" : "No"} />
+                <Info label="Shop" value={view.seller?.shop_name || "Unknown"} />
+                <Info label="Seller status" value={view.seller?.status || "—"} />
+                <Info label="Seller email" value={view.seller?.business_email || "—"} />
+                <Info label="Seller phone" value={view.seller?.business_phone || "—"} />
+              </div>
+              {view.product.description && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Description</p>
+                  <p className="text-sm whitespace-pre-wrap">{view.product.description}</p>
+                </div>
+              )}
+              {view.product.rejection_reason && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Reason</p>
+                  <p className="text-sm">{view.product.rejection_reason}</p>
+                </div>
+              )}
+              {canApprove && (view.product.approval_status || "pending") !== "approved" && (
+                <div className="flex gap-2 flex-wrap pt-2 border-t">
+                  <Button size="sm" onClick={() => { doApprove(view.product.id); setView((s) => ({ ...s, open: false })); }} disabled={busy}>
+                    <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: view.product.id, kind: "reject" }); setReason(""); setView((s) => ({ ...s, open: false })); }}>
+                    <XCircle className="h-4 w-4 mr-1" /> Reject
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setAction({ open: true, id: view.product.id, kind: "ban" }); setReason(""); setView((s) => ({ ...s, open: false })); }}>
+                    <Ban className="h-4 w-4 mr-1" /> Ban
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </StaffLayout>
   );
 }
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-medium truncate">{value}</p>
+    </div>
+  );
+}
+
 
 function ApprovalBadge({ status }: { status: string | null }) {
   const s = status || "pending";

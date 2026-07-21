@@ -88,6 +88,27 @@ serve(async (req) => {
 
     if (!productId) return jsonResp({ error: "Product ID required" }, 400);
 
+    if (action === "get") {
+      if (!needs("products.view") && !needs("products.approve") && !needs("products.manage")) {
+        return jsonResp({ error: "Missing permission" }, 403);
+      }
+      const { data: product, error } = await admin
+        .from("products").select("*").eq("id", productId).maybeSingle();
+      if (error) return jsonResp({ error: error.message }, 400);
+      if (!product) return jsonResp({ error: "Not found" }, 404);
+      const { data: images } = await admin
+        .from("product_images").select("image_url, is_primary, display_order")
+        .eq("product_id", productId).order("display_order", { ascending: true });
+      let seller: any = null;
+      if (product.seller_id) {
+        const { data: s } = await admin.from("sellers")
+          .select("shop_name, business_email, business_phone, status")
+          .eq("user_id", product.seller_id).maybeSingle();
+        seller = s;
+      }
+      return jsonResp({ success: true, product, images: images || [], seller });
+    }
+
     if (action === "approve") {
       if (!needs("products.approve")) return jsonResp({ error: "Missing permission" }, 403);
       const { data, error } = await admin
