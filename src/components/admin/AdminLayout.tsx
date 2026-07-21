@@ -59,6 +59,7 @@ const menuItems = [
   { icon: BarChart3, label: "Reports", href: "/admin/reports" },
   { icon: Shield, label: "Security", href: "/admin/security" },
   { icon: FileText, label: "CMS", href: "/admin/cms" },
+  { icon: Gift, label: "Home Promos", href: "/admin/home-promos" },
   { icon: MessageSquare, label: "Reviews", href: "/admin/reviews" },
   { icon: MessageSquare, label: "Seller Support", href: "/admin/seller-support" },
   { icon: Bell, label: "Push Notifications", href: "/admin/push-notifications" },
