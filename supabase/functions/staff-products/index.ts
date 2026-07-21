@@ -69,11 +69,21 @@ serve(async (req) => {
       }
       const { data, error } = await admin
         .from("products")
-        .select("id, name, slug, regular_price, discount_price, stock_quantity, status, approval_status, seller_id, is_featured, created_at, sellers(shop_name)")
+        .select("id, name, slug, regular_price, discount_price, stock_quantity, status, approval_status, seller_id, is_featured, created_at")
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) return jsonResp({ error: error.message }, 400);
-      return jsonResp({ success: true, products: data });
+      const sellerIds = Array.from(new Set((data || []).map((p: any) => p.seller_id).filter(Boolean)));
+      let sellerMap: Record<string, string> = {};
+      if (sellerIds.length) {
+        const { data: sellers } = await admin
+          .from("sellers")
+          .select("user_id, shop_name")
+          .in("user_id", sellerIds);
+        (sellers || []).forEach((s: any) => { sellerMap[s.user_id] = s.shop_name; });
+      }
+      const enriched = (data || []).map((p: any) => ({ ...p, sellers: p.seller_id ? { shop_name: sellerMap[p.seller_id] || null } : null }));
+      return jsonResp({ success: true, products: enriched });
     }
 
     if (!productId) return jsonResp({ error: "Product ID required" }, 400);
