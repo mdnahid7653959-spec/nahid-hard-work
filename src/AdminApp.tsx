@@ -34,6 +34,7 @@ const AdminCMS = lazy(() => import("./pages/admin/AdminCMS"));
 const AdminConsignments = lazy(() => import("./pages/admin/AdminConsignments"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
+const AdminStudio = lazy(() => import("./pages/admin/AdminStudio"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -94,6 +95,7 @@ const AdminApp = () => (
                 <Route path="/admin/consignments" element={<AdminProtectedRoute><AdminConsignments /></AdminProtectedRoute>} />
                 <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
                 <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
+                <Route path="/admin/studio" element={<AdminProtectedRoute><AdminStudio /></AdminProtectedRoute>} />
                 <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
                 
                 {/* Catch-all redirects to admin */}
