@@ -128,12 +128,27 @@ serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({}));
-    const { adminId, op, table } = body as {
+    const { adminId: bodyAdminId, op, table } = body as {
       adminId?: string; op?: string; table?: string;
     };
 
-    if (!(await verifyAdmin(supabase, adminId ?? ""))) {
-      return json({ error: "Unauthorized" }, 401);
+    // Prefer session-token auth (secure). Fall back to legacy body adminId only
+    // if no token is present, and require the body id match a real active admin.
+    const token = req.headers.get("x-admin-token");
+    let authedAdminId: string | null = null;
+    if (token) {
+      const s = await verifyAdminBySession(supabase, token);
+      if (!s.ok) return json({ error: "Unauthorized" }, 401);
+      authedAdminId = s.adminId!;
+      // If the caller also sent a body adminId, it must match the session.
+      if (bodyAdminId && bodyAdminId !== authedAdminId) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+    } else {
+      if (!(await verifyAdminLegacy(supabase, bodyAdminId ?? ""))) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+      authedAdminId = bodyAdminId ?? null;
     }
 
     if (!op || !ALLOWED_OPS.has(op)) return json({ error: "Invalid op" }, 400);
