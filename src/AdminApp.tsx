@@ -98,6 +98,7 @@ const AdminApp = () => (
                 <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
                 <Route path="/admin/studio" element={<AdminProtectedRoute><AdminStudio /></AdminProtectedRoute>} />
                 <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
+                <Route path="/admin/home-promos" element={<AdminProtectedRoute><AdminHomePromos /></AdminProtectedRoute>} />
                 
                 {/* Catch-all redirects to admin */}
                 <Route path="*" element={<Navigate to="/admin/login" replace />} />
