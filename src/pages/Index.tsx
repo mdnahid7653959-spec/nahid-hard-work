@@ -11,6 +11,7 @@ import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { ProductSection } from "@/components/home/ProductSection";
 import { PersonalizedFeed } from "@/components/home/PersonalizedFeed";
 import { Flame, Sparkles, TrendingUp, ThumbsUp, Clock } from "lucide-react";
+import MobileHome from "@/components/home/MobileHome";
 
 const CJTrendingProducts = lazy(() => import("@/components/home/CJTrendingProducts").then(m => ({ default: m.CJTrendingProducts })));
 const RecentlyViewedSection = lazy(() => import("@/components/home/RecentlyViewedSection"));
