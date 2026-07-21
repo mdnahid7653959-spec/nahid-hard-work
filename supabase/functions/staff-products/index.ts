@@ -97,8 +97,8 @@ serve(async (req) => {
       if (error) return jsonResp({ error: error.message }, 400);
       if (!product) return jsonResp({ error: "Not found" }, 404);
       const { data: images } = await admin
-        .from("product_images").select("image_url, is_primary, display_order")
-        .eq("product_id", productId).order("display_order", { ascending: true });
+        .from("product_images").select("image_url, is_primary, sort_order")
+        .eq("product_id", productId).order("sort_order", { ascending: true });
       let seller: any = null;
       if (product.seller_id) {
         const { data: s } = await admin.from("sellers")
