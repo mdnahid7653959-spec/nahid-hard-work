@@ -12,7 +12,7 @@ import { StaffProtectedRoute } from "@/components/staff/StaffProtectedRoute";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
-import { AdminGate, AdminSecretUnlock, ADMIN_SECRET_PATH } from "@/components/admin/AdminGate";
+import { AdminGate, AdminSecretUnlock, ADMIN_SECRET_ROUTE } from "@/components/admin/AdminGate";
 import { FacebookPixel } from "@/components/FacebookPixel";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { NativeAppProvider } from "@/components/NativeAppProvider";
@@ -220,7 +220,7 @@ const App = () => (
                           <Route path="/free-shipping" element={<Products />} />
                           
                           {/* Secret admin unlock URL — visiting this sets a session flag; all /admin/* routes 404 otherwise */}
-                          <Route path={ADMIN_SECRET_PATH} element={<AdminSecretUnlock />} />
+                          <Route path={ADMIN_SECRET_ROUTE} element={<AdminSecretUnlock />} />
 
                           {/* Admin Login (gated) */}
                           <Route path="/admin/login" element={<AdminGate><AdminLogin /></AdminGate>} />
