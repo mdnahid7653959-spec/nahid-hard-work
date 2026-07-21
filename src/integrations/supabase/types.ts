@@ -2143,6 +2143,107 @@ export type Database = {
           },
         ]
       }
+      seller_support_messages: {
+        Row: {
+          attachments: Json
+          content: string | null
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_id: string
+          sender_name: string | null
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json
+          content?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id: string
+          sender_name?: string | null
+          sender_type: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json
+          content?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id?: string
+          sender_name?: string | null
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "seller_support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_support_tickets: {
+        Row: {
+          assigned_staff_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          seller_id: string
+          seller_unread_count: number
+          staff_unread_count: number
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_staff_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          seller_id: string
+          seller_unread_count?: number
+          staff_unread_count?: number
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_staff_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          seller_id?: string
+          seller_unread_count?: number
+          staff_unread_count?: number
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_support_tickets_assigned_staff_id_fkey"
+            columns: ["assigned_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_support_tickets_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sellers: {
         Row: {
           approval_status: string | null

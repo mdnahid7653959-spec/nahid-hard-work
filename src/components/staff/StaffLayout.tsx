@@ -11,7 +11,7 @@ const NAV: NavItem[] = [
   { to: "/staff", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/staff/tasks", icon: ListChecks, label: "My Tasks", requires: "tasks.view" },
   { to: "/staff/products", icon: Package, label: "Products", requires: "products.view" },
-  { to: "/staff/messages", icon: Mail, label: "Messages", requires: "messages.view" },
+  { to: "/staff/messages", icon: Mail, label: "Seller Support", requires: "messages.view" },
   { to: "/staff/notifications", icon: Bell, label: "Notifications" },
   { to: "/staff/profile", icon: User, label: "Profile" },
 ];
