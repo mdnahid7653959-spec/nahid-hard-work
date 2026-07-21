@@ -143,24 +143,32 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
       const uploads: SupportAttachment[] = [];
       for (const f of pendingFiles) uploads.push(await uploadFile(f, ticketId));
       const preview = text.trim() || (uploads[0]?.kind === "image" ? "📷 Photo" : uploads[0]?.kind === "audio" ? "🎤 Voice message" : uploads[0] ? `📎 ${uploads[0].name}` : "");
-      const { error } = await supabase.from("seller_support_messages").insert({
+      const isAdmin = senderType === "admin";
+      const msgPayload = {
         ticket_id: ticketId,
         sender_type: senderType,
         sender_id: senderId,
         sender_name: senderName,
         content: text.trim() || null,
         attachments: uploads as any,
-      });
-      if (error) throw error;
-      const counterPatch = senderType === "seller"
-        ? { staff_unread_count: (undefined as any) }
-        : { seller_unread_count: (undefined as any) };
+      };
+      if (isAdmin) {
+        const { error } = await adminDb.insert("seller_support_messages", msgPayload);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("seller_support_messages").insert(msgPayload);
+        if (error) throw error;
+      }
       // fetch current and increment
       const { data: t } = await supabase.from("seller_support_tickets").select("staff_unread_count,seller_unread_count").eq("id", ticketId).single();
       const updates: any = { last_message_at: new Date().toISOString(), last_message_preview: preview.slice(0, 120), status: "open" };
       if (senderType === "seller") updates.staff_unread_count = (t?.staff_unread_count || 0) + 1;
       else updates.seller_unread_count = (t?.seller_unread_count || 0) + 1;
-      await supabase.from("seller_support_tickets").update(updates).eq("id", ticketId);
+      if (isAdmin) {
+        await adminDb.update("seller_support_tickets", updates, { id: ticketId });
+      } else {
+        await supabase.from("seller_support_tickets").update(updates).eq("id", ticketId);
+      }
       setText("");
       setPendingFiles([]);
     } catch (e: any) {
@@ -169,6 +177,7 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
       setSending(false);
     }
   };
+
 
   const startRecording = async () => {
     try {
