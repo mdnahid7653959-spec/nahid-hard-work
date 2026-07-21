@@ -97,17 +97,28 @@ serve(async (req) => {
       if (error) return jsonResp({ error: error.message }, 400);
       if (!product) return jsonResp({ error: "Not found" }, 404);
       const { data: images } = await admin
-        .from("product_images").select("image_url, is_primary, sort_order")
+        .from("product_images").select("id, image_url, is_primary, sort_order")
         .eq("product_id", productId).order("sort_order", { ascending: true });
       let seller: any = null;
       if (product.seller_id) {
         const { data: s } = await admin.from("sellers")
-          .select("shop_name, business_email, business_phone, status")
+          .select("shop_name, shop_logo, business_email, business_phone, status, is_verified, rating_average, rating_count")
           .eq("user_id", product.seller_id).maybeSingle();
         seller = s;
       }
-      return jsonResp({ success: true, product, images: images || [], seller });
+      let category: any = null;
+      if (product.category_id) {
+        const { data: c } = await admin.from("categories").select("name, slug").eq("id", product.category_id).maybeSingle();
+        category = c;
+      }
+      let brand: any = null;
+      if (product.brand_id) {
+        const { data: b } = await admin.from("brands").select("name, logo_url").eq("id", product.brand_id).maybeSingle();
+        brand = b;
+      }
+      return jsonResp({ success: true, product, images: images || [], seller, category, brand });
     }
+
 
     if (action === "approve") {
       if (!needs("products.approve")) return jsonResp({ error: "Missing permission" }, 403);
