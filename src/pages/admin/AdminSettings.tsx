@@ -216,6 +216,10 @@ export default function AdminSettings() {
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
+            <TabsTrigger value="support" className="gap-2">
+              <LifeBuoy className="h-4 w-4" />
+              Support Auto-Reply
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="store">
