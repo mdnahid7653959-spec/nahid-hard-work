@@ -26,18 +26,30 @@ export function useSiteConfig<T = Record<string, unknown>>(key: string, fallback
   const { data, isLoading } = useQuery({
     queryKey: ["site-config", key],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("site_config")
-        .select("value")
-        .eq("key", key)
-        .maybeSingle();
-      if (error) throw error;
-      const value = (data?.value ?? null) as T | null;
-      if (value !== null) writeCache(key, value);
-      return value;
+      try {
+        const { data, error } = await (supabase as any)
+          .from("site_config")
+          .select("value")
+          .eq("key", key)
+          .maybeSingle();
+          
+        if (error) {
+          console.warn(`[useSiteConfig] Error for key "${key}", using fallback:`, error.message);
+          return fallback;
+        }
+        
+        const value = (data?.value ?? null) as T | null;
+        if (value !== null) {
+          writeCache(key, value);
+          return value;
+        }
+      } catch (err) {
+        console.warn(`[useSiteConfig] Exception for key "${key}", using fallback:`, err);
+      }
+      return fallback;
     },
     staleTime: 5 * 60 * 1000,
-    initialData: cached ?? undefined,
+    initialData: cached ?? fallback,
   });
 
   return { config: (data as T) ?? cached ?? fallback, isLoading: isLoading && !cached };
