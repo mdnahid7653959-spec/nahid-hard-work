@@ -22,10 +22,14 @@ import {
   Shield,
   FileText,
   Store,
+  CreditCard,
   MessageSquare,
   Bell,
   Download,
-  Palette
+  Palette,
+  RotateCcw,
+  Wallet,
+  Banknote
 } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { Button } from "@/components/ui/button";
@@ -45,6 +49,10 @@ const menuItems = [
   { icon: Tag, label: "Brands", href: "/admin/brands" },
   { icon: Warehouse, label: "Inventory", href: "/admin/inventory" },
   { icon: ShoppingCart, label: "Orders", href: "/admin/orders" },
+  { icon: RotateCcw, label: "Returns & Refunds", href: "/admin/returns" },
+  { icon: Wallet, label: "Wallets", href: "/admin/wallet" },
+  { icon: Banknote, label: "Finance & Payouts", href: "/admin/finance" },
+  { icon: CreditCard, label: "Payments", href: "/admin/payments" },
   { icon: Users, label: "Customers", href: "/admin/users" },
   { icon: Store, label: "Sellers", href: "/admin/sellers" },
   { icon: Users, label: "Staff", href: "/admin/staff" },

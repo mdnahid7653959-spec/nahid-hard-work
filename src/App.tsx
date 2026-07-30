@@ -86,6 +86,7 @@ const ProductForm = lazy(() => import("./pages/admin/ProductForm"));
 const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
@@ -110,6 +111,9 @@ const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
 const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport"));
 const AdminStudio = lazy(() => import("./pages/admin/AdminStudio"));
+const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
+const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
+const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
 
 // Staff Portal
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
@@ -243,6 +247,7 @@ const App = () => (
                           <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
                           <Route path="/admin/brands" element={<AdminProtectedRoute><AdminBrands /></AdminProtectedRoute>} />
                           <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
+                          <Route path="/admin/payments" element={<AdminProtectedRoute><AdminPayments /></AdminProtectedRoute>} />
                           <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
                           <Route path="/admin/coupons" element={<AdminProtectedRoute><AdminCoupons /></AdminProtectedRoute>} />
                           <Route path="/admin/reviews" element={<AdminProtectedRoute><AdminReviews /></AdminProtectedRoute>} />
@@ -267,6 +272,9 @@ const App = () => (
                           <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
                           <Route path="/admin/seller-support" element={<AdminProtectedRoute><AdminSellerSupport /></AdminProtectedRoute>} />
                           <Route path="/admin/studio" element={<AdminProtectedRoute><AdminStudio /></AdminProtectedRoute>} />
+                          <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
+                          <Route path="/admin/wallet" element={<AdminProtectedRoute><AdminWallet /></AdminProtectedRoute>} />
+                          <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
 
                           {/* Staff Portal */}
                           <Route path="/staff/login" element={<StaffLogin />} />

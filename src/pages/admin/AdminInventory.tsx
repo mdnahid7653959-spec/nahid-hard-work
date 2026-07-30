@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { adminDb } from "@/lib/adminDb";
-import { Package, AlertTriangle, TrendingDown, Bell, Settings, Search, RefreshCw } from "lucide-react";
+import { Package, AlertTriangle, TrendingDown, Bell, Settings, Search, RefreshCw, Warehouse, Layers, ArrowUpRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Product {
@@ -31,9 +32,25 @@ interface InventoryAlert {
   product?: Product;
 }
 
+interface WarehouseStock {
+  id: string;
+  warehouse_id: string;
+  product_id: string;
+  quantity: number;
+  reserved_quantity: number;
+  rack_location: string | null;
+}
+
+interface WarehouseInfo {
+  id: string;
+  name: string;
+}
+
 export default function AdminInventory() {
   const [products, setProducts] = useState<Product[]>([]);
   const [alerts, setAlerts] = useState<InventoryAlert[]>([]);
+  const [warehouseStocks, setWarehouseStocks] = useState<WarehouseStock[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -74,18 +91,24 @@ export default function AdminInventory() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [productsRes, alertsRes] = await Promise.all([
+      const [productsRes, alertsRes, stocksRes, warehousesRes] = await Promise.all([
         adminDb.select<Product>("products", { columns: "id, name, sku, stock_quantity, status", orderBy: { col: "stock_quantity", ascending: true } }),
         adminDb.select<InventoryAlert>("inventory_alerts"),
+        adminDb.select<WarehouseStock>("warehouse_stock"),
+        adminDb.select<WarehouseInfo>("warehouses", { columns: "id, name" }),
       ]);
       if (productsRes.data) setProducts(productsRes.data);
       if (alertsRes.data) setAlerts(alertsRes.data);
+      if (stocksRes.data) setWarehouseStocks(stocksRes.data);
+      if (warehousesRes.data) setWarehouses(warehousesRes.data);
     } catch (error) {
       console.error("Error fetching inventory:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  const warehouseNameMap = new Map(warehouses.map((w) => [w.id, w.name]));
 
   const getStockStatus = (quantity: number) => {
     if (quantity === 0) return { label: "Out of Stock", variant: "destructive" as const };
@@ -142,7 +165,6 @@ export default function AdminInventory() {
 
   const createAlert = async () => {
     if (!selectedProduct) return;
-    // Upsert-style: if an alert already exists for this product, update it instead of creating a duplicate
     const existing = alerts.find(a => a.product_id === selectedProduct.id);
     if (existing) {
       const { error } = await adminDb.update("inventory_alerts", {
@@ -180,7 +202,6 @@ export default function AdminInventory() {
     fetchData();
   };
 
-
   if (loading) {
     return (
       <AdminLayout title="Inventory Management">
@@ -197,6 +218,24 @@ export default function AdminInventory() {
   return (
     <AdminLayout title="Inventory Management">
       <div className="space-y-6">
+        {/* Header link to Warehouses */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Package className="h-6 w-6 text-primary" />
+              Stock & Inventory Control
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Monitor catalog stock levels, set alerts, and track multi-warehouse allocations.
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/admin/warehouses">
+              <Warehouse className="h-4 w-4 mr-2" /> Multi-Warehouse Manager <ArrowUpRight className="h-4 w-4 ml-1" />
+            </Link>
+          </Button>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
@@ -286,8 +325,8 @@ export default function AdminInventory() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between gap-4">
               <div>
-                <CardTitle>Stock Tracking</CardTitle>
-                <CardDescription>Monitor and manage product inventory</CardDescription>
+                <CardTitle>Stock Tracking & Multi-Warehouse Breakdown</CardTitle>
+                <CardDescription>Monitor product inventory and warehouse distribution</CardDescription>
               </div>
               <div className="flex gap-2">
                 <div className="relative">
@@ -322,7 +361,8 @@ export default function AdminInventory() {
                 <TableRow>
                   <TableHead>Product</TableHead>
                   <TableHead>SKU</TableHead>
-                  <TableHead>Stock</TableHead>
+                  <TableHead>Total Stock</TableHead>
+                  <TableHead>Warehouse Allocations</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -331,6 +371,8 @@ export default function AdminInventory() {
                 {filteredProducts.map((product) => {
                   const status = getStockStatus(product.stock_quantity);
                   const hasAlert = alerts.some(a => a.product_id === product.id && a.is_active);
+                  const productWhStocks = warehouseStocks.filter((s) => s.product_id === product.id);
+
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
@@ -348,7 +390,20 @@ export default function AdminInventory() {
                           className="w-20"
                         />
                       </TableCell>
-
+                      <TableCell>
+                        {productWhStocks.length === 0 ? (
+                          <span className="text-xs text-muted-foreground italic">Unallocated</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {productWhStocks.map((stk) => (
+                              <Badge key={stk.id} variant="outline" className="text-xs">
+                                {warehouseNameMap.get(stk.warehouse_id) || "WH"}: {stk.quantity}
+                                {stk.rack_location ? ` (${stk.rack_location})` : ""}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>

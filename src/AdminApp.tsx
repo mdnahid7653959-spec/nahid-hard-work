@@ -16,6 +16,7 @@ const ProductForm = lazy(() => import("./pages/admin/ProductForm"));
 const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
@@ -36,6 +37,9 @@ const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotific
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 const AdminStudio = lazy(() => import("./pages/admin/AdminStudio"));
 const AdminHomePromos = lazy(() => import("./pages/admin/AdminHomePromos"));
+const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
+const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
+const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -79,6 +83,7 @@ const AdminApp = () => (
                 <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
                 <Route path="/admin/brands" element={<AdminProtectedRoute><AdminBrands /></AdminProtectedRoute>} />
                 <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
+                <Route path="/admin/payments" element={<AdminProtectedRoute><AdminPayments /></AdminProtectedRoute>} />
                 <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
                 <Route path="/admin/coupons" element={<AdminProtectedRoute><AdminCoupons /></AdminProtectedRoute>} />
                 <Route path="/admin/reviews" element={<AdminProtectedRoute><AdminReviews /></AdminProtectedRoute>} />
@@ -99,6 +104,9 @@ const AdminApp = () => (
                 <Route path="/admin/studio" element={<AdminProtectedRoute><AdminStudio /></AdminProtectedRoute>} />
                 <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
                 <Route path="/admin/home-promos" element={<AdminProtectedRoute><AdminHomePromos /></AdminProtectedRoute>} />
+                <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
+                <Route path="/admin/wallet" element={<AdminProtectedRoute><AdminWallet /></AdminProtectedRoute>} />
+                <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
                 
                 {/* Catch-all redirects to admin */}
                 <Route path="*" element={<Navigate to="/admin/login" replace />} />

@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Paperclip, Send, Mic, Square, Loader2, MessageSquare, FileText, Image as ImageIcon, Play, Pause, X } from "lucide-react";
+import { Paperclip, Send, Mic, Square, Loader2, MessageSquare, FileText, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
 
 export interface SupportAttachment {
   url: string;
@@ -23,7 +22,7 @@ export interface SupportAttachment {
 export interface SupportMessage {
   id: string;
   ticket_id: string;
-  sender_type: "seller" | "staff" | "admin";
+  sender_type: "seller" | "staff" | "admin" | "customer" | string;
   sender_id: string;
   sender_name: string | null;
   content: string | null;
@@ -84,9 +83,8 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [recording, setRecording] = useState(false);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const [ticketSource, setTicketSource] = useState<"support_tickets" | "seller_support_tickets">("seller_support_tickets");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -94,198 +92,219 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
     let cancel = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("seller_support_messages")
-        .select("*")
-        .eq("ticket_id", ticketId)
-        .order("created_at", { ascending: true });
-      if (!cancel) {
-        setMessages((data || []) as any);
-        setLoading(false);
+
+      // Check if ticketId exists in support_tickets table
+      const { data: stRow } = await supabase.from("support_tickets").select("id, subject").eq("id", ticketId).maybeSingle();
+
+      if (stRow) {
+        setTicketSource("support_tickets");
+        const { data: tmRows } = await supabase
+          .from("ticket_messages")
+          .select("*")
+          .eq("ticket_id", ticketId)
+          .order("created_at", { ascending: true });
+
+        if (!cancel) {
+          const formatted: SupportMessage[] = (tmRows || []).map((m) => {
+            const rawAtts: string[] = m.attachments || [];
+            const atts: SupportAttachment[] = rawAtts.map((url) => ({
+              url,
+              path: url,
+              type: "application/octet-stream",
+              kind: url.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? "image" : url.match(/\.(mp3|wav|ogg)$/i) ? "audio" : "file",
+              name: url.split("/").pop() || "Attachment",
+              size: 0,
+            }));
+
+            return {
+              id: m.id,
+              ticket_id: m.ticket_id,
+              sender_type: (m.sender_type as any) || "customer",
+              sender_id: m.sender_id || "",
+              sender_name: m.sender_type === "admin" ? "Admin" : m.sender_type === "staff" ? "Support Agent" : "User / Seller",
+              content: m.message,
+              attachments: atts,
+              created_at: m.created_at,
+              read_at: m.created_at,
+            };
+          });
+
+          setMessages(formatted);
+          setLoading(false);
+        }
+      } else {
+        setTicketSource("seller_support_tickets");
+        const { data } = await supabase
+          .from("seller_support_messages")
+          .select("*")
+          .eq("ticket_id", ticketId)
+          .order("created_at", { ascending: true });
+
+        if (!cancel) {
+          setMessages((data || []) as any);
+          setLoading(false);
+        }
       }
     })();
+
     return () => { cancel = true; };
   }, [ticketId]);
 
+  // Realtime subscription
   useEffect(() => {
+    const tableToListen = ticketSource === "support_tickets" ? "ticket_messages" : "seller_support_messages";
+
     const channel = supabase
-      .channel(`support-${ticketId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "seller_support_messages", filter: `ticket_id=eq.${ticketId}` }, (payload) => {
-        setMessages((m) => (m.some((x) => x.id === (payload.new as any).id) ? m : [...m, payload.new as any]));
+      .channel(`support-chat-${ticketId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: tableToListen, filter: `ticket_id=eq.${ticketId}` }, (payload: any) => {
+        const raw = payload.new;
+        if (ticketSource === "support_tickets") {
+          const formattedMsg: SupportMessage = {
+            id: raw.id,
+            ticket_id: raw.ticket_id,
+            sender_type: raw.sender_type || "customer",
+            sender_id: raw.sender_id || "",
+            sender_name: raw.sender_type === "admin" ? "Admin" : raw.sender_type === "staff" ? "Support Agent" : "User / Seller",
+            content: raw.message,
+            attachments: (raw.attachments || []).map((url: string) => ({
+              url,
+              path: url,
+              type: "application/octet-stream",
+              kind: url.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? "image" : "file",
+              name: url.split("/").pop() || "Attachment",
+              size: 0,
+            })),
+            created_at: raw.created_at,
+            read_at: raw.created_at,
+          };
+          setMessages((m) => (m.some((x) => x.id === formattedMsg.id) ? m : [...m, formattedMsg]));
+        } else {
+          setMessages((m) => (m.some((x) => x.id === raw.id) ? m : [...m, raw]));
+        }
       })
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
-  }, [ticketId]);
+  }, [ticketId, ticketSource]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Mark opposite messages as read
-  useEffect(() => {
-    if (!messages.length) return;
-    const unread = messages.filter((m) => !m.read_at && m.sender_type !== senderType).map((m) => m.id);
-    if (unread.length) {
-      const patch = senderType === "seller"
-        ? { seller_unread_count: 0 }
-        : { staff_unread_count: 0 };
-      if (senderType === "admin") {
-        adminDb.update("seller_support_messages", { read_at: new Date().toISOString() }, { filters: [{ col: "id", op: "in", value: unread }] });
-        adminDb.update("seller_support_tickets", patch, { id: ticketId });
-      } else {
-        supabase.from("seller_support_messages").update({ read_at: new Date().toISOString() }).in("id", unread).then();
-        supabase.from("seller_support_tickets").update(patch).eq("id", ticketId).then();
-      }
-    }
-  }, [messages, senderType, ticketId]);
-
-
   const send = async () => {
     if (readOnly) return;
     if (!text.trim() && pendingFiles.length === 0) return;
     setSending(true);
+
     try {
       const uploads: SupportAttachment[] = [];
       for (const f of pendingFiles) uploads.push(await uploadFile(f, ticketId));
-      const preview = text.trim() || (uploads[0]?.kind === "image" ? "📷 Photo" : uploads[0]?.kind === "audio" ? "🎤 Voice message" : uploads[0] ? `📎 ${uploads[0].name}` : "");
-      const isAdmin = senderType === "admin";
-      const msgPayload = {
-        ticket_id: ticketId,
-        sender_type: senderType,
-        sender_id: senderId,
-        sender_name: senderName,
-        content: text.trim() || null,
-        attachments: uploads as any,
-      };
-      if (isAdmin) {
-        const { error } = await adminDb.insert("seller_support_messages", msgPayload);
-        if (error) throw error;
+      const preview = text.trim() || (uploads[0]?.kind === "image" ? "📷 Photo" : uploads[0] ? `📎 ${uploads[0].name}` : "");
+
+      if (ticketSource === "support_tickets") {
+        const msgPayload = {
+          ticket_id: ticketId,
+          sender_id: senderId,
+          sender_type: senderType,
+          message: text.trim() || preview,
+          attachments: uploads.map((u) => u.url),
+          is_internal: false,
+        };
+
+        const { error: insertErr } = await supabase.from("ticket_messages").insert(msgPayload);
+        if (insertErr) throw insertErr;
+
+        await supabase.from("support_tickets").update({ status: "open", updated_at: new Date().toISOString() }).eq("id", ticketId);
       } else {
-        const { error } = await supabase.from("seller_support_messages").insert(msgPayload);
-        if (error) throw error;
+        const isAdmin = senderType === "admin";
+        const msgPayload = {
+          ticket_id: ticketId,
+          sender_type: senderType,
+          sender_id: senderId,
+          sender_name: senderName,
+          content: text.trim() || null,
+          attachments: uploads as any,
+        };
+
+        if (isAdmin) {
+          const { error } = await adminDb.insert("seller_support_messages", msgPayload);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("seller_support_messages").insert(msgPayload);
+          if (error) throw error;
+        }
+
+        const { data: t } = await supabase.from("seller_support_tickets").select("staff_unread_count,seller_unread_count").eq("id", ticketId).single();
+        const updates: any = { last_message_at: new Date().toISOString(), last_message_preview: preview.slice(0, 120), status: "open" };
+        if (senderType === "seller") updates.staff_unread_count = (t?.staff_unread_count || 0) + 1;
+        else updates.seller_unread_count = (t?.seller_unread_count || 0) + 1;
+
+        if (isAdmin) {
+          await adminDb.update("seller_support_tickets", updates, { id: ticketId });
+        } else {
+          await supabase.from("seller_support_tickets").update(updates).eq("id", ticketId);
+        }
       }
-      // fetch current and increment
-      const { data: t } = await supabase.from("seller_support_tickets").select("staff_unread_count,seller_unread_count").eq("id", ticketId).single();
-      const updates: any = { last_message_at: new Date().toISOString(), last_message_preview: preview.slice(0, 120), status: "open" };
-      if (senderType === "seller") updates.staff_unread_count = (t?.staff_unread_count || 0) + 1;
-      else updates.seller_unread_count = (t?.seller_unread_count || 0) + 1;
-      if (isAdmin) {
-        await adminDb.update("seller_support_tickets", updates, { id: ticketId });
-      } else {
-        await supabase.from("seller_support_tickets").update(updates).eq("id", ticketId);
-      }
+
       setText("");
       setPendingFiles([]);
-
-      // Auto-reply: if seller sends and no recent staff/admin response, send a busy notice
-      if (senderType === "seller") {
-        try {
-          const { data: cfgRow } = await supabase
-            .from("site_settings")
-            .select("value")
-            .eq("key", "support_auto_reply")
-            .maybeSingle();
-          const cfg: any = cfgRow?.value || {};
-          const enabled = cfg.enabled !== false;
-          const timeoutMin = Number(cfg.timeout_minutes) > 0 ? Number(cfg.timeout_minutes) : 10;
-          const messageBn = (cfg.message_bn || "").trim();
-          const messageEn = (cfg.message_en || "").trim();
-          const body = [messageBn, messageEn].filter(Boolean).join("\n\n");
-          if (enabled && body) {
-            const lastStaff = [...messages].reverse().find((m) => m.sender_type === "staff" || m.sender_type === "admin");
-            const cutoff = Date.now() - timeoutMin * 60 * 1000;
-            const needsAutoReply = !lastStaff || new Date(lastStaff.created_at).getTime() < cutoff;
-            if (needsAutoReply) {
-              setTimeout(async () => {
-                try {
-                  await adminDb.insert("seller_support_messages", {
-                    ticket_id: ticketId,
-                    sender_type: "staff",
-                    sender_id: "00000000-0000-0000-0000-000000000000",
-                    sender_name: "Darzo Support (Auto)",
-                    content: body,
-                    attachments: [],
-                  });
-                  await adminDb.update("seller_support_tickets", {
-                    last_message_at: new Date().toISOString(),
-                    last_message_preview: "Auto-reply: our team will get back to you shortly",
-                  }, { id: ticketId });
-                } catch {}
-              }, 1200);
-            }
-          }
-        } catch {}
-      }
-
-    } catch (e: any) {
-      toast.error(e.message || "Failed to send");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to send message");
     } finally {
       setSending(false);
     }
   };
 
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
-      chunksRef.current = [];
-      rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
-      rec.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
-        setPendingFiles((p) => [...p, file]);
-        stream.getTracks().forEach((t) => t.stop());
-      };
-      rec.start();
-      recorderRef.current = rec;
-      setRecording(true);
-    } catch {
-      toast.error("Microphone access denied");
-    }
-  };
-  const stopRecording = () => {
-    recorderRef.current?.stop();
-    setRecording(false);
-  };
-
   return (
-    <div className="flex flex-col h-full bg-card">
-      <div className="p-3 border-b flex items-center gap-3">
-        {onBack && (
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>
-            <X className="h-5 w-5" />
-          </Button>
-        )}
-        <Avatar className="h-9 w-9"><AvatarFallback className="bg-primary/10 text-primary">{(headerTitle || "S")[0].toUpperCase()}</AvatarFallback></Avatar>
-        <div className="min-w-0">
-          <p className="font-medium text-sm truncate">{headerTitle || "Support"}</p>
-          {headerSubtitle && <p className="text-xs text-muted-foreground truncate">{headerSubtitle}</p>}
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="p-3 border-b flex items-center justify-between bg-card">
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <div>
+            <h3 className="font-semibold text-sm">{headerTitle || "Support Conversation"}</h3>
+            <p className="text-xs text-muted-foreground">{headerSubtitle || `Ticket ID: #${ticketId.slice(0, 8)}`}</p>
+          </div>
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4 bg-muted/20">
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-4">
         {loading ? (
-          <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center p-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 p-8 text-center">
-            <MessageSquare className="h-10 w-10 text-muted-foreground/40" />
-            <p className="text-muted-foreground text-sm">Start the conversation</p>
-            <p className="text-muted-foreground text-xs">Send text, images, voice notes, or documents.</p>
+          <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+            <MessageSquare className="h-8 w-8 mb-2 opacity-40" />
+            <p className="text-xs">No messages yet. Send a reply to start the conversation.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {messages.map((m) => {
-              const isMine = m.sender_type === senderType;
+              const isMe = m.sender_type === senderType || (senderType === "admin" && (m.sender_type === "staff" || m.sender_type === "admin"));
               return (
-                <div key={m.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
-                  <div className={cn("max-w-[80%] rounded-2xl px-3 py-2 space-y-1.5", isMine ? "bg-primary text-primary-foreground rounded-br-md" : "bg-card border rounded-bl-md")}>
-                    {!isMine && m.sender_name && <p className="text-[10px] font-semibold opacity-70">{m.sender_name} · {m.sender_type}</p>}
-                    {(m.attachments || []).map((a, i) => (<div key={i}><AttachmentView att={a} /></div>))}
-                    {m.content && <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>}
-                    <p className={cn("text-[10px]", isMine ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                <div key={m.id} className={cn("flex flex-col max-w-[80%]", isMe ? "ml-auto items-end" : "mr-auto items-start")}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      {m.sender_name || (isMe ? "You" : m.sender_type.toUpperCase())}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
                       {format(new Date(m.created_at), "h:mm a")}
-                    </p>
+                    </span>
+                  </div>
+                  <div className={cn("rounded-lg p-3 text-xs shadow-sm", isMe ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")}>
+                    {m.content && <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>}
+                    {m.attachments && m.attachments.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {m.attachments.map((att, i) => (
+                          <AttachmentView key={i} att={att} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -295,55 +314,42 @@ export function SupportChatPanel({ ticketId, senderType, senderId, senderName, r
         )}
       </ScrollArea>
 
+      {/* Input */}
       {!readOnly && (
-        <div className="border-t p-2 space-y-2 bg-card">
+        <div className="p-3 border-t bg-card space-y-2">
           {pendingFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-1">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
               {pendingFiles.map((f, i) => (
-                <div key={i} className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs">
-                  {f.type.startsWith("image/") ? <ImageIcon className="h-3 w-3" /> : f.type.startsWith("audio/") ? <Mic className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
-                  <span className="max-w-[120px] truncate">{f.name}</span>
-                  <button onClick={() => setPendingFiles((p) => p.filter((_, j) => j !== i))}><X className="h-3 w-3" /></button>
-                </div>
+                <span key={i} className="bg-muted px-2 py-1 rounded text-[11px] font-mono">
+                  📎 {f.name}
+                </span>
               ))}
             </div>
           )}
-          <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
               className="hidden"
               onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                setPendingFiles((p) => [...p, ...files]);
-                if (fileInputRef.current) fileInputRef.current.value = "";
+                if (e.target.files?.length) setPendingFiles(Array.from(e.target.files));
               }}
             />
-            <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={sending}>
-              <Paperclip className="h-5 w-5" />
-            </Button>
-            <Button
-              type="button"
-              variant={recording ? "destructive" : "ghost"}
-              size="icon"
-              onClick={recording ? stopRecording : startRecording}
-              disabled={sending}
-            >
-              {recording ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} className="h-9 w-9 shrink-0">
+              <Paperclip className="h-4 w-4" />
             </Button>
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={recording ? "Recording…" : "Type a message"}
-              className="flex-1"
-              disabled={sending}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) send(); }}
+              placeholder="Type your response..."
+              className="h-9 text-xs flex-1"
             />
-            <Button type="submit" size="icon" disabled={sending || (!text.trim() && pendingFiles.length === 0)}>
+            <Button onClick={send} disabled={sending || (!text.trim() && pendingFiles.length === 0)} className="h-9 px-3">
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
-          </form>
+          </div>
         </div>
       )}
     </div>

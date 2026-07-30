@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +56,12 @@ import {
   Package,
   ShoppingCart,
   DollarSign,
-  ExternalLink,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
+  Plus,
+  AlertCircle,
+  FileText,
 } from "lucide-react";
 
 type SellerStatus = "pending" | "approved" | "rejected" | "suspended" | "banned";
@@ -71,6 +77,10 @@ interface Seller {
   contact_phone: string;
   contact_email: string;
   status: SellerStatus;
+  kyc_status: "pending_review" | "approved" | "rejected" | null;
+  kyc_rejected_reason: string | null;
+  kyc_verified_at: string | null;
+  kyc_verified_by: string | null;
   rejection_reason: string | null;
   warning_count: number;
   rating_average: number;
@@ -96,12 +106,51 @@ interface Seller {
   mobile_banking_number: string | null;
 }
 
+interface SellerWarning {
+  id: string;
+  seller_id: string;
+  issued_by: string | null;
+  reason: string;
+  severity: string;
+  status: string;
+  created_at: string;
+}
+
 const statusConfig: Record<SellerStatus, { label: string; color: string; icon: any }> = {
   pending: { label: "Pending", color: "bg-yellow-500/10 text-yellow-600", icon: AlertTriangle },
   approved: { label: "Approved", color: "bg-green-500/10 text-green-600", icon: CheckCircle },
   rejected: { label: "Rejected", color: "bg-red-500/10 text-red-600", icon: XCircle },
   suspended: { label: "Suspended", color: "bg-orange-500/10 text-orange-600", icon: AlertTriangle },
   banned: { label: "Banned", color: "bg-red-500/10 text-red-600", icon: Ban },
+};
+
+const renderKycBadge = (status: string | null) => {
+  switch (status) {
+    case "approved":
+      return (
+        <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 flex items-center gap-1 w-fit">
+          <ShieldCheck className="h-3 w-3" /> KYC Verified
+        </Badge>
+      );
+    case "rejected":
+      return (
+        <Badge className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 flex items-center gap-1 w-fit">
+          <ShieldX className="h-3 w-3" /> KYC Rejected
+        </Badge>
+      );
+    case "pending_review":
+      return (
+        <Badge className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 flex items-center gap-1 w-fit">
+          <ShieldAlert className="h-3 w-3" /> KYC Pending
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="text-muted-foreground flex items-center gap-1 w-fit">
+          <ShieldAlert className="h-3 w-3" /> Unsubmitted
+        </Badge>
+      );
+  }
 };
 
 export default function AdminSellers() {
@@ -111,19 +160,29 @@ export default function AdminSellers() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [kycFilter, setKycFilter] = useState<string>("all");
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [actionType, setActionType] = useState<"approve" | "reject" | "suspend" | "ban" | "unsuspend">("approve");
+  const [actionType, setActionType] = useState<
+    "approve" | "reject" | "suspend" | "ban" | "unsuspend" | "approve_kyc" | "reject_kyc"
+  >("approve");
   const [actionReason, setActionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
+
+  // Seller Warnings state
+  const [warnings, setWarnings] = useState<SellerWarning[]>([]);
+  const [warningsLoading, setWarningsLoading] = useState(false);
+  const [issueWarningDialogOpen, setIssueWarningDialogOpen] = useState(false);
+  const [warningReason, setWarningReason] = useState("");
+  const [warningSeverity, setWarningSeverity] = useState<string>("medium");
+  const [warningLoading, setWarningLoading] = useState(false);
 
   // Resolve stored image reference (storage path OR full URL) to a viewable URL.
   const resolveImage = useCallback(async (ref: string | null | undefined) => {
     if (!ref) return null;
     if (/^https?:\/\//i.test(ref)) return ref;
-    // Determine bucket dynamically based on path prefix
     const bucketName = ref.includes("seller-documents") ? "seller-documents" : "product-media";
     const path = ref.replace(new RegExp(`^${bucketName}\/`), "").replace(/^product-media\//, "");
     const { data, error } = await supabase.storage
@@ -156,10 +215,36 @@ export default function AdminSellers() {
     })();
   }, [selectedSeller, resolveImage]);
 
+  const fetchSellerWarnings = useCallback(async (sellerId: string) => {
+    setWarningsLoading(true);
+    try {
+      const { data, error } = await adminDb.select<SellerWarning>("seller_warnings", {
+        filters: [{ col: "seller_id", value: sellerId }],
+        orderBy: { col: "created_at", ascending: false },
+      });
+      if (!error && data) {
+        setWarnings(data);
+      } else {
+        setWarnings([]);
+      }
+    } catch (err) {
+      console.error("Error fetching seller warnings:", err);
+      setWarnings([]);
+    } finally {
+      setWarningsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedSeller?.id) {
+      fetchSellerWarnings(selectedSeller.id);
+    } else {
+      setWarnings([]);
+    }
+  }, [selectedSeller, fetchSellerWarnings]);
 
   const fetchSellers = useCallback(async () => {
     try {
-      // Get admin session token from localStorage (must match AdminAuthContext key)
       const adminSession = localStorage.getItem("megamart_admin_session");
       const sessionToken = adminSession ? JSON.parse(adminSession).token : null;
 
@@ -169,7 +254,6 @@ export default function AdminSellers() {
         return;
       }
 
-      // Use edge function to bypass RLS
       const { data, error } = await supabase.functions.invoke("admin-sellers", {
         body: { action: "list", sessionToken },
       });
@@ -213,7 +297,6 @@ export default function AdminSellers() {
     setActionLoading(true);
 
     try {
-      // Get admin session token (must match AdminAuthContext key)
       const adminSession = localStorage.getItem("megamart_admin_session");
       const sessionToken = adminSession ? JSON.parse(adminSession).token : null;
 
@@ -221,8 +304,56 @@ export default function AdminSellers() {
         throw new Error("No admin session found");
       }
 
+      // Handle dedicated KYC actions
+      if (actionType === "approve_kyc") {
+        const now = new Date().toISOString();
+        const { error } = await adminDb.update(
+          "sellers",
+          {
+            kyc_status: "approved",
+            kyc_verified_at: now,
+            kyc_verified_by: admin.id,
+            kyc_rejected_reason: null,
+            status: selectedSeller.status === "pending" ? "approved" : selectedSeller.status,
+          },
+          { id: selectedSeller.id }
+        );
+        if (error) throw error;
+
+        toast({
+          title: "KYC Approved",
+          description: `KYC for ${selectedSeller.shop_name} has been approved.`,
+        });
+
+        setActionDialogOpen(false);
+        fetchSellers();
+        return;
+      }
+
+      if (actionType === "reject_kyc") {
+        const { error } = await adminDb.update(
+          "sellers",
+          {
+            kyc_status: "rejected",
+            kyc_rejected_reason: actionReason,
+          },
+          { id: selectedSeller.id }
+        );
+        if (error) throw error;
+
+        toast({
+          title: "KYC Rejected",
+          description: `KYC for ${selectedSeller.shop_name} has been rejected.`,
+        });
+
+        setActionDialogOpen(false);
+        setActionReason("");
+        fetchSellers();
+        return;
+      }
+
+      // Regular status actions via edge function
       let emailType: string = "";
-      
       switch (actionType) {
         case "approve":
           emailType = "seller_approved";
@@ -231,8 +362,6 @@ export default function AdminSellers() {
           emailType = "seller_rejected";
           break;
         case "suspend":
-          emailType = "seller_suspended";
-          break;
         case "ban":
           emailType = "seller_suspended";
           break;
@@ -243,7 +372,6 @@ export default function AdminSellers() {
           return;
       }
 
-      // Use edge function to update seller status (bypasses RLS)
       const { data, error } = await supabase.functions.invoke("admin-sellers", {
         body: {
           action: actionType,
@@ -255,12 +383,34 @@ export default function AdminSellers() {
       });
 
       if (error) throw error;
-      
       if (!data?.success) {
         throw new Error(data?.error || "Failed to update seller");
       }
 
-      // Send notification email
+      // Update KYC fields synchronously when approving/rejecting seller account
+      if (actionType === "approve") {
+        const now = new Date().toISOString();
+        await adminDb.update(
+          "sellers",
+          {
+            kyc_status: "approved",
+            kyc_verified_at: now,
+            kyc_verified_by: admin.id,
+            kyc_rejected_reason: null,
+          },
+          { id: selectedSeller.id }
+        );
+      } else if (actionType === "reject") {
+        await adminDb.update(
+          "sellers",
+          {
+            kyc_status: "rejected",
+            kyc_rejected_reason: actionReason,
+          },
+          { id: selectedSeller.id }
+        );
+      }
+
       sendNotificationEmail(emailType, selectedSeller.contact_email, {
         shopName: selectedSeller.shop_name,
         reason: actionReason,
@@ -268,7 +418,7 @@ export default function AdminSellers() {
 
       toast({
         title: "Success",
-        description: `Seller ${actionType === "approve" ? "approved" : actionType === "reject" ? "rejected" : actionType === "suspend" ? "suspended" : actionType === "ban" ? "banned" : "unsuspended"} successfully`,
+        description: `Seller ${actionType}d successfully`,
       });
 
       setActionDialogOpen(false);
@@ -282,6 +432,49 @@ export default function AdminSellers() {
       });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleIssueWarning = async () => {
+    if (!selectedSeller || !admin || !warningReason.trim()) return;
+
+    setWarningLoading(true);
+    try {
+      const newWarning = {
+        seller_id: selectedSeller.id,
+        issued_by: admin.id,
+        reason: warningReason.trim(),
+        severity: warningSeverity,
+        status: "active",
+      };
+
+      const { error } = await adminDb.insert("seller_warnings", newWarning);
+      if (error) throw error;
+
+      // Update seller warning count
+      const updatedCount = (selectedSeller.warning_count || 0) + 1;
+      await adminDb.update("sellers", { warning_count: updatedCount }, { id: selectedSeller.id });
+
+      setSelectedSeller((prev) => (prev ? { ...prev, warning_count: updatedCount } : null));
+
+      toast({
+        title: "Warning Issued",
+        description: `Warning successfully recorded for ${selectedSeller.shop_name}`,
+      });
+
+      setIssueWarningDialogOpen(false);
+      setWarningReason("");
+      setWarningSeverity("medium");
+      fetchSellerWarnings(selectedSeller.id);
+      fetchSellers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to issue warning",
+        variant: "destructive",
+      });
+    } finally {
+      setWarningLoading(false);
     }
   };
 
@@ -299,8 +492,9 @@ export default function AdminSellers() {
       seller.contact_phone.includes(searchQuery);
 
     const matchesStatus = statusFilter === "all" || seller.status === statusFilter;
+    const matchesKyc = kycFilter === "all" || seller.kyc_status === kycFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesKyc;
   });
 
   const stats = {
@@ -308,6 +502,7 @@ export default function AdminSellers() {
     pending: sellers.filter((s) => s.status === "pending").length,
     approved: sellers.filter((s) => s.status === "approved").length,
     suspended: sellers.filter((s) => s.status === "suspended" || s.status === "banned").length,
+    kycPending: sellers.filter((s) => s.kyc_status === "pending_review").length,
   };
 
   if (loading) {
@@ -327,7 +522,7 @@ export default function AdminSellers() {
     <AdminLayout title="Seller Management">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center gap-3">
@@ -350,6 +545,19 @@ export default function AdminSellers() {
                 <div>
                   <p className="text-2xl font-bold">{stats.pending}</p>
                   <p className="text-xs text-muted-foreground">Pending Approval</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-blue-500/10">
+                  <ShieldAlert className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.kycPending}</p>
+                  <p className="text-xs text-muted-foreground">KYC Pending Review</p>
                 </div>
               </div>
             </CardContent>
@@ -388,9 +596,9 @@ export default function AdminSellers() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <CardTitle>All Sellers</CardTitle>
-                <CardDescription>Manage seller applications and accounts</CardDescription>
+                <CardDescription>Manage seller applications, KYC verification, and warnings</CardDescription>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -401,16 +609,27 @@ export default function AdminSellers() {
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter status" />
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Account status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="all">All Account Status</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
                     <SelectItem value="suspended">Suspended</SelectItem>
                     <SelectItem value="banned">Banned</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={kycFilter} onValueChange={setKycFilter}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="KYC status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All KYC Status</SelectItem>
+                    <SelectItem value="pending_review">Pending Review</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button variant="outline" size="icon" onClick={fetchSellers}>
@@ -426,17 +645,18 @@ export default function AdminSellers() {
                   <TableHead>Shop</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>KYC Status</TableHead>
+                  <TableHead>Warnings</TableHead>
                   <TableHead>Products</TableHead>
                   <TableHead>Orders</TableHead>
                   <TableHead>Rating</TableHead>
-                  <TableHead>Joined</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSellers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No sellers found
                     </TableCell>
                   </TableRow>
@@ -478,6 +698,12 @@ export default function AdminSellers() {
                             {status.label}
                           </Badge>
                         </TableCell>
+                        <TableCell>{renderKycBadge(seller.kyc_status)}</TableCell>
+                        <TableCell>
+                          <Badge variant={seller.warning_count > 0 ? "destructive" : "outline"}>
+                            {seller.warning_count || 0} Warnings
+                          </Badge>
+                        </TableCell>
                         <TableCell>{seller.total_products}</TableCell>
                         <TableCell>{seller.total_orders}</TableCell>
                         <TableCell>
@@ -488,9 +714,6 @@ export default function AdminSellers() {
                               ({seller.rating_count})
                             </span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(seller.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -509,17 +732,30 @@ export default function AdminSellers() {
                                 }}
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                View Details
+                                View Details & KYC
                               </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openActionDialog(seller, "approve_kyc")}
+                              >
+                                <ShieldCheck className="h-4 w-4 mr-2 text-green-600" />
+                                Approve KYC
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openActionDialog(seller, "reject_kyc")}
+                              >
+                                <ShieldX className="h-4 w-4 mr-2 text-red-600" />
+                                Reject KYC
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               {seller.status === "pending" && (
                                 <>
                                   <DropdownMenuItem onClick={() => openActionDialog(seller, "approve")}>
                                     <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                                    Approve
+                                    Approve Seller
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => openActionDialog(seller, "reject")}>
                                     <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                                    Reject
+                                    Reject Seller
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -553,13 +789,16 @@ export default function AdminSellers() {
           </CardContent>
         </Card>
 
-        {/* View Seller Dialog */}
+        {/* View Seller & KYC Details Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Seller Details</DialogTitle>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Seller & KYC Details</span>
+                {selectedSeller && renderKycBadge(selectedSeller.kyc_status)}
+              </DialogTitle>
               <DialogDescription>
-                View complete seller profile and documents
+                Review KYC document submissions, seller verification status, and warning history
               </DialogDescription>
             </DialogHeader>
 
@@ -571,7 +810,6 @@ export default function AdminSellers() {
                     <img
                       src={resolvedImages.shop_logo}
                       alt={selectedSeller.shop_name}
-
                       className="h-20 w-20 rounded-xl object-cover"
                     />
                   ) : (
@@ -580,14 +818,73 @@ export default function AdminSellers() {
                     </div>
                   )}
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold">{selectedSeller.shop_name}</h3>
-                    <p className="text-muted-foreground">
-                      {selectedSeller.business_name || "Individual Seller"}
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-bold">{selectedSeller.shop_name}</h3>
+                      <Badge className={statusConfig[selectedSeller.status].color}>
+                        {statusConfig[selectedSeller.status].label}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground text-sm">
+                      {selectedSeller.business_name || "Individual Seller"} ({selectedSeller.business_type || "N/A"})
                     </p>
-                    <Badge className={statusConfig[selectedSeller.status].color}>
-                      {statusConfig[selectedSeller.status].label}
-                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Joined: {new Date(selectedSeller.created_at).toLocaleDateString()}
+                    </p>
                   </div>
+                </div>
+
+                {/* KYC Workflow Control Box */}
+                <div className="border rounded-xl p-4 bg-muted/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                      <h4 className="font-semibold text-base">KYC Verification Status</h4>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => openActionDialog(selectedSeller, "approve_kyc")}
+                      >
+                        <ShieldCheck className="h-4 w-4 mr-1" /> Approve KYC
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => openActionDialog(selectedSeller, "reject_kyc")}
+                      >
+                        <ShieldX className="h-4 w-4 mr-1" /> Reject KYC
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-3 text-sm pt-2 border-t">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Current KYC Status</p>
+                      <div className="mt-1">{renderKycBadge(selectedSeller.kyc_status)}</div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Verified At</p>
+                      <p className="font-medium mt-1">
+                        {selectedSeller.kyc_verified_at
+                          ? new Date(selectedSeller.kyc_verified_at).toLocaleString()
+                          : "Not verified yet"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Verified By (Admin ID)</p>
+                      <p className="font-medium mt-1 truncate">
+                        {selectedSeller.kyc_verified_by || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedSeller.kyc_rejected_reason && (
+                    <div className="mt-2 text-xs bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 p-2.5 rounded border border-red-200">
+                      <strong>Rejection Reason:</strong> {selectedSeller.kyc_rejected_reason}
+                    </div>
+                  )}
                 </div>
 
                 {/* Stats */}
@@ -628,7 +925,7 @@ export default function AdminSellers() {
 
                 {/* Documents */}
                 <div className="space-y-4">
-                  <Label className="block">Identity Documents</Label>
+                  <Label className="block font-semibold">Submitted Identity Documents</Label>
 
                   {/* Identity numbers */}
                   <div className="grid md:grid-cols-2 gap-3">
@@ -662,10 +959,10 @@ export default function AdminSellers() {
                   </div>
 
                   {/* Document images */}
-                  {(selectedSeller.nid_front_image ||
-                    selectedSeller.nid_back_image ||
-                    selectedSeller.birth_certificate_image ||
-                    selectedSeller.trade_license_image) ? (
+                  {selectedSeller.nid_front_image ||
+                  selectedSeller.nid_back_image ||
+                  selectedSeller.birth_certificate_image ||
+                  selectedSeller.trade_license_image ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
                         { key: "nid_front_image", label: "NID Front" },
@@ -692,12 +989,11 @@ export default function AdminSellers() {
                                   (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
                                 }}
                               />
-                              <p className="text-xs text-center mt-2">{d.label}</p>
+                              <p className="text-xs text-center mt-2 font-medium">{d.label}</p>
                             </div>
                           </a>
                         ))}
                     </div>
-
                   ) : (
                     <div className="text-sm text-muted-foreground bg-muted/50 border border-dashed rounded-lg p-4 text-center">
                       No document images uploaded by this seller.
@@ -705,6 +1001,78 @@ export default function AdminSellers() {
                   )}
                 </div>
 
+                {/* Seller Warnings Log */}
+                <div className="border rounded-xl p-4 bg-muted/20 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-base flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-orange-500" />
+                        Seller Warnings Log
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Track infractions, warnings, and severity history
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIssueWarningDialogOpen(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Issue Warning
+                    </Button>
+                  </div>
+
+                  {warningsLoading ? (
+                    <div className="py-4 text-center text-sm text-muted-foreground">
+                      Loading warnings log...
+                    </div>
+                  ) : warnings.length === 0 ? (
+                    <div className="text-sm text-muted-foreground bg-background p-4 rounded-lg border text-center">
+                      No warnings issued to this seller.
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Severity</TableHead>
+                          <TableHead>Reason</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Issued At</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {warnings.map((w) => (
+                          <TableRow key={w.id}>
+                            <TableCell>
+                              <Badge
+                                className={
+                                  w.severity === "critical" || w.severity === "high"
+                                    ? "bg-red-500/10 text-red-600 border-red-200"
+                                    : w.severity === "medium"
+                                    ? "bg-orange-500/10 text-orange-600 border-orange-200"
+                                    : "bg-yellow-500/10 text-yellow-600 border-yellow-200"
+                                }
+                              >
+                                {w.severity.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium max-w-xs break-words">
+                              {w.reason}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {w.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(w.created_at).toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
 
                 {/* Payment Info */}
                 <div className="grid md:grid-cols-2 gap-4">
@@ -731,7 +1099,7 @@ export default function AdminSellers() {
                 {/* Rejection Reason */}
                 {selectedSeller.rejection_reason && (
                   <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-4">
-                    <Label className="text-red-700 dark:text-red-400">Rejection/Suspension Reason</Label>
+                    <Label className="text-red-700 dark:text-red-400">Account Rejection/Suspension Reason</Label>
                     <p className="text-sm mt-2">{selectedSeller.rejection_reason}</p>
                   </div>
                 )}
@@ -740,34 +1108,41 @@ export default function AdminSellers() {
           </DialogContent>
         </Dialog>
 
-        {/* Action Dialog */}
+        {/* Action Dialog (Approve, Reject, Suspend, Ban, KYC) */}
         <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {actionType === "approve" && "Approve Seller"}
-                {actionType === "reject" && "Reject Application"}
-                {actionType === "suspend" && "Suspend Seller"}
-                {actionType === "ban" && "Ban Seller"}
-                {actionType === "unsuspend" && "Reactivate Seller"}
+                {actionType === "approve" && "Approve Seller Account"}
+                {actionType === "reject" && "Reject Seller Application"}
+                {actionType === "suspend" && "Suspend Seller Account"}
+                {actionType === "ban" && "Ban Seller Account"}
+                {actionType === "unsuspend" && "Reactivate Seller Account"}
+                {actionType === "approve_kyc" && "Approve Seller KYC"}
+                {actionType === "reject_kyc" && "Reject Seller KYC"}
               </DialogTitle>
               <DialogDescription>
-                {actionType === "approve" && "This will allow the seller to start listing products."}
-                {actionType === "reject" && "Please provide a reason for rejection."}
+                {actionType === "approve" && "This will activate the seller account and approve their KYC documents."}
+                {actionType === "reject" && "Please provide a reason for application rejection."}
                 {actionType === "suspend" && "This will temporarily disable the seller's account."}
                 {actionType === "ban" && "This will permanently disable the seller's account."}
                 {actionType === "unsuspend" && "This will reactivate the seller's account."}
+                {actionType === "approve_kyc" && "This marks the seller's identity and business documents as verified."}
+                {actionType === "reject_kyc" && "Please state why the KYC documents were rejected."}
               </DialogDescription>
             </DialogHeader>
 
-            {(actionType === "reject" || actionType === "suspend" || actionType === "ban") && (
+            {(actionType === "reject" ||
+              actionType === "suspend" ||
+              actionType === "ban" ||
+              actionType === "reject_kyc") && (
               <div className="space-y-2">
                 <Label htmlFor="reason">Reason</Label>
                 <Textarea
                   id="reason"
                   value={actionReason}
                   onChange={(e) => setActionReason(e.target.value)}
-                  placeholder="Enter the reason..."
+                  placeholder="Enter detailed reason..."
                   rows={3}
                 />
               </div>
@@ -779,10 +1154,76 @@ export default function AdminSellers() {
               </Button>
               <Button
                 onClick={handleAction}
-                disabled={actionLoading || ((actionType === "reject" || actionType === "suspend" || actionType === "ban") && !actionReason)}
-                variant={actionType === "approve" || actionType === "unsuspend" ? "default" : "destructive"}
+                disabled={
+                  actionLoading ||
+                  ((actionType === "reject" ||
+                    actionType === "suspend" ||
+                    actionType === "ban" ||
+                    actionType === "reject_kyc") &&
+                    !actionReason.trim())
+                }
+                variant={
+                  actionType === "approve" || actionType === "unsuspend" || actionType === "approve_kyc"
+                    ? "default"
+                    : "destructive"
+                }
               >
                 {actionLoading ? "Processing..." : "Confirm"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Issue Warning Dialog */}
+        <Dialog open={issueWarningDialogOpen} onOpenChange={setIssueWarningDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-orange-600">
+                <AlertCircle className="h-5 w-5" /> Issue Seller Warning
+              </DialogTitle>
+              <DialogDescription>
+                Issue a formal warning log entry to {selectedSeller?.shop_name}. This will increment their warning count.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="severity">Severity Level</Label>
+                <Select value={warningSeverity} onValueChange={setWarningSeverity}>
+                  <SelectTrigger id="severity">
+                    <SelectValue placeholder="Select severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low (Policy Reminder)</SelectItem>
+                    <SelectItem value="medium">Medium (Moderate Infraction)</SelectItem>
+                    <SelectItem value="high">High (Severe Infraction)</SelectItem>
+                    <SelectItem value="critical">Critical (Imminent Suspension)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="warning-reason">Warning Reason / Infraction Details</Label>
+                <Textarea
+                  id="warning-reason"
+                  value={warningReason}
+                  onChange={(e) => setWarningReason(e.target.value)}
+                  placeholder="Describe the violation, e.g. late dispatch, counterfeit report, toxic customer chat..."
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIssueWarningDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleIssueWarning}
+                disabled={warningLoading || !warningReason.trim()}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {warningLoading ? "Issuing..." : "Issue Warning"}
               </Button>
             </DialogFooter>
           </DialogContent>

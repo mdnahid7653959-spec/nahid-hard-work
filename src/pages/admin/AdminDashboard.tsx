@@ -5,6 +5,7 @@ import {
   ArrowUpRight, RefreshCw, Clock, AlertTriangle, Store, Star,
   MessageSquare, Command as CommandIcon, Bell, Sparkles, Search,
   FileText, Palette, Tag, Truck, Percent, Layers, Megaphone, Gift,
+  Wallet, Activity, BarChart3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -17,23 +18,88 @@ import {
 } from "@/components/ui/command";
 import { useAdminCacheInvalidation } from "@/hooks/useRealtimeSync";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow, subDays, startOfDay, format } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 
-interface KPI {
-  todayRevenue: number;
-  yesterdayRevenue: number;
-  todayOrders: number;
-  yesterdayOrders: number;
-  totalRevenue: number;
-  totalOrders: number;
-  totalProducts: number;
-  totalUsers: number;
-  totalSellers: number;
-  newUsersToday: number;
-  newUsersYesterday: number;
+interface RevenueStats {
+  today_revenue: number;
+  yesterday_revenue: number;
+  monthly_revenue: number;
+  yearly_revenue: number;
+  total_revenue: number;
+  gross_revenue: number;
+  net_revenue: number;
+  commission_revenue: number;
+  platform_profit: number;
+}
+
+interface OrderBreakdown {
+  total_orders: number;
+  pending_count: number;
+  processing_count: number;
+  shipped_count: number;
+  delivered_count: number;
+  cancelled_count: number;
+  packed_count: number;
+  refunded_count: number;
+  returned_count: number;
+  pending_amount: number;
+  processing_amount: number;
+  shipped_amount: number;
+  delivered_amount: number;
+  cancelled_amount: number;
+  packed_amount: number;
+  refunded_amount: number;
+  returned_amount: number;
+}
+
+interface InventoryHealthStats {
+  low_stock_count: number;
+  out_of_stock_count: number;
+  total_products_tracked: number;
+  total_valuation: number;
+}
+
+interface ConversionMetrics {
+  total_visitors: number;
+  cart_additions: number;
+  checkouts_initiated: number;
+  completed_orders: number;
+  conversion_rate: number;
+  cart_abandonment_rate: number;
+}
+
+interface FinancialSummary {
+  platform_balance: number;
+  total_payouts: number;
+  pending_payouts: number;
+  vat_collected: number;
+  tax_liability: number;
+}
+
+interface TimeseriesPoint {
+  period_date: string;
+  total_revenue: number;
+  net_revenue: number;
+  order_count: number;
+}
+
+interface TopProductItem {
+  product_id: string;
+  product_name: string;
+  total_quantity_sold: number;
+  total_revenue: number;
+}
+
+interface TopSellerItem {
+  seller_id: string;
+  shop_name: string;
+  business_name: string;
+  total_sales: number;
+  total_commission: number;
+  order_count: number;
 }
 
 interface Alert {
@@ -53,13 +119,6 @@ interface RecentOrder {
   created_at: string;
 }
 
-interface TopProduct {
-  id: string;
-  name: string;
-  sold: number;
-  revenue: number;
-}
-
 const statusColors: Record<string, string> = {
   pending: "bg-warning/15 text-warning border-warning/30",
   processing: "bg-blue-500/15 text-blue-600 border-blue-500/30",
@@ -68,7 +127,6 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
-// Command palette routes — every admin page reachable via ⌘K
 const COMMAND_ROUTES: { label: string; href: string; group: string; icon: any }[] = [
   { label: "Dashboard", href: "/admin", group: "Navigate", icon: TrendingUp },
   { label: "Users", href: "/admin/users", group: "Navigate", icon: Users },
@@ -77,6 +135,7 @@ const COMMAND_ROUTES: { label: string; href: string; group: string; icon: any }[
   { label: "Categories", href: "/admin/categories", group: "Navigate", icon: Layers },
   { label: "Brands", href: "/admin/brands", group: "Navigate", icon: Tag },
   { label: "Orders", href: "/admin/orders", group: "Navigate", icon: ShoppingCart },
+  { label: "Payments Ledger", href: "/admin/payments", group: "Navigate", icon: DollarSign },
   { label: "Inventory", href: "/admin/inventory", group: "Navigate", icon: Package },
   { label: "Reviews", href: "/admin/reviews", group: "Navigate", icon: Star },
   { label: "Coupons", href: "/admin/coupons", group: "Navigate", icon: Percent },
@@ -93,14 +152,14 @@ const COMMAND_ROUTES: { label: string; href: string; group: string; icon: any }[
   { label: "Security", href: "/admin/security", group: "Navigate", icon: AlertTriangle },
   { label: "Settings", href: "/admin/settings", group: "Navigate", icon: CommandIcon },
   { label: "CJ Integration", href: "/admin/cj-settings", group: "Navigate", icon: Layers },
-  // Actions
   { label: "Add New Product", href: "/admin/products/new", group: "Quick Actions", icon: Package },
   { label: "Create Coupon", href: "/admin/coupons", group: "Quick Actions", icon: Percent },
   { label: "Approve Sellers", href: "/admin/sellers", group: "Quick Actions", icon: Store },
   { label: "Review Pending Orders", href: "/admin/orders", group: "Quick Actions", icon: ShoppingCart },
 ];
 
-const currency = (n: number) => `৳${Number(n || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
+const currency = (n: number | null | undefined) =>
+  `৳${Number(n || 0).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
 
 function Delta({ current, previous }: { current: number; previous: number }) {
   if (previous === 0 && current === 0) return <span className="text-xs text-muted-foreground">—</span>;
@@ -120,20 +179,38 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const { invalidateAll } = useAdminCacheInvalidation();
 
-  const [kpi, setKpi] = useState<KPI>({
-    todayRevenue: 0, yesterdayRevenue: 0, todayOrders: 0, yesterdayOrders: 0,
-    totalRevenue: 0, totalOrders: 0, totalProducts: 0, totalUsers: 0,
-    totalSellers: 0, newUsersToday: 0, newUsersYesterday: 0,
+  const [revenueStats, setRevenueStats] = useState<RevenueStats>({
+    today_revenue: 0, yesterday_revenue: 0, monthly_revenue: 0, yearly_revenue: 0,
+    total_revenue: 0, gross_revenue: 0, net_revenue: 0, commission_revenue: 0, platform_profit: 0
   });
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [orderBreakdown, setOrderBreakdown] = useState<OrderBreakdown>({
+    total_orders: 0, pending_count: 0, processing_count: 0, shipped_count: 0, delivered_count: 0,
+    cancelled_count: 0, packed_count: 0, refunded_count: 0, returned_count: 0, pending_amount: 0,
+    processing_amount: 0, shipped_amount: 0, delivered_amount: 0, cancelled_amount: 0,
+    packed_amount: 0, refunded_amount: 0, returned_amount: 0
+  });
+  const [inventoryStats, setInventoryStats] = useState<InventoryHealthStats>({
+    low_stock_count: 0, out_of_stock_count: 0, total_products_tracked: 0, total_valuation: 0
+  });
+  const [conversionStats, setConversionStats] = useState<ConversionMetrics>({
+    total_visitors: 0, cart_additions: 0, checkouts_initiated: 0, completed_orders: 0,
+    conversion_rate: 0, cart_abandonment_rate: 0
+  });
+  const [financialStats, setFinancialStats] = useState<FinancialSummary>({
+    platform_balance: 0, total_payouts: 0, pending_payouts: 0, vat_collected: 0, tax_liability: 0
+  });
+
   const [chartData, setChartData] = useState<{ date: string; revenue: number; orders: number }[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProductItem[]>([]);
+  const [topSellers, setTopSellers] = useState<TopSellerItem[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [totalSellersCount, setTotalSellersCount] = useState<number>(0);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
 
-  // ⌘K / Ctrl+K to open palette
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
@@ -147,99 +224,85 @@ export default function AdminDashboard() {
 
   const fetchAll = async () => {
     try {
-      const now = new Date();
-      const todayStart = startOfDay(now).toISOString();
-      const yesterdayStart = startOfDay(subDays(now, 1)).toISOString();
-      const last30 = subDays(now, 30).toISOString();
-
+      // Execute all 8 RPC functions dynamically + supplementary live entity counts
       const [
-        productsCount, ordersAll, usersCount, sellersCount,
-        pendingOrders, lowStock, pendingSellers, pendingReviews,
-        recentOrdersRes, topProductsRes, newUsersToday, newUsersYesterday,
+        revStatsRes,
+        orderBreakdownRes,
+        timeseriesRes,
+        topProductsRes,
+        topSellersRes,
+        financialRes,
+        inventoryRes,
+        conversionRes,
+        sellersCountRes,
+        recentOrdersRes,
+        pendingSellersRes,
+        pendingReviewsRes,
       ] = await Promise.all([
-        supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("total, status, created_at").gte("created_at", last30),
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.rpc("get_admin_dashboard_revenue_stats"),
+        supabase.rpc("get_admin_dashboard_order_breakdown"),
+        supabase.rpc("get_admin_revenue_timeseries", { _period: "7d" }),
+        supabase.rpc("get_admin_top_products", { _limit: 5 }),
+        supabase.rpc("get_admin_top_sellers", { _limit: 5 }),
+        supabase.rpc("get_admin_financial_summary"),
+        supabase.rpc("get_admin_inventory_health_stats"),
+        supabase.rpc("get_admin_conversion_metrics"),
         supabase.from("sellers").select("id", { count: "exact", head: true }).eq("approval_status", "approved"),
-        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("products").select("id", { count: "exact", head: true }).lt("stock_quantity", 10),
+        supabase.from("orders").select("id, order_number, total, status, created_at").order("created_at", { ascending: false }).limit(6),
         supabase.from("sellers").select("id", { count: "exact", head: true }).eq("approval_status", "pending"),
         supabase.from("reviews").select("id", { count: "exact", head: true }).eq("is_approved", false),
-        supabase.from("orders").select("id, order_number, total, status, created_at").order("created_at", { ascending: false }).limit(6),
-        supabase.from("order_items").select("product_id, product_name, quantity, total").limit(500),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", yesterdayStart).lt("created_at", todayStart),
       ]);
 
-      const ordersData = ordersAll.data || [];
-      const todayOrders = ordersData.filter((o) => o.created_at >= todayStart);
-      const yesterdayOrders = ordersData.filter((o) => o.created_at >= yesterdayStart && o.created_at < todayStart);
+      if (revStatsRes.data) setRevenueStats(revStatsRes.data);
+      if (orderBreakdownRes.data) setOrderBreakdown(orderBreakdownRes.data);
+      if (inventoryRes.data) setInventoryStats(inventoryRes.data);
+      if (conversionRes.data) setConversionStats(conversionRes.data);
+      if (financialRes.data) setFinancialStats(financialRes.data);
+      if (topProductsRes.data) setTopProducts(topProductsRes.data);
+      if (topSellersRes.data) setTopSellers(topSellersRes.data);
 
-      const sum = (arr: any[]) => arr.reduce((s, o) => s + Number(o.total || 0), 0);
+      setTotalSellersCount(sellersCountRes.count || 0);
 
-      setKpi({
-        todayRevenue: sum(todayOrders),
-        yesterdayRevenue: sum(yesterdayOrders),
-        todayOrders: todayOrders.length,
-        yesterdayOrders: yesterdayOrders.length,
-        totalRevenue: sum(ordersData),
-        totalOrders: ordersData.length,
-        totalProducts: productsCount.count || 0,
-        totalUsers: usersCount.count || 0,
-        totalSellers: sellersCount.count || 0,
-        newUsersToday: newUsersToday.count || 0,
-        newUsersYesterday: newUsersYesterday.count || 0,
-      });
+      // Process timeseries chart data from RPC
+      const timeseries: TimeseriesPoint[] = timeseriesRes.data || [];
+      const formattedChart = timeseries.map((pt) => ({
+        date: pt.period_date ? format(new Date(pt.period_date), "MMM d") : pt.period_date,
+        revenue: pt.total_revenue || 0,
+        orders: pt.order_count || 0,
+      }));
+      setChartData(formattedChart);
 
-      // Build 7-day chart
-      const buckets: Record<string, { revenue: number; orders: number }> = {};
-      for (let i = 6; i >= 0; i--) {
-        const d = format(subDays(now, i), "MMM d");
-        buckets[d] = { revenue: 0, orders: 0 };
-      }
-      ordersData.forEach((o) => {
-        const key = format(new Date(o.created_at), "MMM d");
-        if (buckets[key]) {
-          buckets[key].revenue += Number(o.total || 0);
-          buckets[key].orders += 1;
-        }
-      });
-      setChartData(Object.entries(buckets).map(([date, v]) => ({ date, ...v })));
+      // Process Recent Orders
+      setRecentOrders(recentOrdersRes.data || []);
 
-      // Alerts
+      // Build system attention alerts
+      const pendingSellersCount = pendingSellersRes.count || 0;
+      const pendingOrdersCount = orderBreakdownRes.data?.pending_count || 0;
+      const lowStockCount = (inventoryRes.data?.low_stock_count || 0) + (inventoryRes.data?.out_of_stock_count || 0);
+      const pendingReviewsCount = pendingReviewsRes.count || 0;
+
       const alertList: Alert[] = [];
-      if ((pendingSellers.count || 0) > 0) alertList.push({
-        id: "ps", label: "Seller applications pending", count: pendingSellers.count!,
+      if (pendingSellersCount > 0) alertList.push({
+        id: "ps", label: "Seller applications pending", count: pendingSellersCount,
         href: "/admin/sellers", tone: "warning", icon: Store,
       });
-      if ((pendingOrders.count || 0) > 0) alertList.push({
-        id: "po", label: "Orders awaiting processing", count: pendingOrders.count!,
+      if (pendingOrdersCount > 0) alertList.push({
+        id: "po", label: "Orders awaiting processing", count: pendingOrdersCount,
         href: "/admin/orders", tone: "info", icon: ShoppingCart,
       });
-      if ((lowStock.count || 0) > 0) alertList.push({
-        id: "ls", label: "Products low on stock", count: lowStock.count!,
+      if (lowStockCount > 0) alertList.push({
+        id: "ls", label: "Products low or out of stock", count: lowStockCount,
         href: "/admin/inventory", tone: "danger", icon: AlertTriangle,
       });
-      if ((pendingReviews.count || 0) > 0) alertList.push({
-        id: "pr", label: "Reviews awaiting moderation", count: pendingReviews.count!,
+      if (pendingReviewsCount > 0) alertList.push({
+        id: "pr", label: "Reviews awaiting moderation", count: pendingReviewsCount,
         href: "/admin/reviews", tone: "info", icon: MessageSquare,
       });
       setAlerts(alertList);
 
-      setRecentOrders(recentOrdersRes.data || []);
-
-      // Top products by revenue (aggregated in-memory)
-      const agg: Record<string, TopProduct> = {};
-      (topProductsRes.data || []).forEach((it: any) => {
-        const key = it.product_id || it.product_name;
-        if (!agg[key]) agg[key] = { id: key, name: it.product_name, sold: 0, revenue: 0 };
-        agg[key].sold += Number(it.quantity || 0);
-        agg[key].revenue += Number(it.total || 0);
-      });
-      setTopProducts(Object.values(agg).sort((a, b) => b.revenue - a.revenue).slice(0, 5));
     } catch (err) {
       console.error("Dashboard fetch error:", err);
-      toast({ title: "Failed to load dashboard", variant: "destructive" });
+      toast({ title: "Failed to load live dashboard analytics", variant: "destructive" });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -262,43 +325,43 @@ export default function AdminDashboard() {
     setRefreshing(true);
     await fetchAll();
     invalidateAll();
-    toast({ title: "Dashboard refreshed" });
+    toast({ title: "Dashboard refreshed with live Supabase RPC data" });
   };
 
   const heroStats = useMemo(() => ([
     {
       title: "Today's Revenue",
-      value: currency(kpi.todayRevenue),
-      delta: <Delta current={kpi.todayRevenue} previous={kpi.yesterdayRevenue} />,
+      value: currency(revenueStats.today_revenue),
+      delta: <Delta current={revenueStats.today_revenue} previous={revenueStats.yesterday_revenue} />,
       icon: DollarSign,
       accent: "from-emerald-500/20 to-teal-500/10",
       iconClass: "bg-emerald-500/15 text-emerald-600",
     },
     {
-      title: "Today's Orders",
-      value: kpi.todayOrders.toString(),
-      delta: <Delta current={kpi.todayOrders} previous={kpi.yesterdayOrders} />,
-      icon: ShoppingCart,
+      title: "Gross Revenue (30d)",
+      value: currency(revenueStats.gross_revenue || revenueStats.total_revenue),
+      delta: <span className="text-xs text-muted-foreground">Monthly: {currency(revenueStats.monthly_revenue)}</span>,
+      icon: TrendingUp,
       accent: "from-blue-500/20 to-indigo-500/10",
       iconClass: "bg-blue-500/15 text-blue-600",
     },
     {
-      title: "New Signups Today",
-      value: kpi.newUsersToday.toString(),
-      delta: <Delta current={kpi.newUsersToday} previous={kpi.newUsersYesterday} />,
-      icon: Users,
+      title: "Total Orders",
+      value: orderBreakdown.total_orders.toLocaleString(),
+      delta: <span className="text-xs text-muted-foreground">{orderBreakdown.delivered_count} delivered</span>,
+      icon: ShoppingCart,
       accent: "from-purple-500/20 to-fuchsia-500/10",
       iconClass: "bg-purple-500/15 text-purple-600",
     },
     {
       title: "Active Sellers",
-      value: kpi.totalSellers.toString(),
+      value: totalSellersCount.toString(),
       delta: <span className="text-xs text-muted-foreground">approved vendors</span>,
       icon: Store,
       accent: "from-orange-500/20 to-amber-500/10",
       iconClass: "bg-orange-500/15 text-orange-600",
     },
-  ]), [kpi]);
+  ]), [revenueStats, orderBreakdown, totalSellersCount]);
 
   return (
     <AdminLayout title="Command Center">
@@ -308,13 +371,13 @@ export default function AdminDashboard() {
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-medium text-primary bg-primary/10 rounded-full px-3 py-1 mb-2">
               <Sparkles className="h-3 w-3" />
-              Command Center
+              Live RPC Analytics Integrated
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
               Welcome back, Admin
             </h1>
             <p className="text-sm text-muted-foreground">
-              Live overview of your marketplace — last 30 days.
+              Real-time analytics directly from Supabase RPC functions.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -350,7 +413,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Alerts */}
+        {/* System Attention Alerts */}
         {alerts.length > 0 && (
           <Card className="border-warning/30 bg-warning/5">
             <CardHeader className="pb-3">
@@ -383,13 +446,73 @@ export default function AdminDashboard() {
           </Card>
         )}
 
+        {/* Additional RPC Stat Badges: Inventory, Conversion & Financial Balance */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase">Platform Balance</p>
+                <p className="text-xl font-bold mt-1 text-emerald-600">{currency(financialStats.platform_balance)}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Pending payouts: {currency(financialStats.pending_payouts)}</p>
+              </div>
+              <div className="p-2.5 bg-emerald-500/15 text-emerald-600 rounded-xl">
+                <Wallet className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase">Commission Earned</p>
+                <p className="text-xl font-bold mt-1 text-blue-600">{currency(revenueStats.commission_revenue || revenueStats.platform_profit)}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Net Profit: {currency(revenueStats.net_revenue)}</p>
+              </div>
+              <div className="p-2.5 bg-blue-500/15 text-blue-600 rounded-xl">
+                <Percent className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase">Conversion Rate</p>
+                <p className="text-xl font-bold mt-1 text-purple-600">{(conversionStats.conversion_rate || 0).toFixed(1)}%</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{conversionStats.total_visitors} unique visitors</p>
+              </div>
+              <div className="p-2.5 bg-purple-500/15 text-purple-600 rounded-xl">
+                <Activity className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase">Stock Valuation</p>
+                <p className="text-xl font-bold mt-1 text-amber-600">{currency(inventoryStats.total_valuation)}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{inventoryStats.total_products_tracked} products tracked</p>
+              </div>
+              <div className="p-2.5 bg-amber-500/15 text-amber-600 rounded-xl">
+                <Package className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Chart + Quick Actions */}
         <div className="grid lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
-                <CardTitle className="text-base">Revenue — last 7 days</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Total: {currency(chartData.reduce((s, d) => s + d.revenue, 0))}</p>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  Revenue Timeseries (get_admin_revenue_timeseries)
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total 7-day revenue: {currency(chartData.reduce((s, d) => s + d.revenue, 0))}
+                </p>
               </div>
               <Link to="/admin/reports">
                 <Button variant="ghost" size="sm">Details <ArrowUpRight className="h-3 w-3 ml-1" /></Button>
@@ -397,29 +520,35 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[240px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11}
-                      tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                    <Tooltip
-                      contentStyle={{
-                        background: "hsl(var(--background))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: 8, fontSize: 12,
-                      }}
-                      formatter={(value: any, name: string) => name === "revenue" ? [currency(value), "Revenue"] : [value, "Orders"]}
-                    />
-                    <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#rev)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {chartData.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                    No timeseries data available for this period.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11}
+                        tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8, fontSize: 12,
+                        }}
+                        formatter={(value: any, name: string) => name === "revenue" ? [currency(value), "Revenue"] : [value, "Orders"]}
+                      />
+                      <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#rev)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -452,48 +581,11 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Recent Orders + Top Products */}
+        {/* Top Products (get_admin_top_products) & Top Sellers (get_admin_top_sellers) */}
         <div className="grid lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">Recent Orders</CardTitle>
-              <Link to="/admin/orders">
-                <Button variant="ghost" size="sm">View all <ArrowUpRight className="h-3 w-3 ml-1" /></Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {loading ? (
-                <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
-              ) : recentOrders.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No orders yet</p>
-              ) : (
-                <div className="divide-y">
-                  {recentOrders.map((o) => (
-                    <button key={o.id} onClick={() => navigate("/admin/orders")}
-                      className="w-full flex items-center justify-between py-3 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors">
-                      <div className="text-left min-w-0">
-                        <p className="font-medium text-sm truncate">#{o.order_number}</p>
-                        <p className="text-xs text-muted-foreground">
-                          <Clock className="inline h-3 w-3 mr-1" />
-                          {formatDistanceToNow(new Date(o.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-semibold text-sm">{currency(o.total)}</span>
-                        <Badge variant="outline" className={`text-[10px] ${statusColors[o.status] || ""}`}>
-                          {o.status}
-                        </Badge>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">Top Products (30d)</CardTitle>
+              <CardTitle className="text-base">Top Products (get_admin_top_products)</CardTitle>
               <Link to="/admin/products">
                 <Button variant="ghost" size="sm">View all <ArrowUpRight className="h-3 w-3 ml-1" /></Button>
               </Link>
@@ -502,11 +594,11 @@ export default function AdminDashboard() {
               {loading ? (
                 <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
               ) : topProducts.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No sales data yet</p>
+                <p className="text-sm text-muted-foreground text-center py-8">No product sales recorded yet</p>
               ) : (
                 <div className="divide-y">
                   {topProducts.map((p, idx) => (
-                    <div key={p.id} className="flex items-center justify-between py-3">
+                    <div key={p.product_id || idx} className="flex items-center justify-between py-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
                           idx === 0 ? "bg-amber-500/20 text-amber-600" :
@@ -515,11 +607,47 @@ export default function AdminDashboard() {
                           "bg-muted text-muted-foreground"
                         }`}>#{idx + 1}</div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{p.name}</p>
-                          <p className="text-xs text-muted-foreground">{p.sold} sold</p>
+                          <p className="text-sm font-medium truncate">{p.product_name || "Product #" + p.product_id}</p>
+                          <p className="text-xs text-muted-foreground">{p.total_quantity_sold} sold</p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold shrink-0">{currency(p.revenue)}</span>
+                      <span className="text-sm font-semibold shrink-0">{currency(p.total_revenue)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base">Top Vendors (get_admin_top_sellers)</CardTitle>
+              <Link to="/admin/sellers">
+                <Button variant="ghost" size="sm">View all <ArrowUpRight className="h-3 w-3 ml-1" /></Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {loading ? (
+                <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
+              ) : topSellers.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No vendor sales recorded yet</p>
+              ) : (
+                <div className="divide-y">
+                  {topSellers.map((s, idx) => (
+                    <div key={s.seller_id || idx} className="flex items-center justify-between py-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                          idx === 0 ? "bg-emerald-500/20 text-emerald-600" :
+                          idx === 1 ? "bg-blue-500/20 text-blue-600" :
+                          idx === 2 ? "bg-purple-500/20 text-purple-600" :
+                          "bg-muted text-muted-foreground"
+                        }`}>#{idx + 1}</div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{s.shop_name || s.business_name || "Seller #" + s.seller_id}</p>
+                          <p className="text-xs text-muted-foreground">{s.order_count} orders • Commission: {currency(s.total_commission)}</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold shrink-0">{currency(s.total_sales)}</span>
                     </div>
                   ))}
                 </div>
@@ -527,6 +655,44 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Orders Live List */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base">Recent Orders Feed</CardTitle>
+            <Link to="/admin/orders">
+              <Button variant="ghost" size="sm">View all <ArrowUpRight className="h-3 w-3 ml-1" /></Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {loading ? (
+              <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
+            ) : recentOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No orders yet</p>
+            ) : (
+              <div className="divide-y">
+                {recentOrders.map((o) => (
+                  <button key={o.id} onClick={() => navigate("/admin/orders")}
+                    className="w-full flex items-center justify-between py-3 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors text-left">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">#{o.order_number}</p>
+                      <p className="text-xs text-muted-foreground">
+                        <Clock className="inline h-3 w-3 mr-1" />
+                        {formatDistanceToNow(new Date(o.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-semibold text-sm">{currency(o.total)}</span>
+                      <Badge variant="outline" className={`text-[10px] ${statusColors[o.status] || ""}`}>
+                        {o.status}
+                      </Badge>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Command Palette */}
         <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
