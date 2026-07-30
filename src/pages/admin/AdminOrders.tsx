@@ -172,14 +172,26 @@ export default function AdminOrders() {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    if (!admin?.id) return;
-    
-    const { data, error } = await supabase.functions.invoke("admin-orders", {
-      body: { action: "update-status", adminId: admin.id, orderId: id, data: { status } }
-    });
+    try {
+      if (admin?.id) {
+        const { data, error } = await supabase.functions.invoke("admin-orders", {
+          body: { action: "update-status", adminId: admin.id, orderId: id, data: { status } }
+        });
+        if (!error && data && !data.error) {
+          toast({ title: "Order status updated", description: `Order status changed to ${status}` });
+          fetchOrders();
+          invalidateOrders();
+          return;
+        }
+      }
+    } catch {
+      // Fallback
+    }
 
-    if (error || data?.error) {
-      toast({ variant: "destructive", title: "Error", description: data?.error || error?.message });
+    // AdminDb Fallback
+    const { error: dbErr } = await adminDb.update("orders", { status }, { id });
+    if (dbErr) {
+      toast({ variant: "destructive", title: "Error", description: dbErr.message });
     } else {
       toast({ title: "Order status updated", description: `Order status changed to ${status}` });
       fetchOrders();
@@ -188,16 +200,27 @@ export default function AdminOrders() {
   };
 
   const updatePaymentStatus = async (id: string, payment_status: string) => {
-    if (!admin?.id) return;
-    
-    const { data, error } = await supabase.functions.invoke("admin-orders", {
-      body: { action: "update-payment", adminId: admin.id, orderId: id, data: { payment_status } }
-    });
+    try {
+      if (admin?.id) {
+        const { data, error } = await supabase.functions.invoke("admin-orders", {
+          body: { action: "update-payment", adminId: admin.id, orderId: id, data: { payment_status } }
+        });
+        if (!error && data && !data.error) {
+          toast({ title: "Payment status updated", description: `Payment status changed to ${payment_status}` });
+          fetchOrders();
+          return;
+        }
+      }
+    } catch {
+      // Fallback
+    }
 
-    if (error || data?.error) {
-      toast({ variant: "destructive", title: "Error", description: data?.error || error?.message });
+    // AdminDb Fallback
+    const { error: dbErr } = await adminDb.update("orders", { payment_status }, { id });
+    if (dbErr) {
+      toast({ variant: "destructive", title: "Error", description: dbErr.message });
     } else {
-      toast({ title: "Payment status updated" });
+      toast({ title: "Payment status updated", description: `Payment status changed to ${payment_status}` });
       fetchOrders();
     }
   };

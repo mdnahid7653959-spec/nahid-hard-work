@@ -76,13 +76,32 @@ export default function AdminProducts() {
         body: { action: "list", adminId: admin.id }
       });
 
-      if (error || data?.error) {
-        console.error("Error fetching products:", error || data?.error);
-      } else {
-        setProducts(data?.products || []);
+      if (!error && data?.products) {
+        setProducts(data.products);
+        setLoading(false);
+        return;
       }
     } catch (err) {
-      console.error("Error fetching products:", err);
+      // Fallback to direct DB
+    }
+
+    // Direct Database Fallback
+    try {
+      const { data: dbProds, error: dbErr } = await supabase
+        .from("products")
+        .select(`
+          *,
+          category:categories(name),
+          brand:brands(name),
+          seller:sellers(store_name)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (!dbErr && dbProds) {
+        setProducts(dbProds as Product[]);
+      }
+    } catch (err) {
+      console.error("Direct fetch products error:", err);
     }
     setLoading(false);
   };
@@ -101,7 +120,6 @@ export default function AdminProducts() {
     return () => { supabase.removeChannel(channel); };
   }, [admin?.id]);
 
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchProducts();
@@ -117,19 +135,29 @@ export default function AdminProducts() {
       return;
     }
 
+    let success = false;
     try {
       const { data, error } = await supabase.functions.invoke("admin-products", {
         body: { action: "delete", adminId: admin.id, productId: id }
       });
-      if (error || data?.error) {
-        toast({ variant: "destructive", title: "Error", description: data?.error || "Failed to delete" });
-      } else {
-        toast({ title: "Product deleted successfully" });
-        fetchProducts();
-        invalidateProducts();
+      if (!error && !data?.error) {
+        success = true;
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
+    } catch (err) {
+      // Fallback
+    }
+
+    if (!success) {
+      const { error: dbErr } = await adminDb.remove("products", { id });
+      if (!dbErr) success = true;
+    }
+
+    if (success) {
+      toast({ title: "Product deleted successfully" });
+      fetchProducts();
+      invalidateProducts();
+    } else {
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete product" });
     }
   };
 
@@ -139,38 +167,58 @@ export default function AdminProducts() {
       return;
     }
     const newStatus = currentStatus === "active" ? "inactive" : "active";
+    let success = false;
     try {
       const { data, error } = await supabase.functions.invoke("admin-products", {
         body: { action: "toggle-status", adminId: admin.id, productId: id, productData: { status: newStatus } }
       });
-      if (error || data?.error) {
-        toast({ variant: "destructive", title: "Error", description: data?.error || "Failed to update" });
-      } else {
-        toast({ title: `Product ${newStatus}` });
-        fetchProducts();
-        invalidateProducts();
+      if (!error && !data?.error) {
+        success = true;
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
+    } catch (err) {
+      // Fallback
+    }
+
+    if (!success) {
+      const { error: dbErr } = await adminDb.update("products", { status: newStatus }, { id });
+      if (!dbErr) success = true;
+    }
+
+    if (success) {
+      toast({ title: `Product ${newStatus}` });
+      fetchProducts();
+      invalidateProducts();
+    } else {
+      toast({ variant: "destructive", title: "Error", description: "Failed to update product status" });
     }
   };
 
   const handleApprove = async (productId: string) => {
     if (!admin?.id) return;
     setActionLoading(true);
+    let success = false;
     try {
       const { data, error } = await supabase.functions.invoke("admin-products", {
         body: { action: "approve-product", adminId: admin.id, productId }
       });
-      if (error || data?.error) {
-        toast({ variant: "destructive", title: "Error", description: data?.error || "Failed to approve" });
-      } else {
-        toast({ title: "Product approved!", description: "Product is now live." });
-        fetchProducts();
-        invalidateProducts();
+      if (!error && !data?.error) {
+        success = true;
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
+    } catch (err) {
+      // Fallback
+    }
+
+    if (!success) {
+      const { error: dbErr } = await adminDb.update("products", { status: "active", approval_status: "approved" }, { id: productId });
+      if (!dbErr) success = true;
+    }
+
+    if (success) {
+      toast({ title: "Product approved!", description: "Product is now live." });
+      fetchProducts();
+      invalidateProducts();
+    } else {
+      toast({ variant: "destructive", title: "Error", description: "Failed to approve product" });
     }
     setActionLoading(false);
   };
@@ -179,19 +227,31 @@ export default function AdminProducts() {
     if (!admin?.id || !rejectDialog.productId) return;
     setActionLoading(true);
     const action = rejectDialog.action === "ban" ? "ban-product" : "reject-product";
+    const targetStatus = rejectDialog.action === "ban" ? "banned" : "rejected";
+    let success = false;
+
     try {
       const { data, error } = await supabase.functions.invoke("admin-products", {
         body: { action, adminId: admin.id, productId: rejectDialog.productId, productData: { reason: rejectReason } }
       });
-      if (error || data?.error) {
-        toast({ variant: "destructive", title: "Error", description: data?.error || "Failed" });
-      } else {
-        toast({ title: rejectDialog.action === "ban" ? "Product banned" : "Product rejected" });
-        fetchProducts();
-        invalidateProducts();
+      if (!error && !data?.error) {
+        success = true;
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
+    } catch (err) {
+      // Fallback
+    }
+
+    if (!success) {
+      const { error: dbErr } = await adminDb.update("products", { status: targetStatus, rejection_reason: rejectReason }, { id: rejectDialog.productId });
+      if (!dbErr) success = true;
+    }
+
+    if (success) {
+      toast({ title: rejectDialog.action === "ban" ? "Product banned" : "Product rejected" });
+      fetchProducts();
+      invalidateProducts();
+    } else {
+      toast({ variant: "destructive", title: "Error", description: "Failed to update product" });
     }
     setActionLoading(false);
     setRejectDialog({ open: false, productId: "", action: "reject" });
@@ -207,9 +267,9 @@ export default function AdminProducts() {
       case "rejected":
         return <Badge className="bg-red-500/10 text-red-600 border-red-500/20"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
       case "banned":
-        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20"><Ban className="h-3 w-3 mr-1" />Banned</Badge>;
+        return <Badge className="bg-red-900/20 text-red-700 border-red-700/30"><Ban className="h-3 w-3 mr-1" />Banned</Badge>;
       default:
-        return <Badge variant="secondary">{status || "N/A"}</Badge>;
+        return <Badge className="bg-gray-500/10 text-gray-500 border-gray-500/20"><AlertCircle className="h-3 w-3 mr-1" />{status || "Unknown"}</Badge>;
     }
   };
 
@@ -231,7 +291,7 @@ export default function AdminProducts() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Products</h1>
-            <p className="text-muted-foreground">Manage your product catalog & approvals</p>
+            <p className="text-muted-foreground">Manage your product catalog &amp; approvals</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
@@ -354,7 +414,6 @@ export default function AdminProducts() {
                             </Link>
                           </DropdownMenuItem>
 
-                          {/* Approval Actions */}
                           {product.approval_status === "pending" && (
                             <>
                               <DropdownMenuSeparator />

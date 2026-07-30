@@ -109,6 +109,7 @@ const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotific
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
 const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport"));
+const AdminStudio = lazy(() => import("./pages/admin/AdminStudio"));
 
 // Staff Portal
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
@@ -265,6 +266,7 @@ const App = () => (
                           <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
                           <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
                           <Route path="/admin/seller-support" element={<AdminProtectedRoute><AdminSellerSupport /></AdminProtectedRoute>} />
+                          <Route path="/admin/studio" element={<AdminProtectedRoute><AdminStudio /></AdminProtectedRoute>} />
 
                           {/* Staff Portal */}
                           <Route path="/staff/login" element={<StaffLogin />} />

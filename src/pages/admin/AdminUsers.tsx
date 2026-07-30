@@ -114,6 +114,8 @@ export default function AdminUsers() {
     const { data, error } = await adminDb.select<Profile>("profiles", {
       columns: "*",
       orderBy: { col: "created_at", ascending: false },
+      limit: 100,
+      useCache: true,
     });
 
     if (error) {

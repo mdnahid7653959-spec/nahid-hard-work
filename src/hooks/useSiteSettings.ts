@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -169,8 +170,9 @@ export function useSiteSettings() {
     }
   };
 
-  return {
-    settings: query.data ? {
+  const settings = useMemo(() => {
+    if (!query.data) return null;
+    return {
       store: {
         storeName: query.data.storeName,
         storeEmail: query.data.storeEmail,
@@ -195,7 +197,11 @@ export function useSiteSettings() {
         ogImage: query.data.ogImage,
       },
       notifications: null,
-    } : null,
+    };
+  }, [query.data]);
+
+  return {
+    settings,
     loading: query.isLoading,
     saveSettings,
     rawSettings: query.data,

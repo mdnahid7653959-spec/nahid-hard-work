@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { SupportTicketList } from "@/components/support/SupportTicketList";
 import { SupportChatPanel } from "@/components/support/SupportChatPanel";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminSellerSupport() {
-  const { user } = useAuth();
+  const { admin } = useAdminAuth();
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
@@ -30,12 +30,12 @@ export default function AdminSellerSupport() {
           <SupportTicketList perspective="admin" selectedId={selected} onSelect={setSelected} />
         </div>
         <div className={cn("flex-1 flex flex-col", !selected ? "hidden md:flex" : "flex")}>
-          {selected && user ? (
+          {selected && admin ? (
             <SupportChatPanel
               ticketId={selected}
               senderType="admin"
-              senderId={user.id}
-              senderName="Admin"
+              senderId={admin.id}
+              senderName={admin.displayName || "Admin"}
               headerTitle="Seller ↔ Staff Conversation"
               headerSubtitle="Full read/write monitoring"
               onBack={() => setSelected(null)}

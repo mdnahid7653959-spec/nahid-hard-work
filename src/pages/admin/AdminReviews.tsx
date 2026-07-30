@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Star, Check, X, MoreHorizontal, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Star, Check, X, MoreHorizontal, Trash2, Search, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { adminDb } from "@/lib/adminDb";
 
 interface Review {
   id: string;
@@ -34,13 +35,15 @@ interface Review {
 export default function AdminReviews() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
   const fetchReviews = async () => {
-    const { data, error } = await supabase
-      .from("reviews")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data, error } = await adminDb.select<Review>("reviews", {
+      columns: "*",
+      orderBy: { col: "created_at", ascending: false },
+    });
 
     if (error) {
       console.error(error);
@@ -55,8 +58,15 @@ export default function AdminReviews() {
     fetchReviews();
   }, []);
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchReviews();
+    toast({ title: "Reviews refreshed" });
+    setRefreshing(false);
+  };
+
   const updateApproval = async (id: string, is_approved: boolean) => {
-    const { error } = await supabase.from("reviews").update({ is_approved }).eq("id", id);
+    const { error } = await adminDb.update("reviews", { is_approved }, { id });
     if (error) {
       toast({ variant: "destructive", title: "Error", description: error.message });
     } else {
@@ -68,7 +78,7 @@ export default function AdminReviews() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this review?")) return;
     
-    const { error } = await supabase.from("reviews").delete().eq("id", id);
+    const { error } = await adminDb.remove("reviews", { id });
     if (error) {
       toast({ variant: "destructive", title: "Error", description: error.message });
     } else {
@@ -90,12 +100,36 @@ export default function AdminReviews() {
     </div>
   );
 
+  const filteredReviews = reviews.filter(r => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (r.title?.toLowerCase().includes(q)) || (r.comment?.toLowerCase().includes(q));
+  });
+
   return (
     <AdminLayout title="Reviews">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Reviews</h1>
-          <p className="text-muted-foreground">Manage customer reviews and ratings</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Reviews</h1>
+            <p className="text-muted-foreground">Manage customer reviews and ratings</p>
+          </div>
+          <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
+        <div className="flex gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search reviews..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
 
         <div className="border rounded-lg bg-card">
@@ -114,14 +148,14 @@ export default function AdminReviews() {
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">Loading...</TableCell>
                 </TableRow>
-              ) : reviews.length === 0 ? (
+              ) : filteredReviews.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     No reviews found
                   </TableCell>
                 </TableRow>
               ) : (
-                reviews.map((review) => (
+                filteredReviews.map((review) => (
                   <TableRow key={review.id}>
                     <TableCell>
                       <div className="max-w-md">

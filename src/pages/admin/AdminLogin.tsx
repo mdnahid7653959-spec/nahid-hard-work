@@ -19,6 +19,18 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  // Lockout countdown timer
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutSeconds]);
+
   // Redirect if already authenticated (avoid navigation during render)
   useEffect(() => {
     if (isAuthenticated) navigate("/admin/dashboard", { replace: true });
@@ -27,18 +39,33 @@ export default function AdminLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (lockoutSeconds > 0) {
+      setError(`Too many failed attempts. Please wait ${lockoutSeconds}s before trying again.`);
+      return;
+    }
+
     setLoading(true);
 
-    const result = await login(username.trim(), password);
+    const cleanUsername = username.trim().replace(/[<>]/g, ""); // Basic XSS sanitization
+    const result = await login(cleanUsername, password);
 
     if (result.success) {
+      setFailedAttempts(0);
       toast({
         title: "Welcome back!",
         description: "You've successfully logged into the admin portal."
       });
       navigate("/admin/dashboard");
     } else {
-      setError(result.error || "Invalid credentials");
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+      if (nextAttempts >= 5) {
+        setLockoutSeconds(60);
+        setError("Account access temporarily locked for 60 seconds due to 5 consecutive failed login attempts.");
+      } else {
+        setError(`${result.error || "Invalid credentials"} (${5 - nextAttempts} attempts remaining)`);
+      }
     }
 
     setLoading(false);

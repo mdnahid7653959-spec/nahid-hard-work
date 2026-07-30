@@ -123,10 +123,11 @@ export default function AdminSellers() {
   const resolveImage = useCallback(async (ref: string | null | undefined) => {
     if (!ref) return null;
     if (/^https?:\/\//i.test(ref)) return ref;
-    // Legacy entries may include the bucket prefix; strip it.
-    const path = ref.replace(/^product-media\//, "");
+    // Determine bucket dynamically based on path prefix
+    const bucketName = ref.includes("seller-documents") ? "seller-documents" : "product-media";
+    const path = ref.replace(new RegExp(`^${bucketName}\/`), "").replace(/^product-media\//, "");
     const { data, error } = await supabase.storage
-      .from("product-media")
+      .from(bucketName)
       .createSignedUrl(path, 60 * 60);
     if (error) {
       console.error("Signed URL error for", path, error);
