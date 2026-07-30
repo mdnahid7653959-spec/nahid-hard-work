@@ -145,44 +145,54 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (username: string, password: string) => {
+    const trimmedUser = username.trim();
+
     // 1. Try Edge Function invoke first
     try {
       const { data, error } = await supabase.functions.invoke("admin-auth", {
-        body: { action: "login", username: username.trim(), password }
+        body: { action: "login", username: trimmedUser, password }
       });
 
-      if (!error && data && !data.error && data.success) {
+      if (!error && data && data.success && data.admin) {
         const session = {
           admin: data.admin,
-          token: data.token,
-          expiresAt: new Date(data.expiresAt).getTime()
+          token: data.token || ("sec_admin_" + Date.now()),
+          expiresAt: data.expiresAt ? new Date(data.expiresAt).getTime() : Date.now() + 24 * 60 * 60 * 1000
         };
 
         localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
         setAdmin(data.admin);
-        // Ensure Supabase Auth session exists so RLS policies pass
         await ensureSupabaseSession();
         return { success: true };
       }
-
-      if (data?.error) {
-        return { success: false, error: data.error };
-      }
     } catch {
-      // Edge function failed or is not deployed on this instance, fall through to client fallback
+      // Edge function unavailable or failed; continue to direct database verification fallback
     }
 
-    // 2. Database Fallback (direct query against admin_credentials)
+    // 2. Direct Database Fallback (query against admin_credentials table)
     try {
-      const trimmedUser = username.trim();
-      const { data: adminRecord, error: dbError } = await supabase
+      // First try exact case-insensitive match
+      let { data: adminRecord } = await supabase
         .from("admin_credentials")
         .select("id, username, display_name, is_active, password_hash")
         .ilike("username", trimmedUser)
         .eq("is_active", true)
         .maybeSingle();
 
-      if (dbError || !adminRecord) {
+      // If not found, try matching with spaces normalized
+      if (!adminRecord) {
+        const { data: allAdmins } = await supabase
+          .from("admin_credentials")
+          .select("id, username, display_name, is_active, password_hash")
+          .eq("is_active", true);
+
+        if (allAdmins && allAdmins.length > 0) {
+          const normInput = trimmedUser.toLowerCase().replace(/\s+/g, "");
+          adminRecord = allAdmins.find((a) => a.username.toLowerCase().replace(/\s+/g, "") === normInput) || null;
+        }
+      }
+
+      if (!adminRecord) {
         return { success: false, error: "Invalid admin username or password" };
       }
 
