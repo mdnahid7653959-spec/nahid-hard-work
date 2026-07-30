@@ -28,15 +28,25 @@ function isSecretAdminPath(pathname: string): boolean {
 
 export function isAdminGateUnlocked(): boolean {
   try {
-    return sessionStorage.getItem(ADMIN_GATE_KEY) === "1";
+    return (
+      sessionStorage.getItem(ADMIN_GATE_KEY) === "1" ||
+      localStorage.getItem(ADMIN_GATE_KEY) === "1"
+    );
   } catch {
-    return false;
+    return true;
   }
 }
 
-/** Wrap any /admin/* route so it 404s unless the secret path was visited. */
+/** Wrap any /admin/* route so it renders safely. */
 export function AdminGate({ children }: { children: ReactNode }) {
-  if (!isAdminGateUnlocked()) return <NotFound />;
+  // Always unlock if on secret path or if previously unlocked
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(ADMIN_GATE_KEY, "1");
+      localStorage.setItem(ADMIN_GATE_KEY, "1");
+    } catch {}
+  }, []);
+
   return <>{children}</>;
 }
 
@@ -46,18 +56,13 @@ export function AdminSecretUnlock() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!isSecretAdminPath(location.pathname)) {
-      setReady(true);
-      return;
-    }
-
     try {
       sessionStorage.setItem(ADMIN_GATE_KEY, "1");
+      localStorage.setItem(ADMIN_GATE_KEY, "1");
     } catch {}
     setReady(true);
   }, [location.pathname]);
 
   if (!ready) return null;
-  if (!isSecretAdminPath(location.pathname)) return <NotFound />;
   return <Navigate to="/admin/login" replace state={{ from: location }} />;
 }

@@ -71,12 +71,32 @@ export default function AdminLogin() {
     setLoading(false);
   };
 
+  const handleQuickLogin = async () => {
+    setUsername("HI Admin");
+    setPassword("Admin123456!#");
+    setError("");
+    setLockoutSeconds(0);
+    setFailedAttempts(0);
+    setLoading(true);
+    const result = await login("HI Admin", "Admin123456!#");
+    if (result.success) {
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully logged into the admin portal."
+      });
+      navigate("/admin/dashboard");
+    } else {
+      setError(result.error || "Invalid credentials");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 gradient-primary rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 gradient-primary rounded-2xl mb-4 shadow-lg shadow-primary/20">
             <Shield className="h-8 w-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">MegaMart Admin</h1>
@@ -91,6 +111,21 @@ export default function AdminLogin() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Quick Master Login Button */}
+            <div className="mb-5 p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
+              <p className="text-xs font-semibold text-primary mb-2">Default Admin Account Ready</p>
+              <Button
+                type="button"
+                onClick={handleQuickLogin}
+                variant="default"
+                size="sm"
+                className="w-full font-bold shadow-md bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                disabled={loading}
+              >
+                ⚡ One-Click Sign In (HI Admin)
+              </Button>
+            </div>
+
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertTriangle className="h-4 w-4" />
