@@ -62,7 +62,35 @@ export default function AdminLoyalty() {
 
   useEffect(() => {
     fetchData();
+    loadLoyaltySettings();
   }, []);
+
+  const loadLoyaltySettings = async () => {
+    try {
+      const { data } = await adminDb.select("site_settings", {
+        filters: [{ col: "key", op: "eq", value: "loyalty_settings" }],
+        limit: 1,
+      });
+      if (data && data.length > 0 && data[0].value) {
+        const saved = typeof data[0].value === "string" ? JSON.parse(data[0].value) : data[0].value;
+        setSettings((prev) => ({ ...prev, ...saved }));
+      }
+    } catch (e) {
+      console.error("Error loading loyalty settings:", e);
+    }
+  };
+
+  const saveLoyaltySettings = async () => {
+    try {
+      await adminDb.upsert("site_settings", {
+        key: "loyalty_settings",
+        value: settings,
+      });
+      toast({ title: "Settings saved", description: "Loyalty program settings updated successfully." });
+    } catch (e) {
+      toast({ title: "Error saving settings", description: String(e), variant: "destructive" });
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -397,7 +425,7 @@ export default function AdminLoyalty() {
                     </div>
                   </div>
                 </div>
-                <Button onClick={() => toast({ title: "Settings saved" })}>Save Settings</Button>
+                <Button onClick={saveLoyaltySettings}>Save Settings</Button>
               </CardContent>
             </Card>
           </TabsContent>
