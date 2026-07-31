@@ -355,12 +355,59 @@ export default function ProductFormPage() {
         product_id: productId,
         image_url: img.url,
         is_primary: img.isPrimary,
-        display_order: idx
+        sort_order: idx
       }));
       await adminDb.insert("product_images", rowsToInsert);
     } catch (dbErr) {
       console.error("Save product_images DB error:", dbErr);
     }
+  };
+
+  const uploadVideoFile = async (productId: string, file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("action", "upload");
+    formData.append("adminId", admin!.id);
+    formData.append("file", file);
+    formData.append("productId", productId);
+    formData.append("mediaType", "video");
+
+    try {
+      // Attempt Edge Function upload first
+      const { data, error } = await supabase.functions.invoke("admin-media", {
+        body: formData,
+      });
+
+      if (!error && data?.url) {
+        setUploading(false);
+        return data.url;
+      }
+    } catch (err) {
+      // Fallback
+    }
+
+    // Direct Storage Fallback
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${productId}/video_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("product-media")
+        .upload(filePath, file);
+
+      if (!uploadErr) {
+        const { data: publicUrlData } = supabase.storage
+          .from("product-media")
+          .getPublicUrl(filePath);
+        setUploading(false);
+        return publicUrlData.publicUrl;
+      } else {
+        console.error("Direct video upload error:", uploadErr);
+      }
+    } catch (directErr) {
+      console.error("Direct video upload exception:", directErr);
+    }
+    setUploading(false);
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -535,6 +582,21 @@ export default function ProductFormPage() {
     if (images.length > 0) {
       const uploadedImages = await uploadNewImages(savedProductId);
       await saveProductImages(savedProductId, uploadedImages);
+    }
+
+    // Upload video if it's a new file
+    if (video && video.isNew && video.file) {
+      const uploadedVideoUrl = await uploadVideoFile(savedProductId, video.file);
+      if (uploadedVideoUrl) {
+        const { error: updateErr } = await supabase
+          .from("products")
+          .update({ video_url: uploadedVideoUrl })
+          .eq("id", savedProductId);
+        if (updateErr) {
+          console.warn("Direct update video_url error, trying adminDb:", updateErr.message);
+          await adminDb.update("products", { video_url: uploadedVideoUrl }, { id: savedProductId });
+        }
+      }
     }
 
     toast({ 
