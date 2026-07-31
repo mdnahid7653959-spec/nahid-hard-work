@@ -38,6 +38,12 @@
   ],
   "shortcuts": [
     {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Durtup Admin Dashboard",
+      "url": "/admin"
+    },
+    {
       "name": "Cart",
       "short_name": "Cart",
       "description": "View your shopping cart",
