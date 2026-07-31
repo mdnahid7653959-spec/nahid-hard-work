@@ -189,7 +189,7 @@ export default function AdminSupplierIntegrations() {
 
       if (editingSupplier.id) {
         // Update existing
-        const { error } = await adminDb.update("supplier_integrations", payload, editingSupplier.id);
+        const { error } = await adminDb.update("supplier_integrations", payload, { id: editingSupplier.id });
         if (error) throw error;
         toast({ title: "Supplier integration updated successfully" });
       } else {
@@ -217,7 +217,7 @@ export default function AdminSupplierIntegrations() {
     if (!confirm("Are you sure you want to delete this supplier integration? All product mappings and logs will be deleted.")) return;
 
     try {
-      const { error } = await adminDb.remove("supplier_integrations", id);
+      const { error } = await adminDb.remove("supplier_integrations", { id });
       if (error) throw error;
       toast({ title: "Integration deleted successfully" });
       fetchData();
