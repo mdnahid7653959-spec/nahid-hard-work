@@ -268,32 +268,7 @@ export default function ProductFormPage() {
     for (const image of images) {
       if (image.isNew && image.file) {
         setUploading(true);
-        const formData = new FormData();
-        formData.append("action", "upload");
-        formData.append("adminId", admin!.id);
-        formData.append("file", image.file);
-        formData.append("productId", productId);
-        formData.append("mediaType", "image");
 
-        try {
-          // Attempt Edge Function upload first
-          const { data, error } = await supabase.functions.invoke("admin-media", {
-            body: formData,
-          });
-
-          if (!error && data?.url) {
-            uploadedImages.push({
-              ...image,
-              url: data.url,
-              isNew: false,
-            });
-            continue;
-          }
-        } catch (err) {
-          // Fallback to direct Supabase Storage upload
-        }
-
-        // Direct Storage Fallback
         try {
           const fileExt = image.file.name.split('.').pop();
           const filePath = `${productId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -313,10 +288,20 @@ export default function ProductFormPage() {
             });
           } else {
             console.error("Direct storage upload error:", uploadErr);
+            toast({
+              variant: "destructive",
+              title: "Upload Error",
+              description: `Failed to upload image "${image.file.name}": ${uploadErr.message}`
+            });
             uploadedImages.push({ ...image, url: '' });
           }
-        } catch (directErr) {
+        } catch (directErr: any) {
           console.error("Direct upload exception:", directErr);
+          toast({
+            variant: "destructive",
+            title: "Upload Error",
+            description: `Error uploading image "${image.file.name}": ${directErr.message || directErr}`
+          });
           uploadedImages.push({ ...image, url: '' });
         }
       } else {
@@ -330,26 +315,6 @@ export default function ProductFormPage() {
 
   const saveProductImages = async (productId: string, imagesToSave: ProductImage[]) => {
     try {
-      const formData = new FormData();
-      formData.append("action", "save-images");
-      formData.append("adminId", admin!.id);
-      formData.append("productId", productId);
-      formData.append("images", JSON.stringify(imagesToSave.map(img => ({
-        url: img.url,
-        isPrimary: img.isPrimary,
-      }))));
-
-      const { error } = await supabase.functions.invoke("admin-media", {
-        body: formData,
-      });
-
-      if (!error) return;
-    } catch (e) {
-      // Fallback
-    }
-
-    // Direct Database Fallback for product_images
-    try {
       await adminDb.remove("product_images", { filters: [{ col: "product_id", value: productId }] });
       const rowsToInsert = imagesToSave.map((img, idx) => ({
         product_id: productId,
@@ -357,36 +322,28 @@ export default function ProductFormPage() {
         is_primary: img.isPrimary,
         sort_order: idx
       }));
-      await adminDb.insert("product_images", rowsToInsert);
-    } catch (dbErr) {
+      const { error: insertErr } = await adminDb.insert("product_images", rowsToInsert);
+      if (insertErr) {
+        console.error("Direct insert product_images error:", insertErr);
+        toast({
+          variant: "destructive",
+          title: "Database Error",
+          description: `Failed to link images to product: ${insertErr.message || 'Row Level Security policy blocked insert'}`
+        });
+      }
+    } catch (dbErr: any) {
       console.error("Save product_images DB error:", dbErr);
+      toast({
+        variant: "destructive",
+        title: "Database Error",
+        description: `Failed to save product images: ${dbErr.message || dbErr}`
+      });
     }
   };
 
   const uploadVideoFile = async (productId: string, file: File) => {
     setUploading(true);
-    const formData = new FormData();
-    formData.append("action", "upload");
-    formData.append("adminId", admin!.id);
-    formData.append("file", file);
-    formData.append("productId", productId);
-    formData.append("mediaType", "video");
 
-    try {
-      // Attempt Edge Function upload first
-      const { data, error } = await supabase.functions.invoke("admin-media", {
-        body: formData,
-      });
-
-      if (!error && data?.url) {
-        setUploading(false);
-        return data.url;
-      }
-    } catch (err) {
-      // Fallback
-    }
-
-    // Direct Storage Fallback
     try {
       const fileExt = file.name.split('.').pop();
       const filePath = `${productId}/video_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -402,9 +359,19 @@ export default function ProductFormPage() {
         return publicUrlData.publicUrl;
       } else {
         console.error("Direct video upload error:", uploadErr);
+        toast({
+          variant: "destructive",
+          title: "Upload Error",
+          description: `Failed to upload video: ${uploadErr.message}`
+        });
       }
-    } catch (directErr) {
+    } catch (directErr: any) {
       console.error("Direct video upload exception:", directErr);
+      toast({
+        variant: "destructive",
+        title: "Upload Error",
+        description: `Error uploading video: ${directErr.message || directErr}`
+      });
     }
     setUploading(false);
     return null;
@@ -498,7 +465,7 @@ export default function ProductFormPage() {
       sold_count: parseInt(form.sold_count) || 0,
     };
 
-    let savedProductId: string | null = isEdit ? id || null : null;
+    let savedProductId: string | null = null;
     let saveError: string | null = null;
 
     try {
