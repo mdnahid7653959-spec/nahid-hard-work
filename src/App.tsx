@@ -107,10 +107,8 @@ const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
 const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminHomePromos = lazy(() => import("./pages/admin/AdminHomePromos"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
-const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
 const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
 const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport"));
-const AdminStudio = lazy(() => import("./pages/admin/AdminStudio"));
 const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
@@ -267,11 +265,9 @@ const App = () => (
                           <Route path="/admin/home-bento" element={<AdminProtectedRoute><AdminHomeBento /></AdminProtectedRoute>} />
                           <Route path="/admin/home-promos" element={<AdminProtectedRoute><AdminHomePromos /></AdminProtectedRoute>} />
                           <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
-                          <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
                           <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
                           <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
                           <Route path="/admin/seller-support" element={<AdminProtectedRoute><AdminSellerSupport /></AdminProtectedRoute>} />
-                          <Route path="/admin/studio" element={<AdminProtectedRoute><AdminStudio /></AdminProtectedRoute>} />
                           <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
                           <Route path="/admin/wallet" element={<AdminProtectedRoute><AdminWallet /></AdminProtectedRoute>} />
                           <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
