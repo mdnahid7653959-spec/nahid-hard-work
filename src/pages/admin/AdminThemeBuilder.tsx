@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { defaultTheme, ThemeConfig, applyThemeToDOM, themePresets } from "@/hooks/useThemeConfig";
 import { defaultSections, SectionConfig } from "@/hooks/useLayoutConfig";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Palette,
   Layout,
@@ -52,26 +53,141 @@ function getAdminToken(): string | null {
   return null;
 }
 
-async function apiCall(action: string, method: string, body?: unknown) {
-  const token = getAdminToken();
-  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const url = `${baseUrl}/functions/v1/admin-theme?action=${action}`;
-  const res = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-token": token || "",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+async function apiCall(action: string, method: string, body?: any) {
+  if (action === "create-custom-section") {
+    const { data, error } = await supabase
+      .from("custom_sections")
+      .insert([{
+        title: body.title,
+        type: body.type,
+        config: body.config,
+        is_active: true
+      }])
+      .select()
+      .single();
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Request failed");
+    if (error) throw error;
+    return { data };
   }
 
-  return res.json();
+  if (action === "save-site-config") {
+    const { data: existing } = await supabase
+      .from("site_config")
+      .select("id")
+      .eq("key", body.key)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("site_config")
+        .update({ value: body.value, updated_at: new Date().toISOString() })
+        .eq("key", body.key);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("site_config")
+        .insert([{ key: body.key, value: body.value }]);
+      if (error) throw error;
+    }
+    return { success: true };
+  }
+
+  if (action === "theme") {
+    const configId = body.id || "default";
+    const { data: existing } = await supabase
+      .from("theme_config")
+      .select("id")
+      .eq("id", configId)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("theme_config")
+        .update({ config: body.config, updated_at: new Date().toISOString() })
+        .eq("id", configId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("theme_config")
+        .insert([{ id: configId, name: "Default Theme", config: body.config, is_active: true }]);
+      if (error) throw error;
+    }
+    return { success: true };
+  }
+
+  if (action === "layout") {
+    const pageName = body.page || "homepage";
+    const { data: existing } = await supabase
+      .from("layout_config")
+      .select("id")
+      .eq("page", pageName)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("layout_config")
+        .update({ sections: body.sections, updated_at: new Date().toISOString() })
+        .eq("page", pageName);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("layout_config")
+        .insert([{ page: pageName, page_type: "custom", sections: body.sections, is_active: true, config: {} }]);
+      if (error) throw error;
+    }
+    return { success: true };
+  }
+
+  if (action === "save-version") {
+    const { data, error } = await supabase
+      .from("theme_versions")
+      .insert([{
+        name: body.name,
+        theme_config: body.theme_config,
+        layout_config: body.layout_config
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data };
+  }
+
+  if (action === "restore-version") {
+    const { data: version, error: fetchErr } = await supabase
+      .from("theme_versions")
+      .select("*")
+      .eq("id", body.id)
+      .single();
+
+    if (fetchErr || !version) throw fetchErr || new Error("Version not found");
+
+    const { error: themeErr } = await supabase
+      .from("theme_config")
+      .update({ config: version.theme_config, updated_at: new Date().toISOString() })
+      .eq("is_active", true);
+
+    const layoutConfig = version.layout_config as any;
+    const { error: layoutErr } = await supabase
+      .from("layout_config")
+      .update({ sections: layoutConfig?.sections || [], updated_at: new Date().toISOString() })
+      .eq("page", "homepage");
+
+    if (themeErr || layoutErr) throw themeErr || layoutErr;
+    return { success: true };
+  }
+
+  if (action === "delete-version") {
+    const { error } = await supabase
+      .from("theme_versions")
+      .delete()
+      .eq("id", body.id);
+
+    if (error) throw error;
+    return { success: true };
+  }
+
+  throw new Error(`Unsupported action: ${action}`);
 }
 
 function HSLColorPicker({
