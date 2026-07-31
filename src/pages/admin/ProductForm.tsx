@@ -298,12 +298,12 @@ export default function ProductFormPage() {
           const fileExt = image.file.name.split('.').pop();
           const filePath = `${productId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
           const { error: uploadErr } = await supabase.storage
-            .from("products")
+            .from("product-media")
             .upload(filePath, image.file);
 
           if (!uploadErr) {
             const { data: publicUrlData } = supabase.storage
-              .from("products")
+              .from("product-media")
               .getPublicUrl(filePath);
             
             uploadedImages.push({
