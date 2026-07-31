@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Save, ArrowLeft, Palette, Loader2, Package, Image as ImageIcon, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -490,7 +491,13 @@ export default function ProductFormPage() {
           .select()
           .single();
         if (dbErr) {
-          saveError = dbErr.message;
+          console.warn("Direct update error, trying adminDb:", dbErr.message);
+          const { data: adminRes, error: adminErr } = await adminDb.update("products", productData, { id });
+          if (!adminErr && adminRes && adminRes.length > 0) {
+            savedProductId = adminRes[0].id;
+          } else {
+            saveError = dbErr.message || adminErr?.message;
+          }
         } else {
           savedProductId = dbData.id;
         }
@@ -501,7 +508,13 @@ export default function ProductFormPage() {
           .select()
           .single();
         if (dbErr) {
-          saveError = dbErr.message;
+          console.warn("Direct insert error, trying adminDb:", dbErr.message);
+          const { data: adminRes, error: adminErr } = await adminDb.insert("products", productData);
+          if (!adminErr && adminRes && adminRes.length > 0) {
+            savedProductId = adminRes[0].id;
+          } else {
+            saveError = dbErr.message || adminErr?.message;
+          }
         } else {
           savedProductId = dbData.id;
         }

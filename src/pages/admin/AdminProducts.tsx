@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search, Edit, Trash2, Eye, MoreHorizontal, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,67 @@ export default function AdminProducts() {
       return;
     }
 
+    // Ensure Supabase auth session exists so RLS policies pass
+    try {
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      if (!sessionCheck?.session) {
+        await supabase.auth.signInAnonymously().catch(() => {});
+      }
+    } catch {}
+
+    // Primary: Direct DB query with category/brand/seller joins
+    try {
+      const { data: dbProds, error: dbErr } = await supabase
+        .from("products")
+        .select(`
+          *,
+          category:categories(name),
+          brand:brands(name),
+          seller:sellers(shop_name)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (!dbErr && dbProds) {
+        setProducts(dbProds as Product[]);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Direct fetch products error with joins:", err);
+    }
+
+    // Fallback 1: Direct DB query without joins (simple select)
+    try {
+      const { data: simpleProds, error: simpleErr } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!simpleErr && simpleProds) {
+        setProducts(simpleProds as Product[]);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Simple fetch products error:", err);
+    }
+
+    // Fallback 2: adminDb helper (handles Edge Function + retry)
+    try {
+      const { data: adminProds, error: adminErr } = await adminDb.select("products", {
+        orderBy: { col: "created_at", ascending: false },
+        limit: 500,
+      });
+      if (!adminErr && adminProds) {
+        setProducts(adminProds as Product[]);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error("AdminDb fetch products error:", err);
+    }
+
+    // Fallback 3: Edge Function
     try {
       const { data, error } = await supabase.functions.invoke("admin-products", {
         body: { action: "list", adminId: admin.id }
@@ -82,27 +144,9 @@ export default function AdminProducts() {
         return;
       }
     } catch (err) {
-      // Fallback to direct DB
+      console.error("Edge function fetch error:", err);
     }
 
-    // Direct Database Fallback
-    try {
-      const { data: dbProds, error: dbErr } = await supabase
-        .from("products")
-        .select(`
-          *,
-          category:categories(name),
-          brand:brands(name),
-          seller:sellers(store_name)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (!dbErr && dbProds) {
-        setProducts(dbProds as Product[]);
-      }
-    } catch (err) {
-      console.error("Direct fetch products error:", err);
-    }
     setLoading(false);
   };
 
