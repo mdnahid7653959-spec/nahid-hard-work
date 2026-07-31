@@ -33,8 +33,12 @@ const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
 const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
 const AdminCMS = lazy(() => import("./pages/admin/AdminCMS"));
 const AdminConsignments = lazy(() => import("./pages/admin/AdminConsignments"));
+const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
+const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const AdminThemeBuilder = lazy(() => import("./pages/admin/AdminThemeBuilder"));
+const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport"));
 const AdminStudio = lazy(() => import("./pages/admin/AdminStudio"));
 const AdminHomePromos = lazy(() => import("./pages/admin/AdminHomePromos"));
 const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
@@ -99,8 +103,12 @@ const AdminApp = () => (
                 <Route path="/admin/security" element={<AdminProtectedRoute><AdminSecurity /></AdminProtectedRoute>} />
                 <Route path="/admin/cms" element={<AdminProtectedRoute><AdminCMS /></AdminProtectedRoute>} />
                 <Route path="/admin/consignments" element={<AdminProtectedRoute><AdminConsignments /></AdminProtectedRoute>} />
+                <Route path="/admin/warehouses" element={<AdminProtectedRoute><AdminWarehouses /></AdminProtectedRoute>} />
+                <Route path="/admin/home-bento" element={<AdminProtectedRoute><AdminHomeBento /></AdminProtectedRoute>} />
                 <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
                 <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminThemeBuilder /></AdminProtectedRoute>} />
+                <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
+                <Route path="/admin/seller-support" element={<AdminProtectedRoute><AdminSellerSupport /></AdminProtectedRoute>} />
                 <Route path="/admin/studio" element={<AdminProtectedRoute><AdminStudio /></AdminProtectedRoute>} />
                 <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
                 <Route path="/admin/home-promos" element={<AdminProtectedRoute><AdminHomePromos /></AdminProtectedRoute>} />
