@@ -56,6 +56,9 @@ const ALLOWED_TABLES = new Set<string>([
   "cj_category_mappings",
   "seller_support_tickets",
   "seller_support_messages",
+  "supplier_integrations",
+  "supplier_product_mappings",
+  "supplier_sync_logs",
 ]);
 
 

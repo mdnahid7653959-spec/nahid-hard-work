@@ -92,6 +92,7 @@ const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminCJSettings = lazy(() => import("./pages/admin/AdminCJSettings"));
+const AdminSupplierIntegrations = lazy(() => import("./pages/admin/AdminSupplierIntegrations"));
 const AdminSellers = lazy(() => import("./pages/admin/AdminSellers"));
 const AdminShipping = lazy(() => import("./pages/admin/AdminShipping"));
 const AdminCommissions = lazy(() => import("./pages/admin/AdminCommissions"));
@@ -250,6 +251,7 @@ const App = () => (
                           <Route path="/admin/coupons" element={<AdminProtectedRoute><AdminCoupons /></AdminProtectedRoute>} />
                           <Route path="/admin/reviews" element={<AdminProtectedRoute><AdminReviews /></AdminProtectedRoute>} />
                           <Route path="/admin/cj-settings" element={<AdminProtectedRoute><AdminCJSettings /></AdminProtectedRoute>} />
+                          <Route path="/admin/supplier-integrations" element={<AdminProtectedRoute><AdminSupplierIntegrations /></AdminProtectedRoute>} />
                           <Route path="/admin/sellers" element={<AdminProtectedRoute><AdminSellers /></AdminProtectedRoute>} />
                           <Route path="/admin/shipping" element={<AdminProtectedRoute><AdminShipping /></AdminProtectedRoute>} />
                           <Route path="/admin/commissions" element={<AdminProtectedRoute><AdminCommissions /></AdminProtectedRoute>} />
