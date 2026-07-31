@@ -42,6 +42,10 @@ export function useSiteConfig<T = Record<string, unknown>>(key: string, fallback
         if (value !== null) {
           writeCache(key, value);
           return value;
+        } else {
+          try {
+            localStorage.removeItem(cacheKey(key));
+          } catch {}
         }
       } catch (err) {
         console.warn(`[useSiteConfig] Exception for key "${key}", using fallback:`, err);
