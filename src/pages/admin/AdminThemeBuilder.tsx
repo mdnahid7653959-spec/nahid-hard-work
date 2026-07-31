@@ -10,7 +10,6 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { defaultTheme, ThemeConfig, applyThemeToDOM, themePresets } from "@/hooks/useThemeConfig";
@@ -35,1217 +34,534 @@ import {
   Plus,
   Copy,
   X,
-  Image,
+  Image as ImageIcon,
   Type,
   Code,
   Video,
   PanelLeft,
   Pencil,
+  Grid,
+  History,
+  CheckCircle,
+  FileText,
+  Sliders,
+  AlignLeft,
+  ChevronRight,
+  ExternalLink,
+  ChevronLeft,
+  HelpCircle,
+  FileCode,
+  LayoutGrid,
+  Layers,
+  ZoomIn,
+  ZoomOut,
+  FolderOpen
 } from "lucide-react";
 
-function getAdminToken(): string | null {
-  try {
-    const stored = localStorage.getItem("megamart_admin_session");
-    if (stored) return JSON.parse(stored).token || null;
-  } catch {
-    // ignore
-  }
-  return null;
-}
-
-async function apiCall(action: string, method: string, body?: any) {
-  if (action === "create-custom-section") {
-    const { data, error } = await supabase
-      .from("custom_sections")
-      .insert([{
-        title: body.title,
-        type: body.type,
-        config: body.config,
-        is_active: true
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { data };
-  }
-
-  if (action === "save-site-config") {
-    const { data: existing } = await supabase
-      .from("site_config")
-      .select("id")
-      .eq("key", body.key)
-      .maybeSingle();
-
-    if (existing) {
-      const { error } = await supabase
-        .from("site_config")
-        .update({ value: body.value, updated_at: new Date().toISOString() })
-        .eq("key", body.key);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from("site_config")
-        .insert([{ key: body.key, value: body.value }]);
-      if (error) throw error;
-    }
-    return { success: true };
-  }
-
-  if (action === "theme") {
-    const configId = body.id || "default";
-    const { data: existing } = await supabase
-      .from("theme_config")
-      .select("id")
-      .eq("id", configId)
-      .maybeSingle();
-
-    if (existing) {
-      const { error } = await supabase
-        .from("theme_config")
-        .update({ config: body.config, updated_at: new Date().toISOString() })
-        .eq("id", configId);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from("theme_config")
-        .insert([{ id: configId, name: "Default Theme", config: body.config, is_active: true }]);
-      if (error) throw error;
-    }
-    return { success: true };
-  }
-
-  if (action === "layout") {
-    const pageName = body.page || "homepage";
-    const { data: existing } = await supabase
-      .from("layout_config")
-      .select("id")
-      .eq("page", pageName)
-      .maybeSingle();
-
-    if (existing) {
-      const { error } = await supabase
-        .from("layout_config")
-        .update({ sections: body.sections, updated_at: new Date().toISOString() })
-        .eq("page", pageName);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from("layout_config")
-        .insert([{ page: pageName, page_type: "custom", sections: body.sections, is_active: true, config: {} }]);
-      if (error) throw error;
-    }
-    return { success: true };
-  }
-
-  if (action === "save-version") {
-    const { data, error } = await supabase
-      .from("theme_versions")
-      .insert([{
-        name: body.name,
-        theme_config: body.theme_config,
-        layout_config: body.layout_config
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { data };
-  }
-
-  if (action === "restore-version") {
-    const { data: version, error: fetchErr } = await supabase
-      .from("theme_versions")
-      .select("*")
-      .eq("id", body.id)
-      .single();
-
-    if (fetchErr || !version) throw fetchErr || new Error("Version not found");
-
-    const { error: themeErr } = await supabase
-      .from("theme_config")
-      .update({ config: version.theme_config, updated_at: new Date().toISOString() })
-      .eq("is_active", true);
-
-    const layoutConfig = version.layout_config as any;
-    const { error: layoutErr } = await supabase
-      .from("layout_config")
-      .update({ sections: layoutConfig?.sections || [], updated_at: new Date().toISOString() })
-      .eq("page", "homepage");
-
-    if (themeErr || layoutErr) throw themeErr || layoutErr;
-    return { success: true };
-  }
-
-  if (action === "delete-version") {
-    const { error } = await supabase
-      .from("theme_versions")
-      .delete()
-      .eq("id", body.id);
-
-    if (error) throw error;
-    return { success: true };
-  }
-
-  throw new Error(`Unsupported action: ${action}`);
-}
-
-function HSLColorPicker({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const parts = value.split(" ");
-  const h = parseInt(parts[0]) || 0;
-  const s = parseInt(parts[1]) || 0;
-  const l = parseInt(parts[2]) || 50;
-
-  const hslToHex = (hue: number, sat: number, lig: number) => {
-    const sN = sat / 100;
-    const lN = lig / 100;
-    const c = (1 - Math.abs(2 * lN - 1)) * sN;
-    const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
-    const m = lN - c / 2;
-    let r = 0,
-      g = 0,
-      b = 0;
-
-    if (hue < 60) {
-      r = c;
-      g = x;
-    } else if (hue < 120) {
-      r = x;
-      g = c;
-    } else if (hue < 180) {
-      g = c;
-      b = x;
-    } else if (hue < 240) {
-      g = x;
-      b = c;
-    } else if (hue < 300) {
-      r = x;
-      b = c;
-    } else {
-      r = c;
-      b = x;
-    }
-
-    const hex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, "0");
-    return `#${hex(r)}${hex(g)}${hex(b)}`;
-  };
-
-  const hexToHSL = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return { h: 0, s: 0, l: 50 };
-
-    const r = parseInt(result[1], 16) / 255;
-    const g = parseInt(result[2], 16) / 255;
-    const b = parseInt(result[3], 16) / 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let hue = 0;
-    let sat = 0;
-    const lig = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      sat = lig > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r:
-          hue = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-          break;
-        case g:
-          hue = ((b - r) / d + 2) / 6;
-          break;
-        case b:
-          hue = ((r - g) / d + 4) / 6;
-          break;
-      }
-    }
-
-    return { h: Math.round(hue * 360), s: Math.round(sat * 100), l: Math.round(lig * 100) };
-  };
-
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-medium">{label}</Label>
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={hslToHex(h, s, l)}
-          onChange={(e) => {
-            const { h: nh, s: ns, l: nl } = hexToHSL(e.target.value);
-            onChange(`${nh} ${ns}% ${nl}%`);
-          }}
-          className="w-8 h-8 rounded border cursor-pointer"
-        />
-        <Input value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 text-xs font-mono h-8" placeholder="H S% L%" />
-      </div>
-    </div>
-  );
-}
-
-function SectionStyleEditor({
-  section,
-  onChange,
-}: {
-  section: SectionConfig;
-  onChange: (s: SectionConfig) => void;
-}) {
-  const style = section.style || {};
-  const rg = section.responsiveGrid || { mobile: 2, tablet: 3, desktop: 6 };
-  const content = section.content || {};
-  const schedule = section.schedule || {};
-
-  const updateStyle = (key: string, value: string) => onChange({ ...section, style: { ...style, [key]: value } });
-  const updateGrid = (device: "mobile" | "tablet" | "desktop", value: number) =>
-    onChange({ ...section, responsiveGrid: { ...rg, [device]: value } });
-  const updateContent = (key: string, value: unknown) =>
-    onChange({ ...section, content: { ...content, [key]: value } });
-  const updateSchedule = (key: string, value: string) =>
-    onChange({ ...section, schedule: { ...schedule, [key]: value || undefined } });
-
-  return (
-    <div className="space-y-5">
-      <div className="space-y-3">
-        <h4 className="text-sm font-semibold">Content</h4>
-        <div>
-          <Label className="text-xs">Section Label</Label>
-          <Input className="h-8 text-xs" value={section.label} onChange={(e) => onChange({ ...section, label: e.target.value })} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs">Title</Label>
-            <Input className="h-8 text-xs" value={(content.title as string) || ""} onChange={(e) => updateContent("title", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Subtitle</Label>
-            <Input className="h-8 text-xs" value={(content.subtitle as string) || ""} onChange={(e) => updateContent("subtitle", e.target.value)} />
-          </div>
-        </div>
-        <div>
-          <Label className="text-xs">Image URL</Label>
-          <Input className="h-8 text-xs" value={(content.imageUrl as string) || ""} onChange={(e) => updateContent("imageUrl", e.target.value)} placeholder="https://..." />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs">Button Text</Label>
-            <Input className="h-8 text-xs" value={(content.buttonText as string) || ""} onChange={(e) => updateContent("buttonText", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Button Link</Label>
-            <Input className="h-8 text-xs" value={(content.buttonLink as string) || ""} onChange={(e) => updateContent("buttonLink", e.target.value)} />
-          </div>
-        </div>
-        <div>
-          <Label className="text-xs">Text / HTML</Label>
-          <Textarea
-            className="text-xs min-h-[90px]"
-            value={(content.text as string) || (content.html as string) || ""}
-            onChange={(e) => {
-              updateContent("text", e.target.value);
-              updateContent("html", e.target.value);
-            }}
-            placeholder="Text or HTML content"
-          />
-        </div>
-      </div>
-
-      <Separator />
-
-      <div>
-        <h4 className="text-sm font-semibold mb-3">Spacing & Sizing</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs">Padding</Label>
-            <Input className="h-8 text-xs" placeholder="e.g. 1rem" value={style.padding || ""} onChange={(e) => updateStyle("padding", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Margin</Label>
-            <Input className="h-8 text-xs" placeholder="e.g. 0.5rem 0" value={style.margin || ""} onChange={(e) => updateStyle("margin", e.target.value)} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <div>
-            <Label className="text-xs">Border Radius</Label>
-            <Input className="h-8 text-xs" placeholder="e.g. 12px" value={style.borderRadius || ""} onChange={(e) => updateStyle("borderRadius", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Shadow</Label>
-            <Input className="h-8 text-xs" placeholder="e.g. 0 6px 18px rgba(...)" value={style.shadow || ""} onChange={(e) => updateStyle("shadow", e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div>
-        <h4 className="text-sm font-semibold mb-3">Colors</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs">Background</Label>
-            <Input className="h-8 text-xs" placeholder="hsl(0 0% 98%)" value={style.backgroundColor || ""} onChange={(e) => updateStyle("backgroundColor", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Text Color</Label>
-            <Input className="h-8 text-xs" placeholder="hsl(0 0% 10%)" value={style.textColor || ""} onChange={(e) => updateStyle("textColor", e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      {section.gridCols !== undefined && (
-        <>
-          <Separator />
-          <div>
-            <h4 className="text-sm font-semibold mb-3">Responsive Grid</h4>
-            <div className="grid grid-cols-3 gap-2">
-              {(["mobile", "tablet", "desktop"] as const).map((device) => (
-                <div key={device} className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    {device === "mobile" ? <Smartphone className="h-3 w-3" /> : device === "tablet" ? <Tablet className="h-3 w-3" /> : <Monitor className="h-3 w-3" />}
-                    {device}
-                  </Label>
-                  <Select value={String(rg[device])} onValueChange={(v) => updateGrid(device, parseInt(v))}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6].map((n) => (
-                        <SelectItem key={n} value={String(n)}>
-                          {n} col{n > 1 ? "s" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-          <div>
-            <h4 className="text-sm font-semibold mb-3">Feed Controls</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Max Items</Label>
-                <Input
-                  className="h-8 text-xs"
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={(content.maxItems as number) || ""}
-                  onChange={(e) => updateContent("maxItems", parseInt(e.target.value) || undefined)}
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Sort By</Label>
-                <Select value={(content.sortBy as string) || "default"} onValueChange={(v) => updateContent("sortBy", v)}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="latest">Latest</SelectItem>
-                    <SelectItem value="popular">Popular</SelectItem>
-                    <SelectItem value="random">Random</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      <Separator />
-
-      <div>
-        <h4 className="text-sm font-semibold mb-3">Schedule</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs">Visible From</Label>
-            <Input className="h-8 text-xs" type="datetime-local" value={schedule.startTime || ""} onChange={(e) => updateSchedule("startTime", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Visible Until</Label>
-            <Input className="h-8 text-xs" type="datetime-local" value={schedule.endTime || ""} onChange={(e) => updateSchedule("endTime", e.target.value)} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const BLOCK_TYPES = [
-  { type: "banner", label: "Banner", icon: Image },
-  { type: "text", label: "Text Block", icon: Type },
-  { type: "image_cta", label: "Image + CTA", icon: Image },
-  { type: "html", label: "HTML Block", icon: Code },
-  { type: "video", label: "Video", icon: Video },
-] as const;
-
-interface CustomBlockForm {
-  type: string;
-  title: string;
-  config: Record<string, string | boolean>;
-}
-
-function CustomBlockEditor({
-  initial,
-  onSave,
-  onCancel,
-}: {
-  initial?: CustomBlockForm;
-  onSave: (b: CustomBlockForm) => void;
-  onCancel: () => void;
-}) {
-  const [block, setBlock] = useState<CustomBlockForm>(initial || { type: "banner", title: "", config: {} });
-  const update = (key: string, value: string | boolean) => setBlock((prev) => ({ ...prev, config: { ...prev.config, [key]: value } }));
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <Label className="text-xs">Block Type</Label>
-        <Select value={block.type} onValueChange={(v) => setBlock((prev) => ({ ...prev, type: v, config: {} }))}>
-          <SelectTrigger className="h-9">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {BLOCK_TYPES.map((bt) => (
-              <SelectItem key={bt.type} value={bt.type}>
-                {bt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label className="text-xs">Title</Label>
-        <Input className="h-9" value={block.title} onChange={(e) => setBlock((prev) => ({ ...prev, title: e.target.value }))} placeholder="Block title" />
-      </div>
-
-      <Separator />
-
-      {block.type === "banner" && (
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Image URL</Label>
-            <Input className="h-8 text-xs" value={(block.config.imageUrl as string) || ""} onChange={(e) => update("imageUrl", e.target.value)} placeholder="https://..." />
-          </div>
-          <div>
-            <Label className="text-xs">Subtitle</Label>
-            <Input className="h-8 text-xs" value={(block.config.subtitle as string) || ""} onChange={(e) => update("subtitle", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Button Text</Label>
-            <Input className="h-8 text-xs" value={(block.config.buttonText as string) || ""} onChange={(e) => update("buttonText", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Button Link</Label>
-            <Input className="h-8 text-xs" value={(block.config.buttonLink as string) || ""} onChange={(e) => update("buttonLink", e.target.value)} />
-          </div>
-        </div>
-      )}
-
-      {block.type === "text" && (
-        <div>
-          <Label className="text-xs">Content</Label>
-          <Textarea className="text-xs min-h-[120px]" value={(block.config.content as string) || ""} onChange={(e) => update("content", e.target.value)} placeholder="Your text content..." />
-        </div>
-      )}
-
-      {block.type === "image_cta" && (
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Image URL</Label>
-            <Input className="h-8 text-xs" value={(block.config.imageUrl as string) || ""} onChange={(e) => update("imageUrl", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Heading</Label>
-            <Input className="h-8 text-xs" value={(block.config.heading as string) || ""} onChange={(e) => update("heading", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">Description</Label>
-            <Textarea className="text-xs min-h-[80px]" value={(block.config.description as string) || ""} onChange={(e) => update("description", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">CTA Button Text</Label>
-            <Input className="h-8 text-xs" value={(block.config.buttonText as string) || ""} onChange={(e) => update("buttonText", e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-xs">CTA Link</Label>
-            <Input className="h-8 text-xs" value={(block.config.buttonLink as string) || ""} onChange={(e) => update("buttonLink", e.target.value)} />
-          </div>
-        </div>
-      )}
-
-      {block.type === "html" && (
-        <div>
-          <Label className="text-xs">HTML Content</Label>
-          <Textarea className="text-xs font-mono min-h-[120px]" value={(block.config.html as string) || ""} onChange={(e) => update("html", e.target.value)} placeholder="<div>...</div>" />
-        </div>
-      )}
-
-      {block.type === "video" && (
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Video URL</Label>
-            <Input className="h-8 text-xs" value={(block.config.videoUrl as string) || ""} onChange={(e) => update("videoUrl", e.target.value)} placeholder="https://..." />
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-2 pt-2">
-        <Button size="sm" onClick={() => block.title.trim() && onSave(block)} disabled={!block.title.trim()} className="flex-1">
-          <Save className="h-3 w-3 mr-1" /> Save Block
-        </Button>
-        <Button size="sm" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </div>
-  );
-}
-
+// Predefined device sizes for center responsive canvas
 const DEVICE_SIZES = [
-  { key: "mobile", label: "Mobile", icon: Smartphone, width: 375 },
-  { key: "tablet", label: "Tablet", icon: Tablet, width: 768 },
-  { key: "desktop", label: "Desktop", icon: Monitor, width: 1440 },
-] as const;
+  { key: "mobile", label: "Mobile", width: 375, icon: Smartphone },
+  { key: "tablet", label: "Tablet", width: 768, icon: Tablet },
+  { key: "laptop", label: "Laptop", width: 1024, icon: Monitor },
+  { key: "desktop", label: "Desktop", width: 1440, icon: Monitor },
+];
 
-type DropPosition = "top" | "middle" | "bottom";
+const PAGES_TEMPLATES = [
+  { key: "homepage", label: "Homepage", icon: Layout },
+  { key: "product_page", label: "Product Detail Page", icon: FileText },
+  { key: "category_page", label: "Category Page", icon: Grid },
+  { key: "cart_page", label: "Cart Page", icon: LayoutGrid },
+  { key: "checkout_page", label: "Checkout Page", icon: CheckCircle },
+  { key: "seller_store", label: "Seller Storefront", icon: Palette },
+];
 
-interface DropTarget {
-  index: number;
-  position: DropPosition;
+interface CustomBlock {
+  id: string;
+  title: string;
+  type: string;
+  config: any;
 }
 
 export default function AdminThemeBuilder() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState("layout");
-  const [saving, setSaving] = useState(false);
-
-  const [theme, setTheme] = useState<ThemeConfig>({ ...defaultTheme });
-  const [themeId, setThemeId] = useState<string | null>(null);
-
-  const [sections, setSections] = useState<SectionConfig[]>([...defaultSections]);
-  const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
-
-  const dragIndexRef = useRef<number | null>(null);
-  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const [versions, setVersions] = useState<Array<{ id: string; name: string; created_at: string }>>([]);
-  const [versionName, setVersionName] = useState("");
-
-  const [showAddSheet, setShowAddSheet] = useState(false);
-  const [showBlockEditor, setShowBlockEditor] = useState(false);
-  const [editingBlock, setEditingBlock] = useState<CustomBlockForm | undefined>(undefined);
-
-  const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "desktop">("mobile");
-  const [showPreview, setShowPreview] = useState(true);
-
+  // Active builder configurations
+  const [activePage, setActivePage] = useState("homepage");
+  const [sections, setSections] = useState<SectionConfig[]>([]);
+  const [theme, setTheme] = useState<ThemeConfig>(defaultTheme);
+  const [customSectionsMap, setCustomSectionsMap] = useState<Record<string, CustomBlock>>({});
+  
+  // Custom headers/footers configurations
   const [headerConfig, setHeaderConfig] = useState<any>({
-    logo_url: "/lovable-uploads/f37448fb-4b8d-40a2-9709-70766997626f.jpg",
-    logo_text: "Darzo",
-    top_bar: { visible: true, text: "Free Shipping on ৳999+" },
+    logo_url: "",
+    logo_text: "Durtup",
     show_search: true,
     show_categories_bar: true,
-    nav_links: [
-      { label: "Home", href: "/" },
-      { label: "Flash Sale", href: "/flash-sale" },
-      { label: "New Arrivals", href: "/new-arrivals" },
-    ],
-    trending_searches: ["Wireless earbuds", "Phone case"],
+    top_bar: { visible: true, text: "Welcome to Durtup Store!" },
+    nav_links: [{ label: "Home", href: "/" }]
   });
-
   const [footerConfig, setFooterConfig] = useState<any>({
-    logo_url: "/darzo-logo.png",
-    brand_description: "Your one-stop destination for millions of products.",
-    copyright: "© 2026 Darzo.com",
-    columns: [
-      { title: "Customer Service", links: [{ name: "Help", href: "/help" }] },
-      { title: "Policies", links: [{ name: "Privacy", href: "/privacy" }] },
-    ],
-    social_links: [{ platform: "facebook", url: "#" }],
-    payment_methods: ["Visa", "MC"],
+    logo_url: "",
+    brand_description: "Durtup is your premier destination for visual shopping.",
+    copyright: "© 2026 Durtup. All rights reserved.",
+    columns: [{ title: "Shop", links: [{ name: "All Products", href: "/products" }] }]
   });
 
-  const [mobileNavConfig, setMobileNavConfig] = useState<any>({
-    tabs: [
-      { label: "Home", icon: "home", href: "/" },
-      { label: "Categories", icon: "grid", href: "/categories" },
-      { label: "Cart", icon: "shopping-cart", href: "/cart", badge: "cart" },
-      { label: "Account", icon: "user", href: "/account" },
-    ],
-  });
+  // UI state variables
+  const [activeTab, setActiveTab] = useState("sections");
+  const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "laptop" | "desktop">("desktop");
+  const [zoomLevel, setZoomLevel] = useState(100); // Zoom in/out percentage
+  const [isModified, setIsModified] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  // Snapshots & Assets
+  const [versions, setVersions] = useState<any[]>([]);
+  const [assets, setAssets] = useState<any[]>([]);
+  const [uploadingAsset, setUploadingAsset] = useState(false);
 
-  const [heroQuickLinks, setHeroQuickLinks] = useState<any[]>([
-    { title: "Free Ship", subtitle: "৳999+", icon: "truck", color: "from-blue-500 to-indigo-600", href: "/products?filter=free-shipping" },
-    { title: "Flash Sale", subtitle: "Limited", icon: "percent", color: "from-rose-500 to-pink-600", href: "/products?filter=flash-sale" },
-    { title: "Premium", subtitle: "VIP", icon: "crown", color: "from-amber-500 to-orange-600", href: "/products?filter=featured" },
-  ]);
+  // Drag and drop ordering states
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  const [customSectionsMap, setCustomSectionsMap] = useState<Record<string, { id: string; title: string; type: string; config: Record<string, unknown> }>>({});
-
-  const loadCurrentConfig = useCallback(async () => {
+  // Load configuration from database on mount or page change
+  const loadConfig = useCallback(async () => {
     try {
-      const [themeRes, layoutRes] = await Promise.all([apiCall("theme", "GET"), apiCall("layout", "GET")]);
-      if (themeRes.data?.config) {
-        setTheme({ ...defaultTheme, ...themeRes.data.config });
-        setThemeId(themeRes.data.id);
-      }
-      if (layoutRes.data?.sections && Array.isArray(layoutRes.data.sections) && layoutRes.data.sections.length > 0) {
-        setSections(layoutRes.data.sections);
-      }
-    } catch (err) {
-      console.error("Failed to load config:", err);
-    }
-  }, []);
+      // 1. Load Layout Config
+      const { data: layoutData } = await supabase
+        .from("layout_config")
+        .select("*")
+        .eq("page", activePage)
+        .eq("is_active", true)
+        .maybeSingle();
 
+      if (layoutData?.sections && Array.isArray(layoutData.sections)) {
+        setSections(layoutData.sections as SectionConfig[]);
+      } else {
+        setSections(defaultSections.map((s, idx) => ({ ...s, order: idx })));
+      }
+
+      // 2. Load Theme Config
+      const { data: themeData } = await supabase
+        .from("theme_config")
+        .select("*")
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (themeData?.config) {
+        setTheme({ ...defaultTheme, ...(themeData.config as Partial<ThemeConfig>) });
+      }
+
+      // 3. Load Custom Blocks
+      const { data: customData } = await supabase
+        .from("custom_sections")
+        .select("*")
+        .eq("is_active", true);
+
+      if (customData) {
+        const mapped = customData.reduce((acc: any, cur: any) => {
+          acc[cur.id] = cur;
+          return acc;
+        }, {});
+        setCustomSectionsMap(mapped);
+      }
+
+      // 4. Load Header/Footer from site_config
+      const { data: headerData } = await supabase
+        .from("site_config")
+        .select("value")
+        .eq("key", "header_config")
+        .maybeSingle();
+      if (headerData?.value) setHeaderConfig(headerData.value);
+
+      const { data: footerData } = await supabase
+        .from("site_config")
+        .select("value")
+        .eq("key", "footer_config")
+        .maybeSingle();
+      if (footerData?.value) setFooterConfig(footerData.value);
+
+      setIsModified(false);
+    } catch (err: any) {
+      console.error("Load config error:", err);
+      toast({ variant: "destructive", title: "Error", description: "Failed to load layouts." });
+    }
+  }, [activePage, toast]);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
+
+  // Load snapshots version history
   const loadVersions = useCallback(async () => {
     try {
-      const res = await apiCall("versions", "GET");
-      if (res.data) setVersions(res.data);
+      const { data, error } = await supabase
+        .from("theme_versions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!error && data) setVersions(data);
     } catch (err) {
-      console.error("Failed to load versions:", err);
+      console.error("Error loading versions:", err);
     }
   }, []);
 
-  const loadSiteConfigs = useCallback(async () => {
+  // Load storage assets list
+  const loadAssets = useCallback(async () => {
     try {
-      const [headerRes, footerRes, navRes, quickLinksRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-theme?action=site-config&key=header`, {
-          headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-theme?action=site-config&key=footer`, {
-          headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-theme?action=site-config&key=mobile_nav`, {
-          headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-theme?action=site-config&key=hero_quick_links`, {
-          headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        }).then((r) => r.json()),
-      ]);
-
-      if (headerRes?.data?.value) setHeaderConfig(headerRes.data.value);
-      if (footerRes?.data?.value) setFooterConfig(footerRes.data.value);
-      if (navRes?.data?.value) setMobileNavConfig(navRes.data.value);
-      if (quickLinksRes?.data?.value) setHeroQuickLinks(quickLinksRes.data.value);
-    } catch (err) {
-      console.error("Failed to load site configs:", err);
-    }
-  }, []);
-
-  const loadCustomSections = useCallback(async () => {
-    try {
-      const res = await apiCall("custom-sections", "GET");
-      const map: Record<string, { id: string; title: string; type: string; config: Record<string, unknown> }> = {};
-      for (const item of res.data || []) {
-        map[item.id] = {
-          id: item.id,
-          title: item.title,
-          type: item.type,
-          config: (item.config || {}) as Record<string, unknown>,
-        };
+      const { data, error } = await supabase.storage.from("product-media").list("", {
+        limit: 50,
+        sortBy: { column: "created_at", order: "desc" }
+      });
+      if (!error && data) {
+        const mapped = data.map(f => ({
+          name: f.name,
+          url: supabase.storage.from("product-media").getPublicUrl(f.name).data.publicUrl,
+          created_at: f.created_at
+        }));
+        setAssets(mapped);
       }
-      setCustomSectionsMap(map);
     } catch (err) {
-      console.error("Failed to load custom sections:", err);
+      console.error("Error listing assets:", err);
     }
   }, []);
 
   useEffect(() => {
-    loadCurrentConfig();
     loadVersions();
-    loadSiteConfigs();
-    loadCustomSections();
-  }, [loadCurrentConfig, loadVersions, loadSiteConfigs, loadCustomSections]);
+    loadAssets();
+  }, [loadVersions, loadAssets]);
 
-  useEffect(() => {
-    applyThemeToDOM(theme);
-  }, [theme]);
+  // Handle Asset Upload
+  const handleAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setUploadingAsset(true);
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `asset_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-  const updateTheme = useCallback((key: keyof ThemeConfig, value: string | boolean) => {
-    setTheme((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  const getDropPosition = (e: React.DragEvent<HTMLDivElement>): DropPosition => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const third = rect.height / 3;
-    if (y < third) return "top";
-    if (y > third * 2) return "bottom";
-    return "middle";
+    try {
+      const { error } = await supabase.storage.from("product-media").upload(fileName, file);
+      if (error) throw error;
+      toast({ title: "Upload Succeeded", description: "Asset saved to your media storage." });
+      loadAssets();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Upload Failed", description: err.message });
+    } finally {
+      setUploadingAsset(false);
+    }
   };
 
-  const handleDragStart = (index: number, e: React.DragEvent<HTMLDivElement>) => {
-    dragIndexRef.current = index;
-    setIsDragging(true);
-    e.dataTransfer.effectAllowed = "move";
+  // Add Built-in Section
+  const addBuiltInSection = (id: string) => {
+    const existing = defaultSections.find(s => s.id === id);
+    if (!existing) return;
+    const newSection: SectionConfig = {
+      ...existing,
+      id: `${id}_${Date.now()}`,
+      visible: true,
+      order: sections.length
+    };
+    setSections([...sections, newSection]);
+    setIsModified(true);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+  // Duplicate Section
+  const duplicateSection = (index: number) => {
+    const section = sections[index];
+    const newSection: SectionConfig = {
+      ...section,
+      id: `${section.id.split('_')[0]}_${Date.now()}`,
+      order: sections.length
+    };
+    const updated = [...sections];
+    updated.splice(index + 1, 0, newSection);
+    setSections(updated.map((s, idx) => ({ ...s, order: idx })));
+    setIsModified(true);
+  };
+
+  // Remove Section
+  const removeSection = (index: number) => {
+    const updated = sections.filter((_, idx) => idx !== index);
+    setSections(updated.map((s, idx) => ({ ...s, order: idx })));
+    setSelectedSectionIndex(null);
+    setIsModified(true);
+  };
+
+  // Drag and Drop Handling (Sidebar List)
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    const position = getDropPosition(e);
-    setDropTarget({ index, position });
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setDropTarget(null);
-    }
-  };
-
-  const handleDrop = (targetIndex: number, forcedPosition?: DropPosition) => {
-    const sourceIndex = dragIndexRef.current;
-    const position = forcedPosition || dropTarget?.position || "bottom";
-
-    if (sourceIndex === null || sourceIndex === targetIndex) {
-      setDropTarget(null);
-      setIsDragging(false);
-      dragIndexRef.current = null;
-      return;
-    }
-
-    const selectedId = selectedSectionIndex !== null ? sections[selectedSectionIndex]?.id : null;
-    const newSections = [...sections];
-
-    if (position === "middle") {
-      const temp = newSections[sourceIndex];
-      newSections[sourceIndex] = newSections[targetIndex];
-      newSections[targetIndex] = temp;
-    } else {
-      const [moved] = newSections.splice(sourceIndex, 1);
-      const insertIndex =
-        sourceIndex < targetIndex
-          ? position === "top"
-            ? targetIndex - 1
-            : targetIndex
-          : position === "top"
-            ? targetIndex
-            : targetIndex + 1;
-
-      newSections.splice(Math.max(0, insertIndex), 0, moved);
-    }
-
-    newSections.forEach((s, i) => {
-      s.order = i;
-    });
-
-    setSections(newSections);
-
-    if (selectedId) {
-      const nextSelected = newSections.findIndex((s) => s.id === selectedId);
-      setSelectedSectionIndex(nextSelected >= 0 ? nextSelected : null);
-    }
-
-    setDropTarget(null);
-    setIsDragging(false);
-    dragIndexRef.current = null;
+    if (draggedIndex === null || draggedIndex === index) return;
+    const updated = [...sections];
+    const item = updated.splice(draggedIndex, 1)[0];
+    updated.splice(index, 0, item);
+    setSections(updated.map((s, idx) => ({ ...s, order: idx })));
+    setDraggedIndex(index);
+    setIsModified(true);
   };
 
   const handleDragEnd = () => {
-    dragIndexRef.current = null;
-    setDropTarget(null);
-    setIsDragging(false);
+    setDraggedIndex(null);
   };
 
-  const toggleSection = (index: number) => {
-    const next = [...sections];
-    next[index].visible = !next[index].visible;
-    setSections(next);
-  };
-
-  const duplicateSection = (index: number) => {
-    const original = sections[index];
-    const clone: SectionConfig = {
-      ...JSON.parse(JSON.stringify(original)),
-      id: `${original.id}_copy_${Date.now()}`,
-      label: `${original.label} (Copy)`,
-      order: sections.length,
-    };
-    const next = [...sections];
-    next.splice(index + 1, 0, clone);
-    next.forEach((s, i) => (s.order = i));
-    setSections(next);
-    toast({ title: "Section duplicated" });
-  };
-
-  const removeSection = (index: number) => {
-    const section = sections[index];
-    const next = [...sections];
-    next.splice(index, 1);
-    next.forEach((s, i) => (s.order = i));
-    setSections(next);
-    if (selectedSectionIndex === index) setSelectedSectionIndex(null);
-    toast({ title: `Deleted: ${section.label}` });
-  };
-
-  const updateSectionConfig = (index: number, updated: SectionConfig) => {
-    const next = [...sections];
-    next[index] = updated;
-    setSections(next);
-  };
-
-  const addBuiltInSection = (sectionId: string) => {
-    const existingIndex = sections.findIndex((s) => s.id === sectionId);
-    if (existingIndex >= 0) {
-      const next = [...sections];
-      next[existingIndex] = { ...next[existingIndex], visible: true };
-      setSections(next);
-      toast({ title: `"${next[existingIndex].label}" is now visible` });
-      setShowAddSheet(false);
-      return;
-    }
-
-    const base = defaultSections.find((s) => s.id === sectionId);
-    if (!base) return;
-
-    const next = [...sections, { ...base, order: sections.length }];
-    setSections(next);
-    setShowAddSheet(false);
-    toast({ title: `Added: ${base.label}` });
-  };
-
-  const addCustomBlock = async (block: CustomBlockForm) => {
-    try {
-      const res = await apiCall("create-custom-section", "POST", block);
-      const newSection: SectionConfig = {
-        id: `custom_${res.data.id}`,
-        label: block.title,
-        visible: true,
-        order: sections.length,
-        customSectionId: res.data.id,
-      };
-
-      setCustomSectionsMap((prev) => ({
-        ...prev,
-        [res.data.id]: {
-          id: res.data.id,
-          title: block.title,
-          type: block.type,
-          config: block.config,
-        },
-      }));
-
-      setSections((prev) => [...prev, newSection]);
-      setShowBlockEditor(false);
-      setShowAddSheet(false);
-      queryClient.invalidateQueries({ queryKey: ["custom-sections"] });
-      toast({ title: "Custom block added" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-  };
-
-  const saveSiteConfig = async (key: string, value: any) => {
+  // Save Config as Draft/Publish
+  const handlePublish = async () => {
     setSaving(true);
     try {
-      await apiCall("save-site-config", "POST", { key, value });
-      queryClient.invalidateQueries({ queryKey: ["site-config", key] });
-      toast({ title: `${key} saved` });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-    setSaving(false);
-  };
+      // 1. Save Layout
+      const { error: layoutErr } = await supabase
+        .from("layout_config")
+        .upsert([{ page: activePage, page_type: "custom", sections: sections, is_active: true }], { onConflict: "page" });
 
-  const saveTheme = async () => {
-    setSaving(true);
-    try {
-      await apiCall("theme", "POST", { id: themeId, config: theme });
-      queryClient.invalidateQueries({ queryKey: ["theme-config"] });
-      toast({ title: "Theme saved" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-    setSaving(false);
-  };
+      // 2. Save Theme
+      const { error: themeErr } = await supabase
+        .from("theme_config")
+        .upsert([{ id: "default", name: "Default Theme", config: theme, is_active: true }], { onConflict: "id" });
 
-  const saveLayout = async () => {
-    setSaving(true);
-    try {
-      await apiCall("layout", "POST", { page: "homepage", sections });
+      // 3. Save Site Config (Headers/Footers)
+      await supabase.from("site_config").upsert([{ key: "header_config", value: headerConfig }], { onConflict: "key" });
+      await supabase.from("site_config").upsert([{ key: "footer_config", value: footerConfig }], { onConflict: "key" });
+
+      if (layoutErr || themeErr) throw layoutErr || themeErr;
+
+      applyThemeToDOM(theme);
+      setIsModified(false);
+      toast({ title: "Publish Successful", description: "Design changes are now live on Durtup.shop!" });
       queryClient.invalidateQueries({ queryKey: ["layout-config"] });
-      toast({ title: "Layout saved" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-    setSaving(false);
-  };
-
-  const saveVersion = async () => {
-    if (!versionName.trim()) {
-      toast({ title: "Enter a version name", variant: "destructive" });
-      return;
-    }
-
-    try {
-      await apiCall("save-version", "POST", {
-        name: versionName,
-        theme_config: theme,
-        layout_config: { sections },
-      });
-      setVersionName("");
-      loadVersions();
-      toast({ title: "Version saved" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-  };
-
-  const restoreVersion = async (id: string) => {
-    try {
-      await apiCall("restore-version", "POST", { id });
-      await loadCurrentConfig();
       queryClient.invalidateQueries({ queryKey: ["theme-config"] });
-      queryClient.invalidateQueries({ queryKey: ["layout-config"] });
-      toast({ title: "Version restored" });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ variant: "destructive", title: "Publish Failed", description: err.message });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const deleteVersion = async (id: string) => {
+  // Save Version Snapshot
+  const handleSaveSnapshot = async () => {
+    const name = prompt("Enter a name for this snapshot version:");
+    if (!name) return;
     try {
-      await apiCall("delete-version", "POST", { id });
+      const { error } = await supabase
+        .from("theme_versions")
+        .insert([{ name, theme_config: theme, layout_config: { sections } }]);
+      if (error) throw error;
+      toast({ title: "Snapshot Saved", description: "You can restore this snapshot anytime." });
       loadVersions();
-      toast({ title: "Version deleted" });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ variant: "destructive", title: "Error", description: err.message });
     }
   };
 
-  const applyPreset = (presetName: string) => {
-    const preset = themePresets[presetName];
-    if (!preset) return;
-    setTheme({ ...preset });
-    toast({ title: `${presetName} preset applied` });
+  // Restore Version Snapshot
+  const handleRestoreVersion = async (v: any) => {
+    if (!confirm(`Are you sure you want to restore snapshot "${v.name}"?`)) return;
+    try {
+      setTheme(v.theme_config);
+      if (v.layout_config?.sections) {
+        setSections(v.layout_config.sections);
+      }
+      setIsModified(true);
+      toast({ title: "Snapshot Restored", description: "Click Publish to make it live." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Restore Failed", description: err.message });
+    }
   };
 
-  const previewWidth = DEVICE_SIZES.find((d) => d.key === previewDevice)?.width || 375;
-  const hiddenBuiltIns = defaultSections.filter((ds) => !sections.some((s) => s.id === ds.id));
+  // Color modification handler
+  const handleColorChange = (key: string, val: string) => {
+    setTheme(prev => ({ ...prev, [key]: val }));
+    setIsModified(true);
+  };
 
   const selectedSection = selectedSectionIndex !== null ? sections[selectedSectionIndex] : null;
 
-  const getPreviewContent = (section: SectionConfig) => {
-    if (section.customSectionId && customSectionsMap[section.customSectionId]) {
-      return {
-        ...customSectionsMap[section.customSectionId].config,
-        ...section.content,
-      };
-    }
-    return section.content || {};
-  };
-
-  const getDropClasses = (index: number) => {
-    if (!dropTarget || dropTarget.index !== index) return "";
-    if (dropTarget.position === "top") return "ring-2 ring-primary/40 before:absolute before:-top-0.5 before:left-2 before:right-2 before:h-0.5 before:bg-primary before:rounded-full";
-    if (dropTarget.position === "middle") return "ring-2 ring-primary/50 bg-primary/5";
-    return "ring-2 ring-primary/40 after:absolute after:-bottom-0.5 after:left-2 after:right-2 after:h-0.5 after:bg-primary after:rounded-full";
-  };
-
-  const sectionPreviewCard = (section: SectionConfig, index: number) => {
-    const content = getPreviewContent(section) as Record<string, unknown>;
-    const isSelected = selectedSectionIndex === index;
-    const isDragged = dragIndexRef.current === index && isDragging;
-
-    return (
-      <div
-        key={`${section.id}-${index}`}
-        draggable
-        onDragStart={(e) => handleDragStart(index, e)}
-        onDragOver={(e) => handleDragOver(e, index)}
-        onDragLeave={handleDragLeave}
-        onDrop={() => handleDrop(index)}
-        onDragEnd={handleDragEnd}
-        onClick={() => setSelectedSectionIndex(index)}
-        className={`relative rounded-xl border transition-all p-3 cursor-grab active:cursor-grabbing ${
-          section.visible ? "bg-card" : "bg-muted/40 opacity-60"
-        } ${isSelected ? "ring-2 ring-primary border-primary" : "border-border"} ${isDragged ? "opacity-50 scale-[0.99]" : ""} ${getDropClasses(index)}`}
-        style={{
-          backgroundColor: section.style?.backgroundColor || undefined,
-          color: section.style?.textColor || undefined,
-          padding: section.style?.padding || undefined,
-          margin: section.style?.margin || undefined,
-          borderRadius: section.style?.borderRadius || undefined,
-          boxShadow: section.style?.shadow || undefined,
-        }}
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs font-semibold uppercase tracking-wide">{section.label}</p>
-          <Badge variant="secondary" className="text-[10px] ml-auto">
-            {section.id}
-          </Badge>
-        </div>
-
-        {(content.imageUrl as string) && (
-          <div className="rounded-lg overflow-hidden border mb-2 bg-muted">
-            <img src={content.imageUrl as string} alt={(content.title as string) || section.label} className="w-full h-24 object-cover" />
+  return (
+    <AdminLayout title="Visual Theme Editor">
+      {/* Top Banner Control Panel */}
+      <div className="flex items-center justify-between bg-card border rounded-2xl p-4 mb-6 shadow-sm">
+        <div className="flex items-center gap-3">
+          <Palette className="h-6 w-6 text-primary animate-pulse" />
+          <div>
+            <h2 className="font-semibold text-lg">Visual Drag & Drop Website Builder</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant={isModified ? "secondary" : "outline"} className="text-xs">
+                {isModified ? "Unpublished Draft Changes" : "Live / Synchronized"}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground">• Configured for Durtup.shop</span>
+            </div>
           </div>
-        )}
-
-        <h4 className="text-sm font-semibold">{(content.title as string) || section.label}</h4>
-        {(content.subtitle as string) && <p className="text-xs text-muted-foreground mt-1">{content.subtitle as string}</p>}
-        {(content.text as string) && <p className="text-xs mt-2 line-clamp-3">{content.text as string}</p>}
-
-        <div className="flex items-center gap-1 mt-3">
-          <Button size="icon" variant="outline" className="h-7 w-7" title="Edit" onClick={(e) => { e.stopPropagation(); setSelectedSectionIndex(index); }}>
-            <Pencil className="h-3 w-3" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleSaveSnapshot} className="h-9 gap-1.5 text-xs">
+            <History className="h-4 w-4" /> Snapshot
           </Button>
-          <Button size="icon" variant="outline" className="h-7 w-7" title="Duplicate" onClick={(e) => { e.stopPropagation(); duplicateSection(index); }}>
-            <Copy className="h-3 w-3" />
-          </Button>
-          <Button size="icon" variant="outline" className="h-7 w-7" title="Toggle visibility" onClick={(e) => { e.stopPropagation(); toggleSection(index); }}>
-            {section.visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-          </Button>
-          <Button size="icon" variant="destructive" className="h-7 w-7" title="Delete section" onClick={(e) => { e.stopPropagation(); removeSection(index); }}>
-            <Trash2 className="h-3 w-3" />
+          <Button variant="default" size="sm" onClick={handlePublish} disabled={saving} className="h-9 gap-1.5 text-xs font-semibold px-4 bg-primary hover:bg-primary/95 text-primary-foreground shadow-md transition-all">
+            {saving ? <RotateCcw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Publish Design Live
           </Button>
         </div>
       </div>
-    );
-  };
 
-  return (
-    <AdminLayout title="Visual Builder">
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-card shrink-0">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-foreground">Visual Builder</h1>
-            <Badge variant="secondary" className="text-[10px]">True Drag & Drop</Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="gap-1 border-primary/40 text-primary hover:bg-primary/10">
-              <Link to="/admin/home-bento">
-                <Layout className="h-4 w-4" />
-                <span className="hidden md:inline">Home Bento Manager</span>
-                <span className="md:hidden">Bento</span>
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowPreview(!showPreview)} className="gap-1">
-              <PanelLeft className="h-4 w-4" />
-              <span className="hidden md:inline">{showPreview ? "Hide" : "Show"} Preview</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                if (activeTab === "theme") saveTheme();
-                else if (activeTab === "layout") saveLayout();
-                else if (activeTab === "header") saveSiteConfig("header", headerConfig || {});
-                else if (activeTab === "footer") saveSiteConfig("footer", footerConfig || {});
-                else if (activeTab === "navigation") saveSiteConfig("mobile_nav", mobileNavConfig || {});
-              }}
-              disabled={saving}
+      <div className="grid lg:grid-cols-[320px_1fr_340px] gap-6 items-start h-[calc(100vh-210px)] min-h-[500px]">
+        {/* ================================================================= */}
+        {/* COLUMN 1: LEFT SIDEBAR EDITOR CONTROL PANELS                      */}
+        {/* ================================================================= */}
+        <div className="bg-card border rounded-2xl flex flex-col h-full overflow-hidden shadow-sm">
+          <div className="flex border-b text-center text-xs font-medium">
+            <button
+              onClick={() => setActiveTab("sections")}
+              className={`flex-1 py-3 hover:bg-muted/40 border-b-2 transition-all ${
+                activeTab === "sections" ? "border-primary text-primary bg-muted/20 font-bold" : "border-transparent text-muted-foreground"
+              }`}
             >
-              <Save className="h-4 w-4 mr-1" /> {saving ? "Saving..." : "Save"}
-            </Button>
+              Layout
+            </button>
+            <button
+              onClick={() => setActiveTab("theme")}
+              className={`flex-1 py-3 hover:bg-muted/40 border-b-2 transition-all ${
+                activeTab === "theme" ? "border-primary text-primary bg-muted/20 font-bold" : "border-transparent text-muted-foreground"
+              }`}
+            >
+              Colors
+            </button>
+            <button
+              onClick={() => setActiveTab("assets")}
+              className={`flex-1 py-3 hover:bg-muted/40 border-b-2 transition-all ${
+                activeTab === "assets" ? "border-primary text-primary bg-muted/20 font-bold" : "border-transparent text-muted-foreground"
+              }`}
+            >
+              Media
+            </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`flex-1 py-3 hover:bg-muted/40 border-b-2 transition-all ${
+                activeTab === "history" ? "border-primary text-primary bg-muted/20 font-bold" : "border-transparent text-muted-foreground"
+              }`}
+            >
+              History
+            </button>
           </div>
-        </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          <div className="w-full md:w-[420px] lg:w-[480px] shrink-0 overflow-y-auto border-r bg-background">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-6 rounded-none border-b">
-                <TabsTrigger value="layout" className="gap-1 rounded-none text-[10px]"><Layout className="h-3 w-3" />Layout</TabsTrigger>
-                <TabsTrigger value="theme" className="gap-1 rounded-none text-[10px]"><Palette className="h-3 w-3" />Theme</TabsTrigger>
-                <TabsTrigger value="header" className="gap-1 rounded-none text-[10px]"><Settings2 className="h-3 w-3" />Header</TabsTrigger>
-                <TabsTrigger value="footer" className="gap-1 rounded-none text-[10px]"><Settings2 className="h-3 w-3" />Footer</TabsTrigger>
-                <TabsTrigger value="navigation" className="gap-1 rounded-none text-[10px]"><Smartphone className="h-3 w-3" />Nav</TabsTrigger>
-                <TabsTrigger value="versions" className="gap-1 rounded-none text-[10px]"><Clock className="h-3 w-3" />History</TabsTrigger>
-              </TabsList>
+          <div className="flex-1 overflow-y-auto p-4 space-y-5">
+            {/* SECTIONS TAB */}
+            {activeTab === "sections" && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Select Page Template</Label>
+                  <Select value={activePage} onValueChange={setActivePage}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGES_TEMPLATES.map((p) => (
+                        <SelectItem key={p.key} value={p.key} className="text-xs">
+                          <span className="flex items-center gap-2"><p.icon className="h-3.5 w-3.5" />{p.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <TabsContent value="layout" className="mt-0 p-0">
-                <div className="p-3 border-b flex justify-between items-center">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Drag handle + drop zones (top / middle / bottom)</p>
-                    <p className="text-[10px] text-muted-foreground">Middle zone swaps, top/bottom inserts</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowAddSheet(true)}>
-                      <Plus className="h-3 w-3 mr-1" /> Add
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() => {
-                        setSections([...defaultSections]);
-                        setSelectedSectionIndex(null);
-                        toast({ title: "Layout reset" });
-                      }}
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Active Page Blocks</span>
+                  <Select onValueChange={(id) => addBuiltInSection(id)}>
+                    <SelectTrigger className="h-7 w-28 text-[10px] gap-1">
+                      <Plus className="h-3 w-3" /> Add Section
+                    </SelectTrigger>
+                    <SelectContent>
+                      {defaultSections.map((s) => (
+                        <SelectItem key={s.id} value={s.id} className="text-xs">
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  {sections.map((section, index) => (
+                    <div
+                      key={section.id}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => setSelectedSectionIndex(index)}
+                      className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-grab active:cursor-grabbing transition-all ${
+                        selectedSectionIndex === index
+                          ? "border-primary ring-1 ring-primary bg-primary/5 shadow-sm"
+                          : "border-border bg-card hover:bg-muted/30"
+                      } ${!section.visible && "opacity-50"}`}
                     >
-                      <RotateCcw className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="p-2 space-y-2">
-                  {sections.map((section, index) => {
-                    const isSelected = selectedSectionIndex === index;
-                    const isDragged = dragIndexRef.current === index && isDragging;
-                    return (
-                      <div
-                        key={`${section.id}-${index}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(index, e)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={() => handleDrop(index)}
-                        onDragEnd={handleDragEnd}
-                        className={`group relative rounded-lg border transition-all cursor-grab active:cursor-grabbing ${
-                          section.visible ? "bg-card" : "bg-muted/40 opacity-60"
-                        } ${isSelected ? "ring-2 ring-primary border-primary" : "border-border"} ${isDragged ? "opacity-50" : ""} ${getDropClasses(index)}`}
-                      >
-                        <div className="flex items-center gap-2 p-2.5">
-                          <div className="h-7 w-7 rounded-md border bg-background flex items-center justify-center">
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          </div>
-
-                          <span className="w-5 text-center text-[10px] font-mono text-muted-foreground">{index + 1}</span>
-
-                          <button className="flex-1 min-w-0 text-left" onClick={() => setSelectedSectionIndex(index)}>
-                            <p className="text-sm font-medium truncate">{section.label}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{section.id}</p>
-                          </button>
-
-                          <div className="flex items-center gap-1">
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setSelectedSectionIndex(index)} title="Edit">
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => duplicateSection(index)} title="Duplicate">
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => toggleSection(index)} title="Toggle visibility">
-                              {section.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                            </Button>
-                            <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => removeSection(index)} title="Delete section">
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2 overflow-hidden flex-1">
+                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium truncate">{section.label}</span>
                       </div>
-                    );
-                  })}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const updated = [...sections];
+                            updated[index] = { ...section, visible: !section.visible };
+                            setSections(updated);
+                            setIsModified(true);
+                          }}
+                          className="p-1 hover:bg-muted rounded text-muted-foreground"
+                          title="Toggle visibility"
+                        >
+                          {section.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            duplicateSection(index);
+                          }}
+                          className="p-1 hover:bg-muted rounded text-muted-foreground"
+                          title="Duplicate Section"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeSection(index);
+                          }}
+                          className="p-1 hover:bg-destructive/10 hover:text-destructive rounded text-muted-foreground"
+                          title="Delete Section"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </TabsContent>
+              </div>
+            )}
 
-              <TabsContent value="theme" className="mt-0 p-4 space-y-6">
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-2 block">Quick Presets</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {Object.keys(themePresets).map((name) => (
-                      <Button key={name} variant="outline" size="sm" onClick={() => applyPreset(name)} className="capitalize h-7 text-xs">
-                        <Sparkles className="h-3 w-3 mr-1" /> {name}
+            {/* COLOR SCHEMES TAB */}
+            {activeTab === "theme" && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground">Select Preset Theme Palette</Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {Object.keys(themePresets).map((preset) => (
+                      <Button
+                        key={preset}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setTheme({ ...themePresets[preset] });
+                          applyThemeToDOM(themePresets[preset]);
+                          setIsModified(true);
+                          toast({ title: `${preset} palette loaded.` });
+                        }}
+                        className="text-[11px] h-8 capitalize justify-start font-medium gap-1"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-primary" /> {preset}
                       </Button>
                     ))}
                   </div>
@@ -1253,601 +569,488 @@ export default function AdminThemeBuilder() {
 
                 <Separator />
 
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold">Colors</h4>
-                  <HSLColorPicker label="Primary" value={theme.primary} onChange={(v) => updateTheme("primary", v)} />
-                  <HSLColorPicker label="Primary Text" value={theme.primaryForeground} onChange={(v) => updateTheme("primaryForeground", v)} />
-                  <HSLColorPicker label="Background" value={theme.background} onChange={(v) => updateTheme("background", v)} />
-                  <HSLColorPicker label="Text" value={theme.foreground} onChange={(v) => updateTheme("foreground", v)} />
-                  <HSLColorPicker label="Card" value={theme.card} onChange={(v) => updateTheme("card", v)} />
-                  <HSLColorPicker label="Card Text" value={theme.cardForeground} onChange={(v) => updateTheme("cardForeground", v)} />
-                  <HSLColorPicker label="Muted" value={theme.muted} onChange={(v) => updateTheme("muted", v)} />
-                  <HSLColorPicker label="Muted Text" value={theme.mutedForeground} onChange={(v) => updateTheme("mutedForeground", v)} />
-                  <HSLColorPicker label="Accent" value={theme.accent} onChange={(v) => updateTheme("accent", v)} />
-                  <HSLColorPicker label="Border" value={theme.border} onChange={(v) => updateTheme("border", v)} />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="text-sm font-semibold">Typography & Style</h4>
-                  <div>
-                    <Label className="text-xs">Font Family</Label>
-                    <Select value={theme.fontFamily} onValueChange={(v) => updateTheme("fontFamily", v)}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["Inter", "Poppins", "Roboto", "Open Sans", "Nunito", "Lato"].map((f) => (
-                          <SelectItem key={f} value={f}>{f}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Font Size: {theme.fontSize}px</Label>
-                    <Slider value={[parseInt(theme.fontSize) || 16]} min={12} max={20} step={1} onValueChange={([v]) => updateTheme("fontSize", String(v))} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Border Radius: {theme.radius}</Label>
-                    <Select value={theme.radius} onValueChange={(v) => updateTheme("radius", v)}>
-                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {["0rem", "0.25rem", "0.5rem", "0.75rem", "1rem", "1.5rem"].map((val) => (
-                          <SelectItem key={val} value={val}>{val}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setTheme({ ...defaultTheme });
-                      applyThemeToDOM(defaultTheme);
-                      toast({ title: "Theme reset" });
-                    }}
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" /> Reset
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="header" className="mt-0 p-4 space-y-5">
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Logo</h4>
+                <div className="space-y-3.5">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Brand Colors (HSL)</span>
                   <div className="space-y-3">
-                    <div><Label className="text-xs">Logo Image URL</Label><Input className="h-8 text-xs" value={headerConfig?.logo_url || ""} onChange={(e) => setHeaderConfig((p: any) => ({ ...p, logo_url: e.target.value }))} /></div>
-                    <div><Label className="text-xs">Logo Alt Text</Label><Input className="h-8 text-xs" value={headerConfig?.logo_text || ""} onChange={(e) => setHeaderConfig((p: any) => ({ ...p, logo_text: e.target.value }))} /></div>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Top Bar</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={headerConfig?.top_bar?.visible !== false} onChange={(e) => setHeaderConfig((p: any) => ({ ...p, top_bar: { ...p?.top_bar, visible: e.target.checked } }))} />
-                      <Label className="text-xs">Show Top Bar</Label>
-                    </div>
-                    <div><Label className="text-xs">Top Bar Text</Label><Input className="h-8 text-xs" value={headerConfig?.top_bar?.text || ""} onChange={(e) => setHeaderConfig((p: any) => ({ ...p, top_bar: { ...p?.top_bar, text: e.target.value } }))} /></div>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Toggles</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={headerConfig?.show_search !== false} onChange={(e) => setHeaderConfig((p: any) => ({ ...p, show_search: e.target.checked }))} />
-                      <Label className="text-xs">Show Search Bar</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={headerConfig?.show_categories_bar !== false} onChange={(e) => setHeaderConfig((p: any) => ({ ...p, show_categories_bar: e.target.checked }))} />
-                      <Label className="text-xs">Show Categories Navigation Bar</Label>
-                    </div>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Navigation Links</h4>
-                  <div className="space-y-2">
-                    {(headerConfig?.nav_links || []).map((link: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2 p-2 border rounded-lg">
-                        <Input className="h-7 text-xs flex-1" placeholder="Label" value={link.label} onChange={(e) => {
-                          const links = [...(headerConfig?.nav_links || [])];
-                          links[i] = { ...links[i], label: e.target.value };
-                          setHeaderConfig((p: any) => ({ ...p, nav_links: links }));
-                        }} />
-                        <Input className="h-7 text-xs flex-1" placeholder="/path" value={link.href} onChange={(e) => {
-                          const links = [...(headerConfig?.nav_links || [])];
-                          links[i] = { ...links[i], href: e.target.value };
-                          setHeaderConfig((p: any) => ({ ...p, nav_links: links }));
-                        }} />
-                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
-                          const links = [...(headerConfig?.nav_links || [])];
-                          links.splice(i, 1);
-                          setHeaderConfig((p: any) => ({ ...p, nav_links: links }));
-                        }}><X className="h-3 w-3 text-destructive" /></Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={() => {
-                      setHeaderConfig((p: any) => ({ ...p, nav_links: [...(p?.nav_links || []), { label: "", href: "/" }] }));
-                    }}><Plus className="h-3 w-3 mr-1" /> Add Link</Button>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-semibold">Hero Quick Links</h4>
-                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => saveSiteConfig("hero_quick_links", heroQuickLinks)}>
-                      <Save className="h-3 w-3 mr-1" /> Save
-                    </Button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mb-3">Homepage banner এর নিচে যে ৩টি বাটন আছে (Free Ship, Flash Sale, Premium) সেগুলো এখান থেকে কন্ট্রোল করুন।</p>
-                  <div className="space-y-3">
-                    {heroQuickLinks.map((link: any, i: number) => (
-                      <div key={i} className="p-3 border rounded-lg space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-muted-foreground w-5">{i + 1}.</span>
-                          <Input className="h-7 text-xs flex-1" placeholder="Title" value={link.title} onChange={(e) => {
-                            const links = [...heroQuickLinks];
-                            links[i] = { ...links[i], title: e.target.value };
-                            setHeroQuickLinks(links);
-                          }} />
-                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
-                            const links = [...heroQuickLinks];
-                            links.splice(i, 1);
-                            setHeroQuickLinks(links);
-                          }}><X className="h-3 w-3 text-destructive" /></Button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div><Label className="text-[10px]">Subtitle</Label><Input className="h-6 text-[10px]" value={link.subtitle} onChange={(e) => {
-                            const links = [...heroQuickLinks];
-                            links[i] = { ...links[i], subtitle: e.target.value };
-                            setHeroQuickLinks(links);
-                          }} /></div>
-                          <div><Label className="text-[10px]">Link Path</Label><Input className="h-6 text-[10px]" placeholder="/products" value={link.href} onChange={(e) => {
-                            const links = [...heroQuickLinks];
-                            links[i] = { ...links[i], href: e.target.value };
-                            setHeroQuickLinks(links);
-                          }} /></div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <Label className="text-[10px]">Icon</Label>
-                            <Select value={link.icon} onValueChange={(v) => {
-                              const links = [...heroQuickLinks];
-                              links[i] = { ...links[i], icon: v };
-                              setHeroQuickLinks(links);
-                            }}>
-                              <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {["truck", "percent", "crown", "gift", "star", "zap", "tag", "shopping-bag", "heart", "award", "sparkles"].map(ic => (
-                                  <SelectItem key={ic} value={ic} className="text-xs">{ic}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="text-[10px]">Gradient</Label>
-                            <Select value={link.color} onValueChange={(v) => {
-                              const links = [...heroQuickLinks];
-                              links[i] = { ...links[i], color: v };
-                              setHeroQuickLinks(links);
-                            }}>
-                              <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="from-blue-500 to-indigo-600" className="text-xs">Blue</SelectItem>
-                                <SelectItem value="from-rose-500 to-pink-600" className="text-xs">Rose</SelectItem>
-                                <SelectItem value="from-amber-500 to-orange-600" className="text-xs">Amber</SelectItem>
-                                <SelectItem value="from-emerald-500 to-teal-600" className="text-xs">Green</SelectItem>
-                                <SelectItem value="from-violet-500 to-purple-600" className="text-xs">Violet</SelectItem>
-                                <SelectItem value="from-cyan-500 to-blue-600" className="text-xs">Cyan</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={() => {
-                      setHeroQuickLinks([...heroQuickLinks, { title: "", subtitle: "", icon: "star", color: "from-blue-500 to-indigo-600", href: "/products" }]);
-                    }}><Plus className="h-3 w-3 mr-1" /> Add Quick Link</Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="footer" className="mt-0 p-4 space-y-5">
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Brand</h4>
-                  <div className="space-y-3">
-                    <div><Label className="text-xs">Footer Logo URL</Label><Input className="h-8 text-xs" value={footerConfig?.logo_url || ""} onChange={(e) => setFooterConfig((p: any) => ({ ...p, logo_url: e.target.value }))} /></div>
-                    <div><Label className="text-xs">Brand Description</Label><Textarea className="text-xs min-h-[60px]" value={footerConfig?.brand_description || ""} onChange={(e) => setFooterConfig((p: any) => ({ ...p, brand_description: e.target.value }))} /></div>
-                    <div><Label className="text-xs">Copyright Text</Label><Input className="h-8 text-xs" value={footerConfig?.copyright || ""} onChange={(e) => setFooterConfig((p: any) => ({ ...p, copyright: e.target.value }))} /></div>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Link Columns</h4>
-                  {(footerConfig?.columns || []).map((col: any, ci: number) => (
-                    <div key={ci} className="mb-4 p-3 border rounded-lg space-y-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Primary Branding Color</Label>
                       <div className="flex items-center gap-2">
-                        <Input className="h-7 text-xs flex-1 font-semibold" value={col.title} onChange={(e) => {
-                          const cols = [...(footerConfig?.columns || [])];
-                          cols[ci] = { ...cols[ci], title: e.target.value };
-                          setFooterConfig((p: any) => ({ ...p, columns: cols }));
-                        }} />
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                          const cols = [...(footerConfig?.columns || [])];
-                          cols.splice(ci, 1);
-                          setFooterConfig((p: any) => ({ ...p, columns: cols }));
-                        }}><X className="h-3 w-3 text-destructive" /></Button>
+                        <Input value={theme.primary} onChange={(e) => handleColorChange("primary", e.target.value)} className="h-8 font-mono text-xs" />
+                        <div className="w-8 h-8 rounded-lg border border-border shadow-sm flex-shrink-0" style={{ backgroundColor: `hsl(${theme.primary})` }} />
                       </div>
-                      {(col.links || []).map((link: any, li: number) => (
-                        <div key={li} className="flex items-center gap-1 ml-2">
-                          <Input className="h-6 text-[10px] flex-1" placeholder="Name" value={link.name} onChange={(e) => {
-                            const cols = [...(footerConfig?.columns || [])];
-                            cols[ci].links[li] = { ...cols[ci].links[li], name: e.target.value };
-                            setFooterConfig((p: any) => ({ ...p, columns: cols }));
-                          }} />
-                          <Input className="h-6 text-[10px] flex-1" placeholder="/path" value={link.href} onChange={(e) => {
-                            const cols = [...(footerConfig?.columns || [])];
-                            cols[ci].links[li] = { ...cols[ci].links[li], href: e.target.value };
-                            setFooterConfig((p: any) => ({ ...p, columns: cols }));
-                          }} />
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
-                            const cols = [...(footerConfig?.columns || [])];
-                            cols[ci].links.splice(li, 1);
-                            setFooterConfig((p: any) => ({ ...p, columns: cols }));
-                          }}><X className="h-2.5 w-2.5 text-destructive" /></Button>
-                        </div>
-                      ))}
-                      <Button variant="ghost" size="sm" className="h-6 text-[10px] ml-2" onClick={() => {
-                        const cols = [...(footerConfig?.columns || [])];
-                        cols[ci].links = [...(cols[ci].links || []), { name: "", href: "/" }];
-                        setFooterConfig((p: any) => ({ ...p, columns: cols }));
-                      }}><Plus className="h-2.5 w-2.5 mr-1" /> Add Link</Button>
                     </div>
-                  ))}
-                  <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={() => {
-                    setFooterConfig((p: any) => ({ ...p, columns: [...(p?.columns || []), { title: "New Column", links: [] }] }));
-                  }}><Plus className="h-3 w-3 mr-1" /> Add Column</Button>
-                </div>
 
-                {/* Trust Badges */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Trust Badges</h4>
-                  {(footerConfig?.trust_badges || []).map((badge: any, i: number) => (
-                    <div key={i} className="flex items-center gap-1.5 mb-2 p-2 border rounded-lg">
-                      <Select value={badge.icon} onValueChange={(v) => {
-                        const badges = [...(footerConfig?.trust_badges || [])];
-                        badges[i] = { ...badges[i], icon: v };
-                        setFooterConfig((p: any) => ({ ...p, trust_badges: badges }));
-                      }}>
-                        <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {["truck", "shield", "headphones", "credit-card"].map((ic) => (
-                            <SelectItem key={ic} value={ic}>{ic}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input className="h-7 text-xs flex-1" placeholder="Title" value={badge.title} onChange={(e) => {
-                        const badges = [...(footerConfig?.trust_badges || [])];
-                        badges[i] = { ...badges[i], title: e.target.value };
-                        setFooterConfig((p: any) => ({ ...p, trust_badges: badges }));
-                      }} />
-                      <Input className="h-7 text-xs w-20" placeholder="Desc" value={badge.desc} onChange={(e) => {
-                        const badges = [...(footerConfig?.trust_badges || [])];
-                        badges[i] = { ...badges[i], desc: e.target.value };
-                        setFooterConfig((p: any) => ({ ...p, trust_badges: badges }));
-                      }} />
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
-                        const badges = [...(footerConfig?.trust_badges || [])];
-                        badges.splice(i, 1);
-                        setFooterConfig((p: any) => ({ ...p, trust_badges: badges }));
-                      }}><X className="h-3 w-3 text-destructive" /></Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={() => {
-                    setFooterConfig((p: any) => ({ ...p, trust_badges: [...(p?.trust_badges || []), { icon: "shield", title: "", desc: "" }] }));
-                  }}><Plus className="h-3 w-3 mr-1" /> Add Badge</Button>
-                </div>
-
-                {/* Social Links */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Social Links</h4>
-                  {(footerConfig?.social_links || []).map((social: any, i: number) => (
-                    <div key={i} className="flex items-center gap-1.5 mb-2">
-                      <Select value={social.platform} onValueChange={(v) => {
-                        const links = [...(footerConfig?.social_links || [])];
-                        links[i] = { ...links[i], platform: v };
-                        setFooterConfig((p: any) => ({ ...p, social_links: links }));
-                      }}>
-                        <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {["facebook", "twitter", "instagram", "youtube"].map((p) => (
-                            <SelectItem key={p} value={p}>{p}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input className="h-7 text-xs flex-1" placeholder="URL" value={social.url} onChange={(e) => {
-                        const links = [...(footerConfig?.social_links || [])];
-                        links[i] = { ...links[i], url: e.target.value };
-                        setFooterConfig((p: any) => ({ ...p, social_links: links }));
-                      }} />
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
-                        const links = [...(footerConfig?.social_links || [])];
-                        links.splice(i, 1);
-                        setFooterConfig((p: any) => ({ ...p, social_links: links }));
-                      }}><X className="h-3 w-3 text-destructive" /></Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={() => {
-                    setFooterConfig((p: any) => ({ ...p, social_links: [...(p?.social_links || []), { platform: "facebook", url: "#" }] }));
-                  }}><Plus className="h-3 w-3 mr-1" /> Add Social Link</Button>
-                </div>
-
-                {/* Payment Methods */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Payment Methods</h4>
-                  {(footerConfig?.payment_methods || []).map((method: string, i: number) => (
-                    <div key={i} className="flex items-center gap-1.5 mb-2">
-                      <Input className="h-7 text-xs flex-1" placeholder="e.g. Visa" value={method} onChange={(e) => {
-                        const methods = [...(footerConfig?.payment_methods || [])];
-                        methods[i] = e.target.value;
-                        setFooterConfig((p: any) => ({ ...p, payment_methods: methods }));
-                      }} />
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
-                        const methods = [...(footerConfig?.payment_methods || [])];
-                        methods.splice(i, 1);
-                        setFooterConfig((p: any) => ({ ...p, payment_methods: methods }));
-                      }}><X className="h-3 w-3 text-destructive" /></Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={() => {
-                    setFooterConfig((p: any) => ({ ...p, payment_methods: [...(p?.payment_methods || []), ""] }));
-                  }}><Plus className="h-3 w-3 mr-1" /> Add Payment Method</Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="navigation" className="mt-0 p-4 space-y-5">
-                <div>
-                  <h4 className="text-sm font-semibold mb-1">Mobile Bottom Navigation</h4>
-                  <div className="space-y-2">
-                    {(mobileNavConfig?.tabs || []).map((tab: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2 p-2.5 border rounded-lg">
-                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <Input className="h-7 text-xs w-20" placeholder="Label" value={tab.label} onChange={(e) => {
-                          const tabs = [...(mobileNavConfig?.tabs || [])];
-                          tabs[i] = { ...tabs[i], label: e.target.value };
-                          setMobileNavConfig((p: any) => ({ ...p, tabs }));
-                        }} />
-                        <Select value={tab.icon} onValueChange={(v) => {
-                          const tabs = [...(mobileNavConfig?.tabs || [])];
-                          tabs[i] = { ...tabs[i], icon: v };
-                          setMobileNavConfig((p: any) => ({ ...p, tabs }));
-                        }}>
-                          <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {["home", "grid", "shopping-cart", "package", "user", "heart", "search", "bell", "store"].map((icon) => (
-                              <SelectItem key={icon} value={icon}>{icon}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input className="h-7 text-xs flex-1" placeholder="/path" value={tab.href} onChange={(e) => {
-                          const tabs = [...(mobileNavConfig?.tabs || [])];
-                          tabs[i] = { ...tabs[i], href: e.target.value };
-                          setMobileNavConfig((p: any) => ({ ...p, tabs }));
-                        }} />
-                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
-                          const tabs = [...(mobileNavConfig?.tabs || [])];
-                          tabs.splice(i, 1);
-                          setMobileNavConfig((p: any) => ({ ...p, tabs }));
-                        }}><X className="h-3 w-3 text-destructive" /></Button>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Secondary Accent Color</Label>
+                      <div className="flex items-center gap-2">
+                        <Input value={theme.secondary} onChange={(e) => handleColorChange("secondary", e.target.value)} className="h-8 font-mono text-xs" />
+                        <div className="w-8 h-8 rounded-lg border border-border shadow-sm flex-shrink-0" style={{ backgroundColor: `hsl(${theme.secondary})` }} />
                       </div>
-                    ))}
-                    <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={() => {
-                      setMobileNavConfig((p: any) => ({ ...p, tabs: [...(p?.tabs || []), { label: "New", icon: "home", href: "/" }] }));
-                    }}><Plus className="h-3 w-3 mr-1" /> Add Tab</Button>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Background Fill Color</Label>
+                      <div className="flex items-center gap-2">
+                        <Input value={theme.background} onChange={(e) => handleColorChange("background", e.target.value)} className="h-8 font-mono text-xs" />
+                        <div className="w-8 h-8 rounded-lg border border-border shadow-sm flex-shrink-0" style={{ backgroundColor: `hsl(${theme.background})` }} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Default Text Color</Label>
+                      <div className="flex items-center gap-2">
+                        <Input value={theme.foreground} onChange={(e) => handleColorChange("foreground", e.target.value)} className="h-8 font-mono text-xs" />
+                        <div className="w-8 h-8 rounded-lg border border-border shadow-sm flex-shrink-0" style={{ backgroundColor: `hsl(${theme.foreground})` }} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Card / Section Fill Color</Label>
+                      <div className="flex items-center gap-2">
+                        <Input value={theme.card} onChange={(e) => handleColorChange("card", e.target.value)} className="h-8 font-mono text-xs" />
+                        <div className="w-8 h-8 rounded-lg border border-border shadow-sm flex-shrink-0" style={{ backgroundColor: `hsl(${theme.card})` }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </TabsContent>
+              </div>
+            )}
 
-              <TabsContent value="versions" className="mt-0 p-4 space-y-4">
+            {/* MEDIA ASSETS TAB */}
+            {activeTab === "assets" && (
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-xs">Save Current Snapshot</Label>
-                  <div className="flex gap-2">
-                    <Input placeholder="Version name" value={versionName} onChange={(e) => setVersionName(e.target.value)} className="flex-1 h-9" />
-                    <Button size="sm" onClick={saveVersion}><Save className="h-3 w-3 mr-1" /> Save</Button>
+                  <Label className="text-xs font-semibold text-muted-foreground">Upload Media Asset</Label>
+                  <div className="relative border-2 border-dashed rounded-xl p-4 text-center hover:bg-muted/40 cursor-pointer transition-all">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={handleAssetUpload}
+                      disabled={uploadingAsset}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex flex-col items-center gap-1.5 text-xs text-muted-foreground">
+                      <Upload className="h-6 w-6 text-primary animate-bounce" />
+                      {uploadingAsset ? "Uploading file..." : "Drag & Drop or Click to upload"}
+                    </div>
                   </div>
                 </div>
 
                 <Separator />
 
-                {versions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">No saved versions yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {versions.map((v) => (
-                      <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border">
-                        <div>
-                          <p className="font-medium text-sm">{v.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{new Date(v.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => restoreVersion(v.id)}>
-                            <Upload className="h-3 w-3 mr-1" /> Restore
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => deleteVersion(v.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {showPreview && (
-            <div className="hidden md:flex flex-1 flex-col bg-muted/30 overflow-hidden">
-              <div className="flex items-center justify-center gap-2 p-3 border-b bg-card shrink-0">
-                {DEVICE_SIZES.map((d) => (
-                  <Button
-                    key={d.key}
-                    variant={previewDevice === d.key ? "default" : "ghost"}
-                    size="sm"
-                    className="h-8 gap-1.5 text-xs"
-                    onClick={() => setPreviewDevice(d.key as typeof previewDevice)}
-                  >
-                    <d.icon className="h-3.5 w-3.5" />
-                    <span className="hidden lg:inline">{d.label}</span>
-                  </Button>
-                ))}
-              </div>
-
-              <div className="flex-1 flex items-start justify-center p-4 overflow-auto">
-                <div className="bg-background rounded-xl border shadow-lg overflow-hidden transition-all duration-300 min-h-full" style={{ width: Math.min(previewWidth, 1440) }}>
-                  {headerConfig?.top_bar?.visible !== false && (
-                    <div className="bg-primary text-primary-foreground px-4 py-1 text-xs">{headerConfig?.top_bar?.text || "Top bar text"}</div>
-                  )}
-
-                  <div className="px-4 py-3 border-b bg-card">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <img src={headerConfig?.logo_url || "/darzo-logo.png"} alt={headerConfig?.logo_text || "Logo"} className="h-8 w-auto rounded" />
-                        <span className="text-sm font-semibold">{headerConfig?.logo_text || "Brand"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {(headerConfig?.nav_links || []).slice(0, 3).map((link: any, i: number) => (
-                          <span key={i}>{link.label || "Link"}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 space-y-3 pb-20">
-                    {sections.length === 0 ? (
-                      <div className="p-8 rounded-xl border border-dashed text-center text-sm text-muted-foreground">
-                        No sections. Add your first block.
-                      </div>
-                    ) : (
-                      sections.map((section, index) => sectionPreviewCard(section, index))
-                    )}
-                  </div>
-
-                  <div className="border-t bg-card px-4 py-4">
-                    <p className="text-xs text-muted-foreground mb-2">Footer preview</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {(footerConfig?.columns || []).slice(0, 2).map((col: any, i: number) => (
-                        <div key={i}>
-                          <p className="text-xs font-semibold">{col.title || "Column"}</p>
-                          <p className="text-[11px] text-muted-foreground">{col.links?.[0]?.name || "Link"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {previewDevice === "mobile" && (
-                    <div className="fixed bottom-0 left-0 right-0 bg-card border-t px-4 py-2">
-                      <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.max(1, (mobileNavConfig?.tabs || []).length)}, 1fr)` }}>
-                        {(mobileNavConfig?.tabs || []).map((tab: any, i: number) => (
-                          <div key={i} className="text-center text-[10px] text-muted-foreground">{tab.label || "Tab"}</div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <Sheet open={showAddSheet} onOpenChange={setShowAddSheet}>
-        <SheetContent side="left" className="w-[360px] sm:w-[400px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Add Section</SheetTitle>
-            <SheetDescription>Add built-in sections or create custom blocks.</SheetDescription>
-          </SheetHeader>
-
-          {showBlockEditor ? (
-            <div className="mt-4">
-              <CustomBlockEditor
-                initial={editingBlock}
-                onSave={addCustomBlock}
-                onCancel={() => {
-                  setShowBlockEditor(false);
-                  setEditingBlock(undefined);
-                }}
-              />
-            </div>
-          ) : (
-            <div className="mt-4 space-y-6">
-              {hiddenBuiltIns.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Built-in Sections</h4>
-                  <div className="space-y-1">
-                    {hiddenBuiltIns.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => addBuiltInSection(s.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors text-left"
-                      >
-                        <Layout className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium">{s.label}</p>
-                          <p className="text-[10px] text-muted-foreground">{s.id}</p>
-                        </div>
-                        <Plus className="h-4 w-4 ml-auto text-muted-foreground" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Create Custom Block</h4>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Saved Media Assets</span>
                 <div className="grid grid-cols-2 gap-2">
-                  {BLOCK_TYPES.map((bt) => (
-                    <button
-                      key={bt.type}
+                  {assets.map((asset, i) => (
+                    <div
+                      key={i}
                       onClick={() => {
-                        setEditingBlock({ type: bt.type, title: "", config: {} });
-                        setShowBlockEditor(true);
+                        navigator.clipboard.writeText(asset.url);
+                        toast({ title: "Copied!", description: "Asset URL copied to clipboard." });
                       }}
-                      className="flex flex-col items-center gap-2 p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                      className="group relative border rounded-xl overflow-hidden aspect-video bg-muted/30 cursor-pointer hover:border-primary transition-all shadow-sm"
                     >
-                      <bt.icon className="h-5 w-5 text-primary" />
-                      <span className="text-xs font-medium">{bt.label}</span>
-                    </button>
+                      <img src={asset.url} alt={asset.name} className="w-full h-full object-cover group-hover:scale-105 transition-all" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white transition-all font-semibold">
+                        Copy URL
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+            )}
 
-      <Sheet open={selectedSection !== null} onOpenChange={(open) => !open && setSelectedSectionIndex(null)}>
-        <SheetContent side="right" className="w-[420px] sm:w-[460px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Edit Section</SheetTitle>
-            <SheetDescription>
-              Click, edit text/image/design, and see instant preview updates.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4">
-            {selectedSection && selectedSectionIndex !== null && (
-              <SectionStyleEditor section={selectedSection} onChange={(updated) => updateSectionConfig(selectedSectionIndex, updated)} />
+            {/* VERSION HISTORY SNAPSHOTS TAB */}
+            {activeTab === "history" && (
+              <div className="space-y-4">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Saved Snapshot Versions</span>
+                <div className="space-y-2">
+                  {versions.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-muted-foreground">
+                      No snapshots available. Create your first snapshot snapshot above!
+                    </div>
+                  ) : (
+                    versions.map((v) => (
+                      <div key={v.id} className="p-3 border rounded-xl bg-card space-y-2 text-xs hover:border-primary transition-all shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-foreground truncate w-2/3">{v.name}</span>
+                          <Badge variant="outline" className="text-[9px]">
+                            {new Date(v.created_at).toLocaleDateString()}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <Button size="sm" variant="outline" className="h-7 text-[10px] flex-1" onClick={() => handleRestoreVersion(v)}>
+                            Restore
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                            onClick={async () => {
+                              if (!confirm("Delete this snapshot version?")) return;
+                              await supabase.from("theme_versions").delete().eq("id", v.id);
+                              loadVersions();
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+
+        {/* ================================================================= */}
+        {/* COLUMN 2: CENTER DEVICE PREVIEW CANVAS WITH INTERACTIVE CONTROLS  */}
+        {/* ================================================================= */}
+        <div className="flex flex-col h-full bg-muted/20 border rounded-2xl overflow-hidden shadow-sm">
+          {/* Top Bar Switchers */}
+          <div className="flex items-center justify-between p-3 border-b bg-card">
+            <div className="flex items-center gap-1">
+              {DEVICE_SIZES.map((d) => (
+                <Button
+                  key={d.key}
+                  variant={previewDevice === d.key ? "default" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPreviewDevice(d.key as any)}
+                  title={`${d.label} View`}
+                >
+                  <d.icon className="h-4 w-4" />
+                </Button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setZoomLevel(prev => Math.max(50, prev - 10))} title="Zoom Out">
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-xs font-semibold w-12 text-center">{zoomLevel}%</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setZoomLevel(prev => Math.min(100, prev + 10))} title="Zoom In">
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Interactive Canvas Rendering Area */}
+          <div className="flex-1 overflow-auto p-6 flex justify-center items-start bg-muted/40">
+            <div
+              className="bg-background border rounded-2xl shadow-xl overflow-hidden transition-all duration-300 relative min-h-[500px]"
+              style={{
+                width: DEVICE_SIZES.find(d => d.key === previewDevice)?.width || 1440,
+                transform: `scale(${zoomLevel / 100})`,
+                transformOrigin: "top center",
+              }}
+            >
+              {/* Mock Header Preview */}
+              {headerConfig?.top_bar?.visible !== false && (
+                <div className="bg-primary text-primary-foreground text-center py-1.5 text-[10px] font-semibold tracking-wide">
+                  {headerConfig?.top_bar?.text || "Top Info Promotion Bar"}
+                </div>
+              )}
+              <div className="border-b px-4 py-3 flex items-center justify-between bg-card">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-sm">D</div>
+                  <span className="text-xs font-bold">{headerConfig?.logo_text || "Durtup"}</span>
+                </div>
+                <div className="flex items-center gap-3 text-[10px] font-medium text-muted-foreground">
+                  <span>Home</span>
+                  <span>Products</span>
+                  <span>Categories</span>
+                </div>
+              </div>
+
+              {/* Dynamic visual blocks listing representing the page design */}
+              <div className="p-4 space-y-4 pb-20">
+                {sections.length === 0 ? (
+                  <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground">
+                    Your layout is currently empty. Add section blocks from the left sidebar to start building.
+                  </div>
+                ) : (
+                  sections.map((sec, idx) => {
+                    const isSelected = selectedSectionIndex === idx;
+                    const content = (sec.customSectionId && customSectionsMap[sec.customSectionId])
+                      ? { ...customSectionsMap[sec.customSectionId].config, ...sec.content }
+                      : sec.content || {};
+
+                    if (!sec.visible) return null;
+
+                    return (
+                      <div
+                        key={sec.id}
+                        onClick={() => setSelectedSectionIndex(idx)}
+                        className={`relative rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
+                          isSelected ? "border-primary ring-2 ring-primary bg-primary/5 shadow-md scale-[1.01]" : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
+                        }`}
+                        style={{
+                          backgroundColor: sec.style?.backgroundColor || undefined,
+                          color: sec.style?.textColor || undefined,
+                          padding: sec.style?.padding || undefined,
+                          margin: sec.style?.margin || undefined,
+                          borderRadius: sec.style?.borderRadius || undefined,
+                          boxShadow: sec.style?.shadow || undefined
+                        }}
+                      >
+                        {isSelected && (
+                          <div className="absolute -top-2.5 left-3 px-2 py-0.5 rounded bg-primary text-primary-foreground text-[9px] font-bold tracking-wider uppercase shadow-sm">
+                            Editing Block
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{sec.label}</span>
+                          <span className="text-[9px] text-muted-foreground font-mono">#{sec.id.split('_')[0]}</span>
+                        </div>
+
+                        {content.imageUrl && (
+                          <div className="rounded-lg overflow-hidden border mb-2 bg-muted max-h-32 flex justify-center">
+                            <img src={content.imageUrl} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <h4 className="font-bold text-sm">{content.title || sec.label}</h4>
+                        {content.subtitle && <p className="text-xs text-muted-foreground mt-1">{content.subtitle}</p>}
+                        {content.text && <p className="text-xs mt-2 line-clamp-3 leading-relaxed">{content.text}</p>}
+                        {content.buttonText && (
+                          <Button size="sm" variant="default" className="mt-3 text-[10px] h-7 px-3 bg-primary text-primary-foreground pointer-events-none">
+                            {content.buttonText}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Mock Footer Preview */}
+              <div className="border-t bg-card p-4 text-[10px] text-muted-foreground text-center">
+                <p className="font-semibold text-foreground mb-1">{footerConfig?.brand_description || "Durtup Shopping Destination"}</p>
+                <p>{footerConfig?.copyright || "© 2026 Durtup. All rights reserved."}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================================= */}
+        {/* COLUMN 3: RIGHT PANEL PROPERTY EDITORS                            */}
+        {/* ================================================================= */}
+        <div className="bg-card border rounded-2xl flex flex-col h-full overflow-hidden shadow-sm">
+          <div className="p-3 border-b bg-muted/10">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-primary" /> Property Editor
+            </h3>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Customize properties of selected canvas block.</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            {selectedSection && selectedSectionIndex !== null ? (
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="text-xs uppercase tracking-wide py-0.5">
+                    {selectedSection.label}
+                  </Badge>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => setSelectedSectionIndex(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <Separator />
+
+                {/* Text Content Editor */}
+                <div className="space-y-3.5">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Block Content</h4>
+                  
+                  <div className="space-y-1">
+                    <Label className="text-xs">Block Title</Label>
+                    <Input
+                      value={selectedSection.content?.title || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          content: { ...(selectedSection.content || {}), title: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Subtitle</Label>
+                    <Input
+                      value={selectedSection.content?.subtitle || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          content: { ...(selectedSection.content || {}), subtitle: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Body Text</Label>
+                    <Textarea
+                      value={selectedSection.content?.text || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          content: { ...(selectedSection.content || {}), text: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="text-xs min-h-[70px]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Image Link (URL)</Label>
+                    <Input
+                      value={selectedSection.content?.imageUrl || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          content: { ...(selectedSection.content || {}), imageUrl: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="h-8 text-xs font-mono"
+                      placeholder="Paste image link from Media tab..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Button Text</Label>
+                      <Input
+                        value={selectedSection.content?.buttonText || ""}
+                        onChange={(e) => {
+                          const updated = [...sections];
+                          updated[selectedSectionIndex] = {
+                            ...selectedSection,
+                            content: { ...(selectedSection.content || {}), buttonText: e.target.value }
+                          };
+                          setSections(updated);
+                          setIsModified(true);
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Button Link</Label>
+                      <Input
+                        value={selectedSection.content?.buttonLink || ""}
+                        onChange={(e) => {
+                          const updated = [...sections];
+                          updated[selectedSectionIndex] = {
+                            ...selectedSection,
+                            content: { ...(selectedSection.content || {}), buttonLink: e.target.value }
+                          };
+                          setSections(updated);
+                          setIsModified(true);
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Spacing & Borders Editor */}
+                <div className="space-y-3.5">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Spacing & Style</h4>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Section Padding (e.g. 1rem or 20px)</Label>
+                    <Input
+                      value={selectedSection.style?.padding || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          style: { ...(selectedSection.style || {}), padding: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Section Margin</Label>
+                    <Input
+                      value={selectedSection.style?.margin || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          style: { ...(selectedSection.style || {}), margin: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Background Hex/HSL Color</Label>
+                    <Input
+                      value={selectedSection.style?.backgroundColor || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          style: { ...(selectedSection.style || {}), backgroundColor: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Corner Border Radius</Label>
+                    <Input
+                      value={selectedSection.style?.borderRadius || ""}
+                      onChange={(e) => {
+                        const updated = [...sections];
+                        updated[selectedSectionIndex] = {
+                          ...selectedSection,
+                          style: { ...(selectedSection.style || {}), borderRadius: e.target.value }
+                        };
+                        setSections(updated);
+                        setIsModified(true);
+                      }}
+                      className="h-8 text-xs"
+                      placeholder="e.g. 0.5rem or 12px"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center h-full text-xs text-muted-foreground py-16">
+                <Layout className="h-8 w-8 text-muted-foreground/50 mb-3" />
+                No block selected.<br />Click on any section block in the center canvas to edit its layout, colors, and content settings.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </AdminLayout>
   );
 }
