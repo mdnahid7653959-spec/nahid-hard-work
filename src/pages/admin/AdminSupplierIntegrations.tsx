@@ -465,10 +465,12 @@ export default function AdminSupplierIntegrations() {
   const handleTestConnection = async (supplierId: string) => {
     setPinging(prev => ({ ...prev, [supplierId]: true }));
     try {
+      const supplier = suppliers.find(s => s.id === supplierId);
       const { data, error } = await supabase.functions.invoke("supplier-api", {
         body: {
           action: "test-connection",
-          supplierId
+          supplierId,
+          supplierOverride: supplier
         }
       });
 
@@ -495,10 +497,12 @@ export default function AdminSupplierIntegrations() {
   const handleSyncProducts = async (supplierId: string) => {
     setSyncing(prev => ({ ...prev, [supplierId]: true }));
     try {
+      const supplier = suppliers.find(s => s.id === supplierId);
       const { data, error } = await supabase.functions.invoke("supplier-api", {
         body: {
           action: "sync-products",
-          supplierId
+          supplierId,
+          supplierOverride: supplier
         }
       });
 

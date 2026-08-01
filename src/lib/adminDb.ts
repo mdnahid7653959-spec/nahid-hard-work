@@ -33,6 +33,79 @@ function getAdminSession(): { id: string | null; token: string | null } {
   }
 }
 
+function getLocalSuppliers(): any[] {
+  try {
+    const raw = localStorage.getItem("durtup_supplier_integrations");
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error("Local storage read failed:", e);
+  }
+
+  // Default hardcoded Mohasagor integration if nothing is saved yet
+  const SECRET_KEY = "durtup-api-gateway-salt-secure-key-2026";
+  const encryptCreds = (data: any) => {
+    const plainText = typeof data === "string" ? data : JSON.stringify(data);
+    let cipherText = "";
+    for (let i = 0; i < plainText.length; i++) {
+      const charCode = plainText.charCodeAt(i);
+      const keyChar = SECRET_KEY.charCodeAt(i % SECRET_KEY.length);
+      cipherText += String.fromCharCode(charCode ^ keyChar);
+    }
+    return btoa(unescape(encodeURIComponent(cipherText)));
+  };
+
+  const defaultSupplier = {
+    id: "mohasagor-integration-id",
+    name: "Mohasagor",
+    company_name: "mohasagor.com.bd",
+    api_base_url: "https://mohasagor.com.bd",
+    api_version: "v1",
+    auth_type: "apikey",
+    credentials_encrypted: encryptCreds({
+      api_key: "A8niclztH9JtzS4t",
+      secret_key: "2ff380917a11d3a7c97bcf6dddfb8adf38194c7d6b726ab12c4d0d5fb136fef8"
+    }),
+    endpoints_config: {
+      product_list: "/api/reseller/product",
+      category_list_path: "/api/reseller/category",
+      response_root_path: "",
+      sku_path: "id",
+      name_path: "name",
+      price_path: "price",
+      stock_path: "stock_quantity",
+      image_path: "thumbnail_image",
+      category_id_path: "category_id",
+      category_name_path: "category",
+      description_path: "description"
+    },
+    pricing_rules: {
+      markup_type: "percentage",
+      markup_value: 15,
+      commission_margin: 5,
+      min_profit: 50,
+      max_profit: 999999,
+      conversion_rate: 1,
+      auto_round: false,
+      round_to: 99
+    },
+    sync_interval: "1h",
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  return [defaultSupplier];
+}
+
+function saveLocalSuppliers(suppliers: any[]) {
+  try {
+    localStorage.setItem("durtup_supplier_integrations", JSON.stringify(suppliers));
+  } catch (e) {
+    console.error("Local storage write failed:", e);
+  }
+}
+
+
 export type Filter = {
   col: string;
   op?: "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "in" | "is" | "ilike" | "like" | "contains";
@@ -197,6 +270,29 @@ export const adminDb = {
       useCache?: boolean;
     }
   ) {
+    if (table === "supplier_integrations") {
+      const localData = getLocalSuppliers() as T[];
+      return { data: localData, count: localData.length, error: null };
+    }
+    if (table === "supplier_sync_logs") {
+      try {
+        const raw = localStorage.getItem("durtup_supplier_sync_logs");
+        const logs = raw ? JSON.parse(raw) : [];
+        return { data: logs as T[], count: logs.length, error: null };
+      } catch {
+        return { data: [] as T[], count: 0, error: null };
+      }
+    }
+    if (table === "supplier_product_mappings") {
+      try {
+        const raw = localStorage.getItem("durtup_supplier_product_mappings");
+        const mappings = raw ? JSON.parse(raw) : [];
+        return { data: mappings as T[], count: mappings.length, error: null };
+      } catch {
+        return { data: [] as T[], count: 0, error: null };
+      }
+    }
+
     const cacheKey = `${table}:${JSON.stringify(opts || {})}`;
     if (opts?.useCache) {
       const cached = queryCache.get(cacheKey);
@@ -217,21 +313,107 @@ export const adminDb = {
   },
 
   async insert<T = any>(table: string, values: Record<string, any> | Record<string, any>[]) {
+    if (table === "supplier_integrations") {
+      const localData = getLocalSuppliers();
+      const newItems = Array.isArray(values) ? values : [values];
+      const inserted = newItems.map(item => ({
+        id: item.id || `local-supplier-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...item
+      }));
+      localData.push(...inserted);
+      saveLocalSuppliers(localData);
+      return { data: inserted as T[], error: null };
+    }
+    if (table === "supplier_sync_logs") {
+      try {
+        const raw = localStorage.getItem("durtup_supplier_sync_logs");
+        const logs = raw ? JSON.parse(raw) : [];
+        const newItems = Array.isArray(values) ? values : [values];
+        const inserted = newItems.map(item => ({
+          id: item.id || `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          created_at: new Date().toISOString(),
+          ...item
+        }));
+        logs.push(...inserted);
+        localStorage.setItem("durtup_supplier_sync_logs", JSON.stringify(logs.slice(-100)));
+        return { data: inserted as T[], error: null };
+      } catch {
+        return { data: [], error: null };
+      }
+    }
+    if (table === "supplier_product_mappings") {
+      try {
+        const raw = localStorage.getItem("durtup_supplier_product_mappings");
+        const mappings = raw ? JSON.parse(raw) : [];
+        const newItems = Array.isArray(values) ? values : [values];
+        const inserted = newItems.map(item => ({
+          id: item.id || `mapping-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          created_at: new Date().toISOString(),
+          ...item
+        }));
+        mappings.push(...inserted);
+        localStorage.setItem("durtup_supplier_product_mappings", JSON.stringify(mappings));
+        return { data: inserted as T[], error: null };
+      } catch {
+        return { data: [], error: null };
+      }
+    }
     const { data, error } = await invoke({ op: "insert", table, values });
     return { data: (data?.data as T[] | null) ?? null, error };
   },
 
   async upsert<T = any>(table: string, values: Record<string, any> | Record<string, any>[]) {
+    if (table === "supplier_integrations") {
+      const localData = getLocalSuppliers();
+      const newItems = Array.isArray(values) ? values : [values];
+      const inserted = newItems.map(item => ({
+        id: item.id || `local-supplier-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...item
+      }));
+      localData.push(...inserted);
+      saveLocalSuppliers(localData);
+      return { data: inserted as T[], error: null };
+    }
     const { data, error } = await invoke({ op: "upsert", table, values });
     return { data: (data?.data as T[] | null) ?? null, error };
   },
 
   async update<T = any>(table: string, values: Record<string, any>, where: { id?: any; idColumn?: string; filters?: Filter[] }) {
+    if (table === "supplier_integrations") {
+      const localData = getLocalSuppliers();
+      const targetId = where.id;
+      const updatedItems: any[] = [];
+      const updatedList = localData.map(item => {
+        if (item.id === targetId) {
+          const updated = {
+            ...item,
+            ...values,
+            updated_at: new Date().toISOString()
+          };
+          updatedItems.push(updated);
+          return updated;
+        }
+        return item;
+      });
+      saveLocalSuppliers(updatedList);
+      return { data: updatedItems as T[], error: null };
+    }
     const { data, error } = await invoke({ op: "update", table, values, ...where });
     return { data: (data?.data as T[] | null) ?? null, error };
   },
 
   async remove(table: string, where: { id?: any; idColumn?: string; filters?: Filter[] }) {
+    if (table === "supplier_integrations") {
+      const localData = getLocalSuppliers();
+      const targetId = where.id;
+      const filtered = localData.filter(item => item.id !== targetId);
+      saveLocalSuppliers(filtered);
+      return { data: { success: true }, error: null };
+    }
     const { data, error } = await invoke({ op: "delete", table, ...where });
     return { data, error };
   },

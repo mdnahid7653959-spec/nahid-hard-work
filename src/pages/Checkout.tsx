@@ -311,20 +311,18 @@ export default function Checkout() {
       try {
         const productIds = regularItems.map(i => i.product_id).filter(Boolean);
         if (productIds.length > 0) {
-          const { data: mappings } = await supabase
-            .from("supplier_product_mappings")
-            .select("supplier_id")
-            .in("product_id", productIds);
+          const { data: products } = await supabase
+            .from("products")
+            .select("id, seller_id")
+            .in("id", productIds);
           
-          if (mappings && mappings.length > 0) {
-            const uniqueSupplierIds = Array.from(new Set(mappings.map(m => m.supplier_id)));
-            
-            // Invoke supplier-api for each supplier
-            for (const supplierId of uniqueSupplierIds) {
+          if (products && products.length > 0) {
+            const hasMohasagorItems = products.some(p => p.seller_id === "mohasagor.com.bd" || p.seller_id === "Mohasagor");
+            if (hasMohasagorItems) {
               await supabase.functions.invoke("supplier-api", {
                 body: {
                   action: "forward-order",
-                  supplierId,
+                  supplierId: "mohasagor-integration-id",
                   payload: {
                     orderId: order.id,
                     shipping_address: {
@@ -339,7 +337,7 @@ export default function Checkout() {
                   }
                 }
               }).catch(err => {
-                console.error(`Automatic order forwarding failed for supplier ${supplierId}:`, err);
+                console.error("Automatic order forwarding failed for Mohasagor:", err);
               });
             }
           }
