@@ -307,6 +307,47 @@ export default function Checkout() {
         if (itemsError) throw itemsError;
       }
 
+      // Forward order to dropship suppliers automatically if any item is mapped
+      try {
+        const productIds = regularItems.map(i => i.product_id).filter(Boolean);
+        if (productIds.length > 0) {
+          const { data: mappings } = await supabase
+            .from("supplier_product_mappings")
+            .select("supplier_id")
+            .in("product_id", productIds);
+          
+          if (mappings && mappings.length > 0) {
+            const uniqueSupplierIds = Array.from(new Set(mappings.map(m => m.supplier_id)));
+            
+            // Invoke supplier-api for each supplier
+            for (const supplierId of uniqueSupplierIds) {
+              await supabase.functions.invoke("supplier-api", {
+                body: {
+                  action: "forward-order",
+                  supplierId,
+                  payload: {
+                    orderId: order.id,
+                    shipping_address: {
+                      name: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim(),
+                      phone: shippingInfo.phone,
+                      address: shippingInfo.address,
+                      city: shippingInfo.city,
+                      state: shippingInfo.state,
+                      zip: shippingInfo.zipCode,
+                      country: shippingInfo.country
+                    }
+                  }
+                }
+              }).catch(err => {
+                console.error(`Automatic order forwarding failed for supplier ${supplierId}:`, err);
+              });
+            }
+          }
+        }
+      } catch (forwardErr) {
+        console.error("Failed to check or forward dropship orders:", forwardErr);
+      }
+
       // Clear both carts
       await clearCart();
       clearCJCart();

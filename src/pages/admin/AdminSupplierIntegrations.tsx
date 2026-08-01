@@ -87,6 +87,16 @@ export default function AdminSupplierIntegrations() {
   const [syncInterval, setSyncInterval] = useState("1h");
   const [isActive, setIsActive] = useState(true);
   const [webhookUrl, setWebhookUrl] = useState("");
+
+  // Pricing Rule States
+  const [markupType, setMarkupType] = useState<'percentage' | 'fixed'>('percentage');
+  const [markupValue, setMarkupValue] = useState(15);
+  const [commissionMargin, setCommissionMargin] = useState(5);
+  const [minProfit, setMinProfit] = useState(50);
+  const [maxProfit, setMaxProfit] = useState(999999);
+  const [conversionRate, setConversionRate] = useState(1);
+  const [autoRound, setAutoRound] = useState(false);
+  const [roundTo, setRoundTo] = useState(99);
   
   // JSON Parse states
   const [sampleResponseText, setSampleResponseText] = useState("");
@@ -101,7 +111,10 @@ export default function AdminSupplierIntegrations() {
     price_path: "",
     stock_path: "",
     image_path: "",
-    description_path: ""
+    description_path: "",
+    category_list_path: "",
+    category_id_path: "",
+    category_name_path: ""
   });
 
   // Action status loader states
@@ -163,6 +176,17 @@ export default function AdminSupplierIntegrations() {
     // Set mapped endpoints
     const endpoints = supplier.endpoints_config || {};
     setEndpointsInput(endpoints);
+
+    // Set pricing rules states
+    const rules = supplier.pricing_rules || {};
+    setMarkupType(rules.markup_type || 'percentage');
+    setMarkupValue(rules.markup_value !== undefined ? rules.markup_value : 15);
+    setCommissionMargin(rules.commission_margin !== undefined ? rules.commission_margin : 5);
+    setMinProfit(rules.min_profit !== undefined ? rules.min_profit : 50);
+    setMaxProfit(rules.max_profit !== undefined ? rules.max_profit : 999999);
+    setConversionRate(rules.conversion_rate !== undefined ? rules.conversion_rate : 1);
+    setAutoRound(rules.auto_round || false);
+    setRoundTo(rules.round_to !== undefined ? rules.round_to : 99);
     
     // Load sample response if stored
     const sample = endpoints.sample_response ? JSON.stringify(endpoints.sample_response, null, 2) : "";
@@ -181,16 +205,6 @@ export default function AdminSupplierIntegrations() {
     setEditingSupplier({
       auth_type: "apikey",
       api_version: "v1",
-      pricing_rules: {
-        markup_type: 'percentage',
-        markup_value: 15,
-        commission_margin: 5,
-        min_profit: 50,
-        max_profit: 999999,
-        conversion_rate: 1,
-        auto_round: false,
-        round_to: 99
-      }
     });
     setSupplierName("");
     setEndpointUrl("");
@@ -209,8 +223,22 @@ export default function AdminSupplierIntegrations() {
       price_path: "",
       stock_path: "",
       image_path: "",
-      description_path: ""
+      description_path: "",
+      category_list_path: "",
+      category_id_path: "",
+      category_name_path: ""
     });
+
+    // Set default pricing rules states
+    setMarkupType('percentage');
+    setMarkupValue(15);
+    setCommissionMargin(5);
+    setMinProfit(50);
+    setMaxProfit(999999);
+    setConversionRate(1);
+    setAutoRound(false);
+    setRoundTo(99);
+
     setIsFormOpen(true);
   };
 
@@ -377,15 +405,15 @@ export default function AdminSupplierIntegrations() {
           ...endpointsInput,
           sample_response: sampleJSON
         },
-        pricing_rules: editingSupplier.pricing_rules || {
-          markup_type: 'percentage',
-          markup_value: 15,
-          commission_margin: 5,
-          min_profit: 50,
-          max_profit: 999999,
-          conversion_rate: 1,
-          auto_round: false,
-          round_to: 99
+        pricing_rules: {
+          markup_type: markupType,
+          markup_value: Number(markupValue),
+          commission_margin: Number(commissionMargin),
+          min_profit: Number(minProfit),
+          max_profit: Number(maxProfit),
+          conversion_rate: Number(conversionRate),
+          auto_round: autoRound,
+          round_to: Number(roundTo)
         },
         sync_interval: syncInterval,
         is_active: isActive,
@@ -808,6 +836,120 @@ export default function AdminSupplierIntegrations() {
                         </div>
                       </div>
 
+                      {/* Profit Margin & Pricing Rules */}
+                      <div className="border-t pt-4 space-y-3">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-orange-500 flex items-center gap-1">
+                          <Percent className="h-4 w-4" /> Pricing Rules & Profit Margin
+                        </h3>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="markup_type" className="text-xs font-semibold">Markup Type</Label>
+                            <Select value={markupType} onValueChange={(val: any) => setMarkupType(val)}>
+                              <SelectTrigger id="markup_type" className="h-9 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                <SelectItem value="fixed">Fixed BDT (৳)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="markup_value" className="text-xs font-semibold">
+                              {markupType === 'percentage' ? 'Profit Margin (%)' : 'Profit Margin (৳)'}
+                            </Label>
+                            <Input 
+                              id="markup_value" 
+                              type="number"
+                              min="0"
+                              placeholder={markupType === 'percentage' ? '15' : '100'}
+                              value={markupValue} 
+                              onChange={e => setMarkupValue(Number(e.target.value))}
+                              className="h-9 text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="commission_margin" className="text-xs font-semibold">Commission Margin (%)</Label>
+                            <Input 
+                              id="commission_margin" 
+                              type="number"
+                              min="0"
+                              placeholder="5"
+                              value={commissionMargin} 
+                              onChange={e => setCommissionMargin(Number(e.target.value))}
+                              className="h-9 text-xs font-mono"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="conversion_rate" className="text-xs font-semibold">Exchange Rate (1 BDT = ? Supp Currency)</Label>
+                            <Input 
+                              id="conversion_rate" 
+                              type="number"
+                              step="0.0001"
+                              placeholder="1.0"
+                              value={conversionRate} 
+                              onChange={e => setConversionRate(Number(e.target.value))}
+                              className="h-9 text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="min_profit" className="text-xs font-semibold">Min Profit Cap (৳)</Label>
+                            <Input 
+                              id="min_profit" 
+                              type="number"
+                              placeholder="50"
+                              value={minProfit} 
+                              onChange={e => setMinProfit(Number(e.target.value))}
+                              className="h-9 text-xs font-mono"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="max_profit" className="text-xs font-semibold">Max Profit Cap (৳)</Label>
+                            <Input 
+                              id="max_profit" 
+                              type="number"
+                              placeholder="999999"
+                              value={maxProfit} 
+                              onChange={e => setMaxProfit(Number(e.target.value))}
+                              className="h-9 text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border border-border/40 p-2.5 rounded-lg bg-muted/5 gap-4">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="auto_round" className="text-xs font-semibold cursor-pointer">Auto Round Final Prices</Label>
+                            <p className="text-[10px] text-muted-foreground">Force prices to end with a specific value (e.g. ৳99)</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {autoRound && (
+                              <Input 
+                                type="number" 
+                                placeholder="99" 
+                                value={roundTo}
+                                onChange={e => setRoundTo(Number(e.target.value))}
+                                className="w-16 h-8 text-xs font-mono text-center" 
+                              />
+                            )}
+                            <Switch 
+                              id="auto_round" 
+                              checked={autoRound}
+                              onCheckedChange={setAutoRound}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="flex items-center space-x-2 border border-border/40 p-3 rounded-lg bg-muted/10">
                         <Switch 
                           id="s_active" 
@@ -857,6 +999,16 @@ export default function AdminSupplierIntegrations() {
                                 placeholder="Auto-detected root key (e.g. products)"
                                 value={endpointsInput.response_root_path || ""}
                                 onChange={e => setEndpointsInput((prev: any) => ({ ...prev, response_root_path: e.target.value }))}
+                                className="h-8 text-[11px]"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] text-muted-foreground font-semibold">Category List Endpoint Path</Label>
+                              <Input 
+                                placeholder="e.g. /api/reseller/category"
+                                value={endpointsInput.category_list_path || ""}
+                                onChange={e => setEndpointsInput((prev: any) => ({ ...prev, category_list_path: e.target.value }))}
                                 className="h-8 text-[11px]"
                               />
                             </div>
@@ -929,6 +1081,36 @@ export default function AdminSupplierIntegrations() {
                               >
                                 <SelectTrigger className="h-8 text-[11px]">
                                   <SelectValue placeholder="Select image field" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {detectedKeys.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] text-muted-foreground font-semibold">Category ID key</Label>
+                              <Select 
+                                value={endpointsInput.category_id_path || ""} 
+                                onValueChange={(val) => setEndpointsInput((prev: any) => ({ ...prev, category_id_path: val }))}
+                              >
+                                <SelectTrigger className="h-8 text-[11px]">
+                                  <SelectValue placeholder="Select category ID field" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {detectedKeys.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] text-muted-foreground font-semibold">Category Name key (if direct)</Label>
+                              <Select 
+                                value={endpointsInput.category_name_path || ""} 
+                                onValueChange={(val) => setEndpointsInput((prev: any) => ({ ...prev, category_name_path: val }))}
+                              >
+                                <SelectTrigger className="h-8 text-[11px]">
+                                  <SelectValue placeholder="Select category name field" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {detectedKeys.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}

@@ -120,29 +120,31 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Validate admin session
-    const adminToken = req.headers.get("x-admin-token");
-    if (!adminToken) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-    }
-
-    const { data: session } = await supabase
-      .from("admin_sessions")
-      .select("admin_id")
-      .eq("session_token", adminToken)
-      .eq("is_valid", true)
-      .gt("expires_at", new Date().toISOString())
-      .maybeSingle();
-
-    if (!session) {
-      return new Response(JSON.stringify({ error: "Invalid admin session" }), { status: 401, headers: corsHeaders });
-    }
-
     const body = await req.json();
     const { action, supplierId, payload } = body;
 
     if (!action || !supplierId) {
       return new Response(JSON.stringify({ error: "Missing action or supplierId" }), { status: 400, headers: corsHeaders });
+    }
+
+    // Validate admin session for admin-only actions (sync-products, test-connection)
+    if (action === "test-connection" || action === "sync-products") {
+      const adminToken = req.headers.get("x-admin-token");
+      if (!adminToken) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      }
+
+      const { data: session } = await supabase
+        .from("admin_sessions")
+        .select("admin_id")
+        .eq("session_token", adminToken)
+        .eq("is_valid", true)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+
+      if (!session) {
+        return new Response(JSON.stringify({ error: "Invalid admin session" }), { status: 401, headers: corsHeaders });
+      }
     }
 
     // Fetch Supplier details
@@ -289,6 +291,31 @@ serve(async (req) => {
           throw new Error(`Products root path does not point to an array. Path: '${responseRoot}'`);
         }
 
+        // 1. Fetch and map categories if configured
+        const categoryMap = new Map<string, string>();
+        const categoryListPath = endpoints.category_list_path || "";
+        if (categoryListPath) {
+          try {
+            const catUrl = categoryListPath.startsWith("http") ? categoryListPath : `${supplier.api_base_url}${categoryListPath}`;
+            const catRes = await fetch(catUrl, { method: "GET", headers });
+            if (catRes.ok) {
+              const catData = await catRes.json();
+              const rawCats = Array.isArray(catData) ? catData : (catData.categories || catData.data || []);
+              if (Array.isArray(rawCats)) {
+                for (const cat of rawCats) {
+                  const catId = String(cat.id || cat.category_id || "");
+                  const catName = String(cat.name || cat.title || "");
+                  if (catId && catName) {
+                    categoryMap.set(catId, catName);
+                  }
+                }
+              }
+            }
+          } catch (catErr) {
+            console.error("Failed to sync supplier categories:", catErr);
+          }
+        }
+
         let successCount = 0;
         let skipCount = 0;
 
@@ -309,6 +336,52 @@ serve(async (req) => {
           // Resolve Pricing Selling Prices
           const { regular_price, discount_price } = calculatePrice(sPrice, supplier.pricing_rules);
 
+          // Category Resolution
+          const sCatId = String(getNestedValue(rawProd, endpoints.category_id_path || "category_id") || "");
+          let sCatName = "";
+          
+          if (sCatId && categoryMap.has(sCatId)) {
+            sCatName = categoryMap.get(sCatId) || "";
+          } else {
+            // Try extracting category name directly from product if it is a string property
+            const directCatName = getNestedValue(rawProd, endpoints.category_name_path || "category_name") || getNestedValue(rawProd, "category");
+            if (typeof directCatName === "string" && directCatName.trim()) {
+              sCatName = directCatName.trim();
+            }
+          }
+
+          let localCategoryId: string | null = null;
+          if (sCatName) {
+            const slug = sCatName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+            
+            // Query local category by slug
+            const { data: existingCat } = await supabase
+              .from("categories")
+              .select("id")
+              .eq("slug", slug)
+              .maybeSingle();
+
+            if (existingCat) {
+              localCategoryId = existingCat.id;
+            } else {
+              // Auto-create category
+              const { data: newCat, error: catCreateErr } = await supabase
+                .from("categories")
+                .insert({
+                  name: sCatName,
+                  slug: slug,
+                  is_active: true,
+                  description: `Imported from ${supplier.name}`
+                })
+                .select("id")
+                .single();
+
+              if (!catCreateErr && newCat) {
+                localCategoryId = newCat.id;
+              }
+            }
+          }
+
           const productPayload = {
             name: sName,
             sku: sSku,
@@ -320,6 +393,7 @@ serve(async (req) => {
             dimensions: sDim,
             status: "active",
             seller_id: supplier.company_name || supplier.name, // set supplier name as seller info
+            category_id: localCategoryId, // set the mapped category ID
           };
 
           // Upsert product in Database
