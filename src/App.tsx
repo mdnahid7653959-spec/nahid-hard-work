@@ -23,7 +23,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import OAuthConsent from "./pages/OAuthConsent";
 
 // Lazy load - less critical pages
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -165,7 +164,6 @@ const App = () => (
                           <Route path="/" element={<Index />} />
                           <Route path="/login" element={<Login />} />
                           <Route path="/register" element={<Register />} />
-                          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                           
                           {/* Public Routes - Lazy loaded */}
                           <Route path="/forgot-password" element={<ForgotPassword />} />

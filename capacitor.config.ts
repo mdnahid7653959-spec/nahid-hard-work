@@ -5,12 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Darzo',
   webDir: 'dist',
   
-  // Server configuration for development (remove for production APK/IPA)
+  // Server configuration for production/development
   server: {
-    url: 'https://65637dbb-b265-45c8-9b12-3e83712f3664.lovableproject.com?forceHideBadge=true',
     cleartext: true,
-    // Disable external navigation for security
-    allowNavigation: ['*.megamart.app', '*.supabase.co', '*.lovableproject.com']
+    allowNavigation: ['*.supabase.co']
   },
 
   // Android specific configuration

@@ -11,11 +11,9 @@
 3. **Xcode** (iOS app এর জন্য - শুধুমাত্র Mac)
 4. **Git**
 
-### Step 1: Export to GitHub
+### Step 1: Clone Project from GitHub
 
-1. Lovable এ "Export to GitHub" বাটনে ক্লিক করুন
-2. আপনার GitHub repository তে প্রজেক্ট push করুন
-3. আপনার local machine এ clone করুন:
+1. আপনার GitHub repository থেকে local machine এ clone করুন:
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
@@ -248,7 +246,6 @@ cd ios/App && xcodebuild clean
 - [Capacitor Documentation](https://capacitorjs.com/docs)
 - [Android Developer Guide](https://developer.android.com/guide)
 - [Apple Developer Documentation](https://developer.apple.com/documentation/)
-- [Lovable Mobile App Blog Post](https://lovable.dev/blog)
 
 ---
 

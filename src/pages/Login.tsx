@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -51,10 +51,13 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: nextPath ? `${window.location.origin}${nextPath}` : window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: nextPath ? `${window.location.origin}${nextPath}` : window.location.origin,
+        }
       });
-      if (result.error) throw result.error;
+      if (error) throw error;
     } catch (error: any) {
       toast({
         variant: "destructive",
