@@ -57,11 +57,24 @@ async function invoke(body: Record<string, any>) {
   // 1. Try Edge Function Invoke First with Retry
   try {
     const edgeCall = async () => {
+      // Don't send un-registered client-side tokens ("sec_admin_") in header to avoid 401 rejection
+      const headers = (token && !token.startsWith("sec_admin_")) ? { "x-admin-token": token } : undefined;
       const { data, error } = await supabase.functions.invoke("admin-db", {
         body: { ...body, adminId },
-        headers: token ? { "x-admin-token": token } : undefined,
+        headers,
       });
-      if (error || !data || data.error) throw error || new Error(data?.error || "Edge function failed");
+      if (error || !data || data.error) {
+        // If header token caused 401/error, retry once using body adminId legacy verification
+        if (headers) {
+          const retryRes = await supabase.functions.invoke("admin-db", {
+            body: { ...body, adminId }
+          });
+          if (!retryRes.error && retryRes.data && !retryRes.data.error) {
+            return retryRes.data;
+          }
+        }
+        throw error || new Error(data?.error || "Edge function failed");
+      }
       return data;
     };
     const data = await withRetry(edgeCall, 1, 200);
