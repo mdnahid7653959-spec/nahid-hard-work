@@ -164,7 +164,7 @@ async function fetchAllHomeProducts() {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const products = data as ProductWithImages[];
       const mapped = products.map((p, i) => mapProduct(p, i));
 
@@ -176,11 +176,11 @@ async function fetchAllHomeProducts() {
 
       return {
         latestProducts: mapped.slice(0, 12),
-        flashSale: flashSale.length > 0 ? flashSale.slice(0, 6) : mapped.slice(0, 6),
-        featured: featured.length > 0 ? featured.slice(0, 12) : mapped.slice(0, 12),
-        newArrivals: newArrivals.length > 0 ? newArrivals.slice(0, 12) : mapped.slice(0, 12),
-        trending: trending.length > 0 ? trending.slice(0, 6) : mapped.slice(0, 6),
-        recommended: recommended.length > 0 ? recommended.slice(0, 12) : mapped.slice(0, 12),
+        flashSale: flashSale.slice(0, 6),
+        featured: featured.slice(0, 12),
+        newArrivals: newArrivals.slice(0, 12),
+        trending: trending.slice(0, 6),
+        recommended: recommended.slice(0, 12),
       };
     }
   } catch (err) {
