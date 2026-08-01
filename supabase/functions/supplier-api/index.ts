@@ -123,6 +123,45 @@ serve(async (req) => {
     const body = await req.json();
     const { action, supplierId, payload } = body;
 
+    if (action === "seed-supplier") {
+      const { supplierData } = body;
+      if (!supplierData || !supplierData.name) {
+        return new Response(JSON.stringify({ error: "Missing supplierData" }), { status: 400, headers: corsHeaders });
+      }
+
+      const { data: existing } = await supabase
+        .from("supplier_integrations")
+        .select("id")
+        .eq("name", supplierData.name)
+        .maybeSingle();
+
+      let result;
+      if (existing) {
+        result = await supabase
+          .from("supplier_integrations")
+          .update({
+            ...supplierData,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", existing.id)
+          .select();
+      } else {
+        result = await supabase
+          .from("supplier_integrations")
+          .insert({
+            ...supplierData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select();
+      }
+
+      if (result.error) {
+        return new Response(JSON.stringify({ error: result.error.message }), { status: 500, headers: corsHeaders });
+      }
+      return new Response(JSON.stringify({ success: true, data: result.data }), { status: 200, headers: corsHeaders });
+    }
+
     if (!action || !supplierId) {
       return new Response(JSON.stringify({ error: "Missing action or supplierId" }), { status: 400, headers: corsHeaders });
     }
@@ -419,8 +458,17 @@ serve(async (req) => {
           }, { onConflict: "product_id" });
 
           // Extract and insert image if configured
-          const imgUrl = getNestedValue(rawProd, endpoints.image_path || "image");
+          let imgUrl = getNestedValue(rawProd, endpoints.image_path || "image");
           if (imgUrl) {
+            // Resolve relative image URLs using the supplier base URL
+            if (typeof imgUrl === "string" && !imgUrl.startsWith("http") && !imgUrl.startsWith("//")) {
+              const base = supplier.api_base_url.replace(/\/$/, "");
+              if (imgUrl.startsWith("/")) {
+                imgUrl = `${base}${imgUrl}`;
+              } else {
+                imgUrl = `${base}/${imgUrl}`;
+              }
+            }
             await supabase.from("product_images").upsert({
               product_id: upsertedProduct.id,
               image_url: imgUrl,
