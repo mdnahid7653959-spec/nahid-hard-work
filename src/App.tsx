@@ -108,13 +108,20 @@ const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
 const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminHomePromos = lazy(() => import("./pages/admin/AdminHomePromos"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
-const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
-const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport"));
-const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
-const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
-const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
-const AdminVisualEditor = lazy(() => import("./pages/admin/AdminVisualEditor"));
-const AdminSearchManagement = lazy(() => import("./pages/admin/AdminSearchManagement"));
+// Enterprise Admin Pages
+import { EnterpriseDashboard } from "./pages/admin/enterprise/EnterpriseDashboard";
+import { EnterpriseProducts } from "./pages/admin/enterprise/EnterpriseProducts";
+import { EnterpriseOrders } from "./pages/admin/enterprise/EnterpriseOrders";
+import { EnterprisePayments } from "./pages/admin/enterprise/EnterprisePayments";
+import { EnterpriseCommissions } from "./pages/admin/enterprise/EnterpriseCommissions";
+import { EnterpriseUsers } from "./pages/admin/enterprise/EnterpriseUsers";
+import { EnterpriseSupplierCenter } from "./pages/admin/enterprise/EnterpriseSupplierCenter";
+import { EnterpriseCMSBuilder } from "./pages/admin/enterprise/EnterpriseCMSBuilder";
+import { EnterpriseAIStudio } from "./pages/admin/enterprise/EnterpriseAIStudio";
+import { EnterpriseCampaigns } from "./pages/admin/enterprise/EnterpriseCampaigns";
+import { EnterpriseShipping } from "./pages/admin/enterprise/EnterpriseShipping";
+import { EnterpriseInventory } from "./pages/admin/enterprise/EnterpriseInventory";
+import { EnterpriseSecurity } from "./pages/admin/enterprise/EnterpriseSecurity";
 
 // Staff Portal
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
@@ -241,44 +248,21 @@ const App = () => (
                           <Route path="/admin/login" element={<AdminGate><AdminLogin /></AdminGate>} />
                           
                           
-                          {/* Protected Admin Routes */}
-                          <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
-                          <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
-                          <Route path="/admin/products" element={<AdminProtectedRoute><AdminProducts /></AdminProtectedRoute>} />
-                          <Route path="/admin/products/new" element={<AdminProtectedRoute><ProductForm /></AdminProtectedRoute>} />
-                          <Route path="/admin/products/:id" element={<AdminProtectedRoute><ProductForm /></AdminProtectedRoute>} />
-                          <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
-                          <Route path="/admin/brands" element={<AdminProtectedRoute><AdminBrands /></AdminProtectedRoute>} />
-                          <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
-                          <Route path="/admin/payments" element={<AdminProtectedRoute><AdminPayments /></AdminProtectedRoute>} />
-                          <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
-                          <Route path="/admin/coupons" element={<AdminProtectedRoute><AdminCoupons /></AdminProtectedRoute>} />
-                          <Route path="/admin/reviews" element={<AdminProtectedRoute><AdminReviews /></AdminProtectedRoute>} />
-                          <Route path="/admin/cj-settings" element={<AdminProtectedRoute><AdminCJSettings /></AdminProtectedRoute>} />
-                          <Route path="/admin/supplier-integrations" element={<AdminProtectedRoute><AdminSupplierIntegrations /></AdminProtectedRoute>} />
-                          <Route path="/admin/sellers" element={<AdminProtectedRoute><AdminSellers /></AdminProtectedRoute>} />
-                          <Route path="/admin/shipping" element={<AdminProtectedRoute><AdminShipping /></AdminProtectedRoute>} />
-                          <Route path="/admin/commissions" element={<AdminProtectedRoute><AdminCommissions /></AdminProtectedRoute>} />
-                          <Route path="/admin/inventory" element={<AdminProtectedRoute><AdminInventory /></AdminProtectedRoute>} />
-                          <Route path="/admin/marketing" element={<AdminProtectedRoute><AdminMarketing /></AdminProtectedRoute>} />
-                          <Route path="/admin/loyalty" element={<AdminProtectedRoute><AdminLoyalty /></AdminProtectedRoute>} />
-                          <Route path="/admin/free-delivery" element={<AdminProtectedRoute><AdminFreeDelivery /></AdminProtectedRoute>} />
-                          <Route path="/admin/reports" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
-                          <Route path="/admin/security" element={<AdminProtectedRoute><AdminSecurity /></AdminProtectedRoute>} />
-                          <Route path="/admin/cms" element={<AdminProtectedRoute><AdminCMS /></AdminProtectedRoute>} />
-                          <Route path="/admin/consignments" element={<AdminProtectedRoute><AdminConsignments /></AdminProtectedRoute>} />
-                          <Route path="/admin/warehouses" element={<AdminProtectedRoute><AdminWarehouses /></AdminProtectedRoute>} />
-                          <Route path="/admin/home-bento" element={<AdminProtectedRoute><AdminHomeBento /></AdminProtectedRoute>} />
-                          <Route path="/admin/home-promos" element={<AdminProtectedRoute><AdminHomePromos /></AdminProtectedRoute>} />
-                          <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
-                          <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
-                          <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
-                          <Route path="/admin/seller-support" element={<AdminProtectedRoute><AdminSellerSupport /></AdminProtectedRoute>} />
-                          <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
-                          <Route path="/admin/wallet" element={<AdminProtectedRoute><AdminWallet /></AdminProtectedRoute>} />
-                          <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
-                          <Route path="/admin/visual-editor" element={<AdminProtectedRoute><AdminVisualEditor /></AdminProtectedRoute>} />
-                          <Route path="/admin/search" element={<AdminProtectedRoute><AdminSearchManagement /></AdminProtectedRoute>} />
+                          {/* Protected Enterprise Admin Routes */}
+                          <Route path="/admin" element={<AdminProtectedRoute><EnterpriseDashboard /></AdminProtectedRoute>} />
+                          <Route path="/admin/dashboard" element={<AdminProtectedRoute><EnterpriseDashboard /></AdminProtectedRoute>} />
+                          <Route path="/admin/products" element={<AdminProtectedRoute><EnterpriseProducts /></AdminProtectedRoute>} />
+                          <Route path="/admin/inventory" element={<AdminProtectedRoute><EnterpriseInventory /></AdminProtectedRoute>} />
+                          <Route path="/admin/orders" element={<AdminProtectedRoute><EnterpriseOrders /></AdminProtectedRoute>} />
+                          <Route path="/admin/payments" element={<AdminProtectedRoute><EnterprisePayments /></AdminProtectedRoute>} />
+                          <Route path="/admin/commissions" element={<AdminProtectedRoute><EnterpriseCommissions /></AdminProtectedRoute>} />
+                          <Route path="/admin/shipping" element={<AdminProtectedRoute><EnterpriseShipping /></AdminProtectedRoute>} />
+                          <Route path="/admin/users" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
+                          <Route path="/admin/suppliers" element={<AdminProtectedRoute><EnterpriseSupplierCenter /></AdminProtectedRoute>} />
+                          <Route path="/admin/cms-builder" element={<AdminProtectedRoute><EnterpriseCMSBuilder /></AdminProtectedRoute>} />
+                          <Route path="/admin/campaigns" element={<AdminProtectedRoute><EnterpriseCampaigns /></AdminProtectedRoute>} />
+                          <Route path="/admin/ai-studio" element={<AdminProtectedRoute><EnterpriseAIStudio /></AdminProtectedRoute>} />
+                          <Route path="/admin/security" element={<AdminProtectedRoute><EnterpriseSecurity /></AdminProtectedRoute>} />
 
                           {/* Staff Portal */}
                           <Route path="/staff/login" element={<StaffLogin />} />
