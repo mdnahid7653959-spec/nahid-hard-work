@@ -146,20 +146,20 @@ export function Header() {
 
       {/* Main header */}
       <div className="bg-primary text-primary-foreground">
-        <div className="container py-1.5 sm:py-2">
-          <div className="flex items-center justify-between gap-3 sm:gap-6 relative">
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <button className="lg:hidden p-1.5 hover:bg-white/10 rounded-md transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        <div className="px-2.5 sm:container py-1.5 sm:py-2">
+          <div className="flex items-center justify-between gap-1 sm:gap-6 relative">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              <button className="lg:hidden p-1 hover:bg-white/10 rounded-md transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
 
               <Link 
                 to="/" 
-                className="flex items-center gap-2 shrink-0 group py-0.5 z-10"
+                className="flex items-center shrink-0 group py-0.5 z-10"
               >
                 <img 
                   alt="Durtup.shop" 
-                  className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain transition-transform group-hover:scale-105 filter drop-shadow-sm" 
+                  className="h-6.5 sm:h-9 md:h-11 lg:h-12 w-auto object-contain transition-transform group-hover:scale-105 filter drop-shadow-sm max-w-[120px] sm:max-w-none" 
                   src={(logoUrl && !logoUrl.endsWith(".png")) ? logoUrl : "/durtup-logo.svg"} 
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/durtup-logo.svg";
