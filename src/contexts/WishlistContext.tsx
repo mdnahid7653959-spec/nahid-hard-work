@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
 
-interface WishlistItem {
+export interface WishlistItem {
   id: string;
   product_id: string;
   product: {
@@ -37,8 +39,12 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   const getLocalWishlist = useCallback(() => {
-    const stored = localStorage.getItem(WISHLIST_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    try {
+      const stored = localStorage.getItem(WISHLIST_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
   }, []);
 
   const setLocalWishlist = useCallback((wishlist: any[]) => {
@@ -47,117 +53,124 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   const fetchWishlist = useCallback(async () => {
     setLoading(true);
-    
-    if (user) {
-      const { data, error } = await supabase
-        .from("wishlist")
-        .select(`
-          id,
-          product_id,
-          product:products(id, name, slug, regular_price, discount_price)
-        `)
-        .eq("user_id", user.id);
+    try {
+      const catalog = await getCachedMohasagorProducts();
+      let rawItems: any[] = [];
 
-      if (!error && data) {
-        const images = [
-          "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=200&h=200&fit=crop",
-          "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=200&h=200&fit=crop",
-        ];
-        
-        const wishlistItems = data.map((item: any, i: number) => ({
-          ...item,
-          product: Array.isArray(item.product) ? item.product[0] : item.product,
-          image: images[i % images.length]
-        })).filter((item: any) => item.product);
-        
-        setItems(wishlistItems);
-      }
-    } else {
-      const localWishlist = getLocalWishlist();
-      if (localWishlist.length > 0) {
-        const { data: products } = await supabase
-          .from("products")
-          .select("id, name, slug, regular_price, discount_price")
-          .in("id", localWishlist);
-
-        if (products) {
-          const images = [
-            "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=200&h=200&fit=crop",
-            "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=200&h=200&fit=crop",
-          ];
-          
-          const wishlistItems = products.map((p: any, i: number) => ({
-            id: `local-${p.id}`,
-            product_id: p.id,
-            product: p,
-            image: images[i % images.length]
-          }));
-          
-          setItems(wishlistItems);
+      if (user) {
+        const ref = doc(db, "wishlists", user.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          rawItems = snap.data().items || [];
+        } else {
+          rawItems = getLocalWishlist();
         }
       } else {
-        setItems([]);
+        rawItems = getLocalWishlist();
       }
+
+      const formatted: WishlistItem[] = rawItems.map((item: any) => {
+        const pid = typeof item === 'string' ? item : (item.product_id || item.id);
+        const matched = catalog.find(p => p.id === pid);
+        return {
+          id: `wish-${pid}`,
+          product_id: pid,
+          product: matched ? {
+            id: matched.id,
+            name: matched.name,
+            slug: matched.slug,
+            regular_price: matched.originalPrice || matched.price,
+            discount_price: matched.price
+          } : {
+            id: pid,
+            name: "Product",
+            slug: `product-${pid}`,
+            regular_price: 100,
+            discount_price: null
+          },
+          image: matched?.image || "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400"
+        };
+      });
+
+      setItems(formatted);
+    } catch (err) {
+      console.error("Failed to fetch wishlist:", err);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   }, [user, getLocalWishlist]);
 
   useEffect(() => {
     fetchWishlist();
   }, [fetchWishlist]);
 
+  const syncWishlistToFirebase = async (newItems: WishlistItem[]) => {
+    const rawIds = newItems.map(i => i.product_id);
+    setLocalWishlist(rawIds);
+    if (user) {
+      try {
+        await setDoc(doc(db, "wishlists", user.uid), {
+          items: newItems,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (e) {
+        console.error("Wishlist Firestore sync error:", e);
+      }
+    }
+  };
+
   const isInWishlist = useCallback((productId: string) => {
     return items.some(item => item.product_id === productId);
   }, [items]);
 
   const addToWishlist = useCallback(async (productId: string) => {
-    if (user) {
-      const { error } = await supabase.from("wishlist").insert({
-        user_id: user.id,
-        product_id: productId
-      });
+    if (isInWishlist(productId)) return;
+    const catalog = await getCachedMohasagorProducts();
+    const matched = catalog.find(p => p.id === productId);
 
-      if (error) {
-        if (error.code === "23505") {
-          toast({ title: "Already in wishlist" });
-          return;
-        }
-        toast({ variant: "destructive", title: "Error", description: "Failed to add to wishlist" });
-        return;
-      }
-    } else {
-      const localWishlist = getLocalWishlist();
-      if (!localWishlist.includes(productId)) {
-        localWishlist.push(productId);
-        setLocalWishlist(localWishlist);
-      }
-    }
-    
-    await fetchWishlist();
-    toast({ title: "Added to wishlist" });
-  }, [user, fetchWishlist, getLocalWishlist, setLocalWishlist, toast]);
+    const newItem: WishlistItem = {
+      id: `wish-${productId}`,
+      product_id: productId,
+      product: matched ? {
+        id: matched.id,
+        name: matched.name,
+        slug: matched.slug,
+        regular_price: matched.originalPrice || matched.price,
+        discount_price: matched.price
+      } : {
+        id: productId,
+        name: "Product",
+        slug: `product-${productId}`,
+        regular_price: 100,
+        discount_price: null
+      },
+      image: matched?.image || "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400"
+    };
+
+    setItems(prev => {
+      const updated = [...prev, newItem];
+      syncWishlistToFirebase(updated);
+      return updated;
+    });
+
+    toast({
+      title: "Added to wishlist",
+      description: "Item saved to your wishlist."
+    });
+  }, [isInWishlist, toast]);
 
   const removeFromWishlist = useCallback(async (productId: string) => {
-    if (user) {
-      const { error } = await supabase
-        .from("wishlist")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("product_id", productId);
+    setItems(prev => {
+      const updated = prev.filter(item => item.product_id !== productId);
+      syncWishlistToFirebase(updated);
+      return updated;
+    });
 
-      if (error) {
-        toast({ variant: "destructive", title: "Error", description: "Failed to remove from wishlist" });
-        return;
-      }
-    } else {
-      const localWishlist = getLocalWishlist().filter((id: string) => id !== productId);
-      setLocalWishlist(localWishlist);
-    }
-    
-    await fetchWishlist();
-    toast({ title: "Removed from wishlist" });
-  }, [user, fetchWishlist, getLocalWishlist, setLocalWishlist, toast]);
+    toast({
+      title: "Removed from wishlist",
+      description: "Item removed from your wishlist."
+    });
+  }, [toast]);
 
   const toggleWishlist = useCallback(async (productId: string) => {
     if (isInWishlist(productId)) {
@@ -176,7 +189,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     isInWishlist,
     addToWishlist,
     removeFromWishlist,
-    toggleWishlist
+    toggleWishlist,
   }), [items, loading, itemCount, isInWishlist, addToWishlist, removeFromWishlist, toggleWishlist]);
 
   return (
@@ -188,7 +201,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
 export function useWishlist() {
   const context = useContext(WishlistContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useWishlist must be used within a WishlistProvider");
   }
   return context;

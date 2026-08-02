@@ -118,7 +118,7 @@
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     font-size: 16px;
-    overflow-x: hidden;
+    overflow-x: clip;
     overflow-y: scroll !important;
     height: auto !important;
     /* Universal scrolling - allow scroll from anywhere */
@@ -132,7 +132,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior-y: contain;
-    overflow-x: hidden;
+    overflow-x: clip;
     overflow-y: scroll !important;
     /* Universal scrolling */
     touch-action: pan-x pan-y;

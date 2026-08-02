@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import type { Product } from "@/components/products/ProductCard";
 
 const defaultImages = [
@@ -184,6 +184,35 @@ function buildSections(products: Product[]) {
   };
 }
 
+const CACHE_KEY = "mohasagor_cached_home_products_v2";
+
+function preloadImages(products: Product[]) {
+  if (typeof window === "undefined") return;
+  products.slice(0, 12).forEach(p => {
+    if (p.image) {
+      const img = new Image();
+      img.src = p.image;
+    }
+  });
+}
+
+function getInitialCachedProducts() {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.latestProducts?.length) {
+        preloadImages(parsed.latestProducts);
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to load cached home products", e);
+  }
+  return undefined;
+}
+
 async function fetchAllHomeProducts() {
   // ── Strategy 1: Fetch from local DB (synced products + images) ──
   try {
@@ -201,27 +230,45 @@ async function fetchAllHomeProducts() {
 
     if (!dbError && dbProducts && dbProducts.length >= 6) {
       const mapped = (dbProducts as ProductWithImages[]).map(mapDbProduct);
-      return buildSections(mapped);
+      const result = buildSections(mapped);
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(result));
+      } catch (e) {}
+      preloadImages(result.latestProducts);
+      return result;
     }
   } catch (dbErr) {
     console.warn("[useHomeProducts] DB fetch failed, trying live API:", dbErr);
   }
 
-  // ── Strategy 2: Fetch from live supplier API (Edge Function proxy) ──
+  // ── Strategy 2: Fetch directly from live supplier API (Mohasagor API) ──
   try {
-    const { data: responseData, error } = await supabase.functions.invoke("supplier-api", {
-      body: { action: "get-products", supplierId: "da929859-f7fa-4590-a3ad-f7012eac5b8c" }
+    const apiUrl = typeof window !== "undefined" && window.location.hostname === "localhost" 
+      ? "/api/mohasagor/api/reseller/product"
+      : "https://mohasagor.com.bd/api/reseller/product";
+
+    const res = await fetch(apiUrl, {
+      headers: {
+        "api-key": "A8niclztH9JtzS4t",
+        "secret-key": "2ff380917a11d3a7c97bcf6dddfb8adf38194c7d6b726ab12c4d0d5fb136fef8"
+      }
     });
 
-    if (error) {
-      console.error("[useHomeProducts] Edge Function error:", error);
-    } else if (responseData && responseData.success && responseData.data?.products) {
-      const rawProducts = responseData.data.products;
-      const mapped = rawProducts.map(mapSupplierProduct);
-      return buildSections(mapped);
+    if (res.ok) {
+      const responseData = await res.json();
+      const rawProducts = responseData.products || (Array.isArray(responseData) ? responseData : []);
+      if (Array.isArray(rawProducts) && rawProducts.length > 0) {
+        const mapped = rawProducts.map(mapSupplierProduct);
+        const result = buildSections(mapped);
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(result));
+        } catch (e) {}
+        preloadImages(result.latestProducts);
+        return result;
+      }
     }
   } catch (err) {
-    console.warn("[useHomeProducts] Error fetching from Edge Function, using fallback data:", err);
+    console.warn("[useHomeProducts] Error fetching from Mohasagor API:", err);
   }
 
   // ── Strategy 3: Hardcoded fallback ──
@@ -239,8 +286,9 @@ export function useHomeProducts() {
   return useQuery({
     queryKey: ["home-products"],
     queryFn: fetchAllHomeProducts,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
+    initialData: getInitialCachedProducts,
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     retry: 2,

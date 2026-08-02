@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 
 const ADMIN_SESSION_KEY = "megamart_admin_session";
 

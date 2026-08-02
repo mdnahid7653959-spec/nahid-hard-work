@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Globe, Loader2 } from "lucide-react";
 import { useCJSettings, calculateCJPrice, mapCJCategory, useCJCategoryMappings } from "@/hooks/useCJSettings";
 import type { CombinedProduct } from "@/hooks/useCombinedSearch";
+
+import { getCachedMohasagorProducts, filterProductsByCategory } from "@/utils/mohasagorCache";
 
 interface Category {
   id: string;
@@ -33,70 +35,86 @@ export default function CategoryPage() {
     async function fetchData() {
       if (!slug) return;
 
-      // Fetch all categories for mapping
-      const { data: allCats } = await supabase
-        .from("categories")
-        .select("id, name, slug, description")
-        .eq("is_active", true);
+      // 0ms Fast Path: Check if cached Mohasagor products exist and render instantly
+      const formattedName = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      const initialCat = {
+        id: `cat-${slug}`,
+        name: formattedName,
+        slug,
+        description: `Explore top quality products in ${formattedName}`,
+      };
+      setCategory(initialCat);
 
-      if (allCats) {
-        setCategories(allCats);
+      const allMohasagor = await getCachedMohasagorProducts();
+      if (allMohasagor.length > 0) {
+        const instantFiltered = filterProductsByCategory(allMohasagor, slug, formattedName);
+        setProducts(instantFiltered);
+        setLoading(false); // Instantly turn off spinner in 0ms!
+      } else {
+        setLoading(true);
       }
 
-      // Fetch current category
-      const { data: catData } = await supabase
-        .from("categories")
-        .select("*")
-        .eq("slug", slug)
-        .single();
+      try {
+        // Fetch all categories for mapping
+        const { data: allCats } = await supabase
+          .from("categories")
+          .select("id, name, slug, description")
+          .eq("is_active", true);
 
-      if (catData) {
-        setCategory(catData);
-
-        // Fetch local products by category_id with images
-        const { data: prodData } = await supabase
-          .from("products")
-          .select(`
-            *,
-            category:categories(id, name, slug),
-            product_images(image_url, is_primary)
-          `)
-          .eq("category_id", catData.id)
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(50);
-
-        if (prodData) {
-          const mappedProducts: Product[] = prodData.map(p => {
-            const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
-            const firstImage = p.product_images?.[0]?.image_url;
-            const fallbackImage = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop";
-            
-            return {
-              id: p.id,
-              name: p.name,
-              slug: p.slug,
-              image: primaryImage || firstImage || fallbackImage,
-              price: p.discount_price || p.regular_price,
-              originalPrice: p.discount_price ? p.regular_price : undefined,
-              rating: Number(p.rating_average) || 0,
-              reviews: p.rating_count || 0,
-              sold: p.sold_count || 0,
-              freeShipping: p.free_shipping || false,
-              isNew: p.is_new_arrival || false,
-              isBestSeller: p.is_best_seller || false,
-            };
-          });
-          setProducts(mappedProducts);
+        if (allCats) {
+          setCategories(allCats);
         }
 
-        // Fetch CJ products if enabled
-        if (cjSettings?.is_enabled && cjSettings?.show_in_categories && allCats) {
-          await fetchCJProductsForCategory(catData, allCats);
+        // Fetch current category from DB
+        const { data: catData } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("slug", slug)
+          .maybeSingle();
+
+        if (catData) {
+          setCategory(catData);
+          const { data: prodData } = await supabase
+            .from("products")
+            .select(`
+              *,
+              category:categories(id, name, slug),
+              product_images(image_url, is_primary)
+            `)
+            .eq("category_id", catData.id)
+            .eq("status", "active")
+            .order("created_at", { ascending: false })
+            .limit(50);
+
+          if (prodData && prodData.length > 0) {
+            const mappedProducts: Product[] = prodData.map(p => {
+              const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
+              const firstImage = p.product_images?.[0]?.image_url;
+              const fallbackImage = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop";
+              
+              return {
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                image: primaryImage || firstImage || fallbackImage,
+                price: p.discount_price || p.regular_price,
+                originalPrice: p.discount_price ? p.regular_price : undefined,
+                rating: Number(p.rating_average) || 0,
+                reviews: p.rating_count || 0,
+                sold: p.sold_count || 0,
+                freeShipping: p.free_shipping || false,
+                isNew: p.is_new_arrival || false,
+                isBestSeller: p.is_best_seller || false,
+              };
+            });
+            setProducts(mappedProducts);
+          }
         }
+      } catch (err) {
+        console.error("Error in CategoryPage fetchData:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
     fetchData();

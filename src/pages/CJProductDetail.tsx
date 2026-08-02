@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, Star, Truck, Shield, RotateCcw, Minus, Plus, Loader2, ChevronLeft, ChevronRight, Share2, Zap } from "lucide-react";
 import DOMPurify from "dompurify";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layout/Header";
@@ -10,6 +10,7 @@ import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { useCJCart } from "@/hooks/useCJCart";
 import { useToast } from "@/hooks/use-toast";
+import { RelatedProducts } from "@/components/products/RelatedProducts";
 // BDT conversion rate with profit margin
 const USD_TO_BDT = 120;
 const PROFIT_MARGIN = 1.3; // 30% margin
@@ -503,13 +504,14 @@ export default function CJProductDetail() {
                 </div>
               </div>
 
-              {/* Description - Collapsible on Mobile */}
+              {/* Description */}
               {(product.descriptionEn || product.description) && (
                 <div className="space-y-2 pt-4 border-t">
                   <h3 className="text-sm font-semibold">Description</h3>
                   <div 
-                    className="text-xs sm:text-sm text-muted-foreground prose prose-sm max-w-none prose-p:my-1 prose-p:leading-relaxed overflow-hidden"
-                    style={{ maxHeight: '200px', overflowY: 'auto' }}
+                    className="text-xs sm:text-sm text-muted-foreground prose prose-sm max-w-none prose-p:my-2 prose-p:leading-relaxed overflow-hidden
+                      [&_img]:max-w-full [&_img]:rounded-lg [&_table]:w-full [&_table]:border-collapse
+                      [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2"
                     dangerouslySetInnerHTML={{ 
                       __html: DOMPurify.sanitize(product.descriptionEn || product.description, {
                         ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'span', 'b', 'i', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', 'td', 'th', 'tbody', 'thead', 'img'],
@@ -530,6 +532,20 @@ export default function CJProductDetail() {
               </div>
             </div>
           </div>
+
+          {/* Related Products */}
+          <RelatedProducts 
+            product={{
+              id: product.id,
+              name: product.nameEn || product.name,
+              category_id: product.category || null,
+              regular_price: product.price,
+              discount_price: product.originalPrice || undefined,
+            }}
+            title="You May Also Like"
+            subtitle="Similar products based on your interests"
+            limit={12}
+          />
         </div>
 
         {/* Mobile sticky bottom bar - Enhanced */}

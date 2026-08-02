@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

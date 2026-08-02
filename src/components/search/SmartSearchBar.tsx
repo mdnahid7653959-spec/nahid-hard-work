@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, X, Loader2, Clock, TrendingUp, Star, Package, Tag, Store } from "lucide-react";
+import { Search, X, Loader2, Clock, TrendingUp, Star, Package, Tag, Store, Camera } from "lucide-react";
 import {
   useSearchSuggestions,
   getRecentSearches,
@@ -8,6 +8,7 @@ import {
   clearRecentSearches,
   type SuggestProduct,
 } from "@/hooks/useSearchSuggestions";
+import { ImageSearchModal } from "./ImageSearchModal";
 import { cn } from "@/lib/utils";
 
 interface SmartSearchBarProps {
@@ -52,6 +53,7 @@ export function SmartSearchBar({
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [imageSearchOpen, setImageSearchOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
   const [recent, setRecent] = useState<string[]>([]);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -135,7 +137,6 @@ export function SmartSearchBar({
 
   const showDropdown =
     open && (hasQuery ? true : rows.length > 0);
-
   // Mobile: tap opens dedicated /search page for a richer experience
   if (variant === "mobile") {
     return (
@@ -229,6 +230,7 @@ export function SmartSearchBar({
               <X className="h-3.5 w-3.5" />
             </button>
           )}
+
           <button
             type="submit"
             aria-label="Search"
@@ -241,9 +243,6 @@ export function SmartSearchBar({
             <Search className={variant === "desktop" ? "h-4 w-4" : "h-3.5 w-3.5"} />
             {variant === "desktop" && <span>Search</span>}
           </button>
-
-
-
         </div>
       </form>
 

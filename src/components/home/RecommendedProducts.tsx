@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { ProductCard, type Product } from "@/components/products/ProductCard";
 import { ChevronRight, ThumbsUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";

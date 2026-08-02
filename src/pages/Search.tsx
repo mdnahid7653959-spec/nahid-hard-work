@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Search as SearchIcon, X, Clock, TrendingUp, Loader2, Star } from "lucide-react";
+import { ArrowLeft, Search as SearchIcon, X, Clock, TrendingUp, Loader2, Star, Camera } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import {
   useSearchSuggestions,
   getRecentSearches,
@@ -10,6 +10,7 @@ import {
   removeRecentSearch,
   clearRecentSearches,
 } from "@/hooks/useSearchSuggestions";
+import { ImageSearchModal } from "@/components/search/ImageSearchModal";
 import { cn } from "@/lib/utils";
 
 function currency(n: number) {
@@ -75,6 +76,7 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const [editMode, setEditMode] = useState(false);
+  const [imageSearchOpen, setImageSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: suggestions, isFetching } = useSearchSuggestions(query);

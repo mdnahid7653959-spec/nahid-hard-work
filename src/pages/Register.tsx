@@ -8,7 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "@/integrations/firebase/client";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
@@ -68,19 +69,20 @@ export default function Register() {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: nextPath ? `${window.location.origin}${nextPath}` : `${window.location.origin}/`,
-        },
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast({
+        title: "Signed up with Google!",
+        description: "Welcome to Darzo.com!"
       });
-      if (error) throw error;
+      navigate(nextPath || "/");
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Google sign up failed",
         description: error.message
       });
+    } finally {
       setGoogleLoading(false);
     }
   };

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -120,8 +120,38 @@ export function SupportTicketList({ perspective, selectedId, onSelect }: Props) 
         };
       });
 
+      // 3. Fetch buyer conversations
+      const { data: convRows } = await supabase
+        .from("conversations")
+        .select("*")
+        .order("last_message_at", { ascending: false, nullsFirst: false });
+
+      const convBuyerIds = Array.from(new Set((convRows || []).map((r: any) => r.buyer_id).filter(Boolean)));
+      if (convBuyerIds.length) {
+        const { data: buyerProfs } = await supabase.from("profiles").select("id, full_name, email").in("id", convBuyerIds);
+        (buyerProfs || []).forEach((p: any) => profilesMap.set(p.id, p));
+      }
+
+      const formattedConvs: SupportTicketRow[] = (convRows || []).map((r: any) => {
+        const buyerProf = profilesMap.get(r.buyer_id);
+        return {
+          id: r.id,
+          source_table: "support_tickets",
+          user_id: r.buyer_id,
+          subject: `Chat: ${buyerProf?.full_name || "Customer Chat"}`,
+          category: "Live Chat",
+          status: "open",
+          ticket_number: r.id,
+          last_message_at: r.last_message_at || r.created_at,
+          last_message_preview: r.last_message || "Product Inquiry Chat",
+          seller_unread_count: r.seller_unread_count || 0,
+          staff_unread_count: r.seller_unread_count || 0,
+          display_name: buyerProf?.full_name || "Customer",
+        };
+      });
+
       // Combine and sort by last_message_at desc
-      const combined = [...formattedSupportTickets, ...formattedSellerTickets].sort((a, b) => {
+      const combined = [...formattedSupportTickets, ...formattedSellerTickets, ...formattedConvs].sort((a, b) => {
         const timeA = new Date(a.last_message_at || 0).getTime();
         const timeB = new Date(b.last_message_at || 0).getTime();
         return timeB - timeA;

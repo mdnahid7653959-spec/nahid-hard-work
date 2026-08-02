@@ -160,7 +160,7 @@ function StaffFormDialog({ open, onOpenChange, roles, depts, existing, onSaved }
   useEffect(() => {
     if (existing) {
       (async () => {
-        const { data } = await (await import("@/integrations/supabase/client")).supabase
+        const { data } = await (await import("@/lib/firebaseAdapter")).supabase
           .from("staff_permissions").select("permission_key").eq("staff_id", existing.id);
         setPerms((data || []).map((p) => p.permission_key));
       })();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { StaffLayout } from "@/components/staff/StaffLayout";
 import { useStaff } from "@/contexts/StaffContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ListChecks, Clock, CheckCircle2, Mail, Bell, TrendingUp } from "lucide-react";

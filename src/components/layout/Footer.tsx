@@ -54,10 +54,10 @@ const defaultFooterConfig: FooterConfig = {
     { platform: "facebook", url: "#" }, { platform: "twitter", url: "#" },
     { platform: "instagram", url: "#" }, { platform: "youtube", url: "#" },
   ],
-  copyright: "© 2026 Darzo.com. All rights reserved.",
+  copyright: "© 2026 Durtup.shop. All rights reserved.",
   brand_description: "Your one-stop destination for millions of products at unbeatable prices. Shop with confidence worldwide.",
-  logo_url: "/darzo-logo.png",
-  payment_methods: ["Visa", "MC", "PayPal"],
+  logo_url: "/durtup-logo.svg",
+  payment_methods: ["Visa", "MC", "bKash", "Nagad"],
 };
 
 export function Footer() {
@@ -101,7 +101,14 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 sm:col-span-2 lg:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-3">
-              <img src={logoUrl} alt="Darzo.com" className="h-10 w-auto object-contain" />
+              <img 
+                src={(logoUrl && !logoUrl.endsWith(".png")) ? logoUrl : "/durtup-logo.svg"} 
+                alt="Durtup.shop" 
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/durtup-logo.svg";
+                }}
+              />
             </Link>
             <p className="text-muted-foreground mb-4 text-xs leading-relaxed max-w-xs">{brandDesc}</p>
             <div className="flex items-center gap-2">

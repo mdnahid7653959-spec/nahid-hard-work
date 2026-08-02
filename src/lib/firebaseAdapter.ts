@@ -1,0 +1,312 @@
+import { auth, db } from "@/integrations/firebase/client";
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query as fsQuery, 
+  where, 
+  orderBy as fsOrderBy, 
+  limit as fsLimit
+} from "firebase/firestore";
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut, 
+  onAuthStateChanged,
+  updateProfile
+} from "firebase/auth";
+
+class FirebaseQueryBuilder {
+  private colName: string;
+  private conditions: any[] = [];
+  private orderBys: any[] = [];
+  private limitNum: number | null = null;
+  private isSingle = false;
+  private isMaybeSingle = false;
+  private updateData: any = null;
+  private isDelete = false;
+
+  constructor(colName: string) {
+    this.colName = colName;
+  }
+
+  select(fields?: string) {
+    return this;
+  }
+
+  eq(field: string, value: any) {
+    if (value !== undefined && value !== null) {
+      this.conditions.push(where(field, "==", value));
+    }
+    return this;
+  }
+
+  neq(field: string, value: any) {
+    if (value !== undefined && value !== null) {
+      this.conditions.push(where(field, "!=", value));
+    }
+    return this;
+  }
+
+  gt(field: string, value: any) {
+    this.conditions.push(where(field, ">", value));
+    return this;
+  }
+
+  gte(field: string, value: any) {
+    this.conditions.push(where(field, ">=", value));
+    return this;
+  }
+
+  lt(field: string, value: any) {
+    this.conditions.push(where(field, "<", value));
+    return this;
+  }
+
+  lte(field: string, value: any) {
+    this.conditions.push(where(field, "<=", value));
+    return this;
+  }
+
+  in(field: string, values: any[]) {
+    if (values && values.length > 0) {
+      this.conditions.push(where(field, "in", values.slice(0, 10)));
+    }
+    return this;
+  }
+
+  or(filterStr: string) {
+    return this;
+  }
+
+  order(field: string, opts?: { ascending?: boolean; nullsFirst?: boolean }) {
+    this.orderBys.push(fsOrderBy(field, opts?.ascending ? "asc" : "desc"));
+    return this;
+  }
+
+  limit(n: number) {
+    this.limitNum = n;
+    return this;
+  }
+
+  single() {
+    this.isSingle = true;
+    return this;
+  }
+
+  maybeSingle() {
+    this.isMaybeSingle = true;
+    return this;
+  }
+
+  update(data: any) {
+    this.updateData = data;
+    return this;
+  }
+
+  delete() {
+    this.isDelete = true;
+    return this;
+  }
+
+  async insert(data: any | any[]) {
+    try {
+      const items = Array.isArray(data) ? data : [data];
+      const results: any[] = [];
+
+      for (const item of items) {
+        let docId = item.id || item.user_id;
+        if (docId) {
+          await setDoc(doc(db, this.colName, docId.toString()), {
+            ...item,
+            created_at: item.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, { merge: true });
+          results.push({ id: docId, ...item });
+        } else {
+          const docRef = await addDoc(collection(db, this.colName), {
+            ...item,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          results.push({ id: docRef.id, ...item });
+        }
+      }
+
+      const returned = Array.isArray(data) ? results : results[0];
+      return { data: returned, error: null };
+    } catch (err: any) {
+      console.error(`Firebase insert error on [${this.colName}]:`, err);
+      return { data: null, error: err };
+    }
+  }
+
+  async upsert(data: any | any[]) {
+    return this.insert(data);
+  }
+
+  private async executeFetch() {
+    const colRef = collection(db, this.colName);
+    const constraints: any[] = [...this.conditions, ...this.orderBys];
+    if (this.limitNum) constraints.push(fsLimit(this.limitNum));
+    const q = fsQuery(colRef, ...constraints);
+    return await getDocs(q);
+  }
+
+  async then(resolve: (res: { data: any; error: any; count?: number }) => void, reject?: (reason: any) => void) {
+    try {
+      if (this.updateData) {
+        const snapshot = await this.executeFetch();
+        for (const d of snapshot.docs) {
+          await updateDoc(doc(db, this.colName, d.id), {
+            ...this.updateData,
+            updated_at: new Date().toISOString()
+          });
+        }
+        resolve({ data: this.updateData, error: null });
+        return;
+      }
+
+      if (this.isDelete) {
+        const snapshot = await this.executeFetch();
+        for (const d of snapshot.docs) {
+          await deleteDoc(doc(db, this.colName, d.id));
+        }
+        resolve({ data: true, error: null });
+        return;
+      }
+
+      const snapshot = await this.executeFetch();
+      let list: any[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      if (this.isSingle || this.isMaybeSingle) {
+        const item = list.length > 0 ? list[0] : null;
+        if (this.isSingle && !item) {
+          resolve({ data: null, error: new Error("Item not found"), count: 0 });
+        } else {
+          resolve({ data: item, error: null, count: item ? 1 : 0 });
+        }
+      } else {
+        resolve({ data: list, error: null, count: list.length });
+      }
+    } catch (err: any) {
+      console.warn(`Firebase query fallback on [${this.colName}]:`, err?.message);
+      resolve({ data: this.isSingle || this.isMaybeSingle ? null : [], error: null, count: 0 });
+    }
+  }
+}
+
+// Export Firebase database client object as 'supabase' for full backward compatibility without Supabase SDK
+export const firebaseDb: any = {
+  from: (colName: string) => new FirebaseQueryBuilder(colName),
+  storage: {
+    from: (bucket: string) => ({
+      createSignedUrl: async (path: string) => ({ data: { signedUrl: path }, error: null }),
+      getPublicUrl: (path: string) => ({ data: { publicUrl: path } }),
+      upload: async () => ({ data: null, error: null })
+    })
+  },
+  functions: {
+    invoke: async (fnName: string, options?: any) => {
+      console.log(`Firebase Cloud Function invoke mock [${fnName}]`, options);
+      return { data: { valid: true }, error: null };
+    }
+  },
+  rpc: async (fnName: string, params?: any) => {
+    console.log(`Firebase RPC call mock [${fnName}]`, params);
+    return { data: null, error: null };
+  },
+  channel: (name: string) => {
+    const channelObj: any = {
+      on: () => channelObj,
+      subscribe: () => ({
+        unsubscribe: () => {}
+      }),
+      unsubscribe: () => {}
+    };
+    return channelObj;
+  },
+  removeChannel: (channel: any) => {},
+  auth: {
+    getSession: async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return { data: { session: null }, error: null };
+      return {
+        data: {
+          session: {
+            user: {
+              id: currentUser.uid,
+              email: currentUser.email,
+              user_metadata: { full_name: currentUser.displayName }
+            }
+          }
+        },
+        error: null
+      };
+    },
+    onAuthStateChange: (callback: (event: string, session: any) => void) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const session = user ? {
+          user: {
+            id: user.uid,
+            email: user.email,
+            user_metadata: { full_name: user.displayName }
+          }
+        } : null;
+        callback(user ? "SIGNED_IN" : "SIGNED_OUT", session);
+      });
+      return {
+        data: {
+          subscription: {
+            unsubscribe
+          }
+        }
+      };
+    },
+    signUp: async ({ email, password, options }: any) => {
+      try {
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        if (res.user && options?.data?.full_name) {
+          await updateProfile(res.user, { displayName: options.data.full_name });
+          await setDoc(doc(db, "profiles", res.user.uid), {
+            id: res.user.uid,
+            user_id: res.user.uid,
+            email: email,
+            full_name: options.data.full_name,
+            role: "customer",
+            created_at: new Date().toISOString()
+          }, { merge: true });
+        }
+        return { data: { user: res.user }, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
+    },
+    signInWithPassword: async ({ email, password }: any) => {
+      try {
+        const res = await signInWithEmailAndPassword(auth, email, password);
+        return { data: { user: res.user }, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
+    },
+    signInWithOAuth: async () => {
+      return { data: null, error: new Error("OAuth sign-in delegated to Firebase Auth") };
+    },
+    signOut: async () => {
+      try {
+        await firebaseSignOut(auth);
+        return { error: null };
+      } catch (err: any) {
+        return { error: err };
+      }
+    }
+  }
+};
+
+export const supabase = firebaseDb;

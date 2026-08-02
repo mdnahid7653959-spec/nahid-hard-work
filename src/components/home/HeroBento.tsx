@@ -286,12 +286,6 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
                 ))
               )}
             </div>
-            <Link
-              to={foryouCfg.link || "/products"}
-              className="mt-4 sm:mt-6 md:mt-8 w-full border border-border py-2.5 md:py-3 rounded-xl sm:rounded-2xl text-[10px] font-bold text-muted-foreground uppercase tracking-[0.18em] sm:tracking-[0.2em] hover:bg-muted transition-colors flex items-center justify-center"
-            >
-              {foryouCfg.subtitle || "Personalize Feed"}
-            </Link>
           </div>
         )}
 

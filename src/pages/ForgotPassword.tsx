@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/integrations/firebase/client";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -20,12 +21,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) throw error;
-
+      await sendPasswordResetEmail(auth, email);
       setEmailSent(true);
       toast({
         title: "Email sent!",

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { getCachedMohasagorProducts, filterProductsByCategory } from "@/utils/mohasagorCache";
 import { Header } from "@/components/layout/Header";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ProductCard, type Product } from "@/components/products/ProductCard";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { 
   ChevronRight, Loader2, Package, 
   Smartphone, Shirt, Home, Dumbbell, Gamepad2, 
@@ -74,9 +75,21 @@ const Categories = () => {
           children: childCategories.filter(child => child.parent_id === parent.id),
         }));
 
-        setCategories(categoriesWithChildren);
-        if (categoriesWithChildren.length > 0) {
-          setSelectedCategory(categoriesWithChildren[0]);
+        const defaultMohasagorCats: Category[] = [
+          { id: "cat-gadgets", name: "Gadgets & Electronics", slug: "electronics", image_url: null, parent_id: null },
+          { id: "cat-fashion", name: "Men's Fashion", slug: "mens-fashion", image_url: null, parent_id: null },
+          { id: "cat-women", name: "Women's Fashion", slug: "womens-fashion", image_url: null, parent_id: null },
+          { id: "cat-home", name: "Home & Lifestyle", slug: "home-lifestyle", image_url: null, parent_id: null },
+          { id: "cat-winter", name: "Winter Collection", slug: "winter", image_url: null, parent_id: null },
+          { id: "cat-watch", name: "Watches", slug: "watch", image_url: null, parent_id: null },
+          { id: "cat-kids", name: "Kids Zone", slug: "kids-zone", image_url: null, parent_id: null },
+          { id: "cat-foods", name: "Foods", slug: "foods", image_url: null, parent_id: null },
+        ];
+
+        const finalCats = categoriesWithChildren.length > 0 ? categoriesWithChildren : defaultMohasagorCats;
+        setCategories(finalCats);
+        if (finalCats.length > 0) {
+          setSelectedCategory(finalCats[0]);
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -93,42 +106,54 @@ const Categories = () => {
     const fetchProducts = async () => {
       if (!selectedCategory) return;
       
-      setProductsLoading(true);
+      // Fast Path: Check cached Mohasagor products first (0ms)
+      const cachedMohasagor = await getCachedMohasagorProducts();
+      if (cachedMohasagor.length > 0) {
+        const instantFiltered = filterProductsByCategory(cachedMohasagor, selectedCategory.slug, selectedCategory.name);
+        setProducts(instantFiltered);
+        setProductsLoading(false); // 0ms Instant render!
+      } else {
+        setProductsLoading(true);
+      }
+
       try {
-        const { data, error } = await supabase
-          .from("products")
-          .select(`
-            *,
-            product_images(image_url, is_primary)
-          `)
-          .eq("category_id", selectedCategory.id)
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(20);
+        let mappedProducts: Product[] = [];
+        if (!selectedCategory.id.startsWith("cat-")) {
+          const { data, error } = await supabase
+            .from("products")
+            .select(`
+              *,
+              product_images(image_url, is_primary)
+            `)
+            .eq("category_id", selectedCategory.id)
+            .eq("status", "active")
+            .order("created_at", { ascending: false })
+            .limit(20);
 
-        if (error) throw error;
-
-        const mappedProducts: Product[] = (data || []).map(p => {
-          const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
-          const firstImage = p.product_images?.[0]?.image_url;
-          const fallbackImage = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop";
-          
-          return {
-            id: p.id,
-            name: p.name,
-            slug: p.slug,
-            image: primaryImage || firstImage || fallbackImage,
-            price: p.discount_price || p.regular_price,
-            originalPrice: p.discount_price ? p.regular_price : undefined,
-            rating: Number(p.rating_average) || 0,
-            reviews: p.rating_count || 0,
-            sold: p.sold_count || 0,
-            freeShipping: p.free_shipping || false,
-            isNew: p.is_new_arrival || false,
-            isBestSeller: p.is_best_seller || false,
-          };
-        });
-        setProducts(mappedProducts);
+          if (!error && data && data.length > 0) {
+            mappedProducts = data.map(p => {
+              const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
+              const firstImage = p.product_images?.[0]?.image_url;
+              const fallbackImage = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop";
+              
+              return {
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                image: primaryImage || firstImage || fallbackImage,
+                price: p.discount_price || p.regular_price,
+                originalPrice: p.discount_price ? p.regular_price : undefined,
+                rating: Number(p.rating_average) || 0,
+                reviews: p.rating_count || 0,
+                sold: p.sold_count || 0,
+                freeShipping: p.free_shipping || false,
+                isNew: p.is_new_arrival || false,
+                isBestSeller: p.is_best_seller || false,
+              };
+            });
+            setProducts(mappedProducts);
+          }
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {

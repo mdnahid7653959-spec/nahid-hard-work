@@ -12,7 +12,7 @@ import { Footer } from "@/components/layout/Footer";
 import { useCart } from "@/contexts/CartContext";
 import { useCJCart } from "@/hooks/useCJCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { useToast } from "@/hooks/use-toast";
 
 interface AppliedCoupon {

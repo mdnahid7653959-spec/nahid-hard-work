@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { SmartSearchBar } from "@/components/search/SmartSearchBar";
 
@@ -61,16 +61,13 @@ interface HeaderConfig {
 }
 
 const defaultHeaderConfig: HeaderConfig = {
-  logo_url: "/darzo-logo.png",
-  logo_text: "Darzo",
+  logo_url: "/durtup-logo.svg",
+  logo_text: "Durtup.shop",
   show_search: true,
   show_categories_bar: true,
   top_bar: { text: "Free Shipping on ৳999+", visible: true },
   nav_links: [
     { label: "Home", href: "/", highlight: false },
-    { label: "⚡ Flash Sale", href: "/flash-sale", highlight: true, color: "sale" },
-    { label: "New Arrivals", href: "/new-arrivals", highlight: true, color: "success" },
-    { label: "Free Shipping", href: "/free-shipping", highlight: false },
   ],
   trending_searches: defaultTrendingSearches,
 };
@@ -150,71 +147,36 @@ export function Header() {
       {/* Main header */}
       <div className="bg-primary text-primary-foreground">
         <div className="container py-1.5 sm:py-2">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button className="lg:hidden p-1.5 hover:bg-white/10 rounded-md transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </button>
-
-            <Link to="/" className="flex items-center gap-2 shrink-0">
-              <img alt="Darzo.com" className="h-6 sm:h-7 w-auto object-contain rounded-md" src={logoUrl} />
-            </Link>
-
-            {/* Categories dropdown for desktop */}
-            <div className="hidden lg:block relative">
-              <button
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all font-medium text-sm"
-                onMouseEnter={() => setShowCategories(true)}
-                onMouseLeave={() => setShowCategories(false)}
-              >
-                <Menu className="h-4 w-4" /> All Categories <ChevronDown className="h-3.5 w-3.5" />
+          <div className="flex items-center justify-between gap-3 sm:gap-6 relative">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <button className="lg:hidden p-1.5 hover:bg-white/10 rounded-md transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
-
-              {showCategories && (
-                <div
-                  className="absolute top-full left-0 mt-1 bg-card text-foreground rounded-xl shadow-2xl overflow-hidden flex z-50"
-                  onMouseEnter={() => setShowCategories(true)}
-                  onMouseLeave={() => { setShowCategories(false); setActiveCategory(null); }}
-                >
-                  <div className="w-64 border-r py-2">
-                    {categories.map((cat, idx) => (
-                      <Link
-                        key={cat.name}
-                        to={`/category/${cat.name.toLowerCase().replace(/ & /g, '-')}`}
-                        className={`group flex items-center gap-3 px-4 py-3 hover:bg-primary/5 transition-all duration-200 ${activeCategory === idx ? 'bg-primary/10 border-l-2 border-primary' : 'border-l-2 border-transparent'}`}
-                        onMouseEnter={() => setActiveCategory(idx)}
-                      >
-                        <span className={`text-sm font-semibold tracking-wide transition-colors ${activeCategory === idx ? 'text-primary' : 'text-foreground/80 group-hover:text-foreground'}`}>
-                          {cat.name}
-                        </span>
-                        <ChevronRight className={`h-4 w-4 ml-auto transition-all duration-200 ${activeCategory === idx ? 'text-primary translate-x-0.5' : 'opacity-40'}`} />
-                      </Link>
-                    ))}
-                  </div>
-                  {activeCategory !== null && (
-                    <div className="w-64 p-4 bg-muted/50">
-                      <h4 className="font-semibold text-sm mb-3 text-foreground">{categories[activeCategory].name}</h4>
-                      <div className="space-y-2">
-                        {categories[activeCategory].subcategories.map((sub) => (
-                          <Link key={sub} to={`/category/${categories[activeCategory].name.toLowerCase().replace(/ & /g, '-')}?sub=${sub.toLowerCase()}`} className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                            {sub}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* Search bar */}
+            <Link 
+              to="/" 
+              className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center gap-2 shrink-0 group py-0.5 z-10"
+            >
+              <img 
+                alt="Durtup.shop" 
+                className="h-9 sm:h-10 md:h-11 lg:h-12 w-auto object-contain transition-transform group-hover:scale-105 filter drop-shadow-sm" 
+                src={(logoUrl && !logoUrl.endsWith(".png")) ? logoUrl : "/durtup-logo.svg"} 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/durtup-logo.svg";
+                }}
+              />
+            </Link>
+
+            {/* Search bar - Perfectly Centered */}
             {showSearch && (
-              <div className="flex-1 max-w-2xl hidden md:block">
+              <div className="flex-1 max-w-2xl mx-4 hidden md:block">
                 <SmartSearchBar variant="desktop" trendingSearches={trendingSearches} />
               </div>
             )}
 
             {/* Actions */}
-            <div className="flex items-center gap-0.5 sm:gap-1 ml-auto">
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 flex flex-col items-center h-auto py-1 px-1.5 sm:px-2 rounded-md">
@@ -289,41 +251,29 @@ export function Header() {
             </div>
           )}
 
-          {/* Trending searches - desktop */}
-          <div className="hidden md:flex items-center gap-3 mt-2 text-xs text-white/70">
-            <span className="font-medium">Trending:</span>
-            {trendingSearches.map((term, i) => (
-              <button key={term} onClick={() => { setSearchQuery(term); navigate(`/products?search=${encodeURIComponent(term)}`); }} className="hover:text-white transition-colors">
-                {term}{i < trendingSearches.length - 1 && <span className="ml-2 text-white/30">•</span>}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
       {/* Categories nav - desktop */}
       {showCategoriesBar && (
-        <nav className="border-t border-white/5 bg-card hidden lg:block shadow-sm">
+        <nav className="border-t border-border/40 bg-card/95 backdrop-blur-md hidden lg:block shadow-xs sticky top-0 z-40">
           <div className="container">
-            <ul className="flex items-center gap-1 py-1.5 text-sm overflow-x-auto">
-              {navLinks.map((link) => (
-                <li key={link.label}>
+            <ul className="flex items-center gap-2 py-2 text-sm overflow-x-auto scrollbar-none">
+              {[
+                { name: "Home", href: "/" },
+                { name: "Electronics", href: "/category/electronics" },
+                { name: "Fashion", href: "/category/mens-fashion" },
+                { name: "Home & Garden", href: "/category/home-lifestyle" },
+                { name: "Sports", href: "/category/sports" },
+                { name: "Toys & Hobbies", href: "/category/kids-zone" },
+                { name: "Beauty & Health", href: "/category/beauty-health" },
+              ].map(({ name, href }) => (
+                <li key={name}>
                   <Link
-                    to={link.href}
-                    className={`px-3 py-1.5 font-bold hover:bg-primary/10 rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 text-[13px] ${
-                      link.color === 'sale' ? 'text-sale hover:bg-sale/10' :
-                      link.color === 'success' ? 'text-success hover:bg-success/10' :
-                      'text-primary'
-                    }`}
+                    to={href}
+                    className="px-4 py-2 text-xs font-bold rounded-xl border border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40 transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95"
                   >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-              {categories.slice(0, 6).map((category) => (
-                <li key={category.name}>
-                  <Link to={`/category/${category.name.toLowerCase().replace(/ & /g, '-')}`} className="px-3 py-1.5 text-foreground/70 hover:text-primary font-medium hover:bg-primary/5 rounded-lg transition-all whitespace-nowrap text-[13px]">
-                    {category.name}
+                    {name}
                   </Link>
                 </li>
               ))}

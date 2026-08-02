@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { SellerLayout } from "@/components/seller/SellerLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { useAuth } from "@/contexts/AuthContext";
 import { SupportChatPanel } from "@/components/support/SupportChatPanel";
 import { Loader2, LifeBuoy } from "lucide-react";

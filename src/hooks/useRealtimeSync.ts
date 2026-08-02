@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 
 type TableName = "products" | "categories" | "brands" | "orders" | "profiles" | "reviews" | "coupons";
 

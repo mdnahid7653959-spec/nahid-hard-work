@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, MapPin, Edit2, Trash2, Check, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

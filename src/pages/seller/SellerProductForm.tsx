@@ -5,7 +5,7 @@ import {
   DollarSign, Truck, Search, RotateCcw, Layers, Tag, Plus,
   Info, Sparkles, Shield, Globe, Palette, Scale, Ruler, Video
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { ProductImageUploader } from "@/components/admin/ProductImageUploader";
 
 import { SellerLayout } from "@/components/seller/SellerLayout";

@@ -1,10 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { firebaseDb as supabase } from "./firebaseAdapter";
 import { encryptCredentials } from "./crypto";
-
-// Use direct env variables or service role if needed, but since RLS is disabled/fixed we can use service role
-const supabaseUrl = "https://bbfusyiykxxrsnhqgzrh.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiZnVzeWl5a3h4cnNuaHFnenJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzIyNTAsImV4cCI6MjEwMDkwODI1MH0.FCkYFlH9dlIa4z6TFHB0MTvOuBafYlFo4XxlR5lkkiQ";
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function run() {
   const creds = {
@@ -51,8 +46,7 @@ async function run() {
 
   const { data, error } = await supabase
     .from("supplier_integrations")
-    .upsert(payload, { onConflict: "name" })
-    .select();
+    .upsert(payload);
 
   if (error) {
     console.error("Error inserting Mohasagor supplier:", error);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
+import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
 
 export interface RelatedProduct {
   id: string;
@@ -46,12 +47,80 @@ export function useRelatedProducts(productContext: ProductContext | null, limit:
     setError(null);
 
     try {
-      const currentPrice = productContext.discount_price || productContext.regular_price;
-      const priceMin = currentPrice * 0.5; // 50% lower
-      const priceMax = currentPrice * 2; // 200% higher
+      // 1. Try to fetch and match from local cached Mohasagor products first
+      const cachedCatalog = await getCachedMohasagorProducts();
+      
+      if (cachedCatalog && cachedCatalog.length > 0) {
+        // Find current product in cache to get its category name if available
+        const currentCachedProd = cachedCatalog.find(p => p.id === productContext.id || p.name === productContext.name);
+        const targetCategory = productContext.category_id || (currentCachedProd as any)?.category;
 
-      // Build smart query with scoring logic
-      // Priority: Same category > Same brand > Similar price > Popular items
+        // Filter out current product
+        const otherProducts = cachedCatalog.filter(p => p.id !== productContext.id && p.name !== productContext.name);
+
+        if (otherProducts.length > 0) {
+          const scored = otherProducts.map((p: any) => {
+            let score = 0;
+
+            // Category match (highest priority) - 50 points
+            if (targetCategory && p.category && targetCategory.toString().toLowerCase() === p.category.toString().toLowerCase()) {
+              score += 50;
+            }
+
+            // Word overlap in product names - 10 points per word
+            const currentWords = productContext.name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+            const productWords = p.name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+            const wordOverlap = currentWords.filter(word => 
+              productWords.some(pw => pw.includes(word) || word.includes(pw))
+            ).length;
+            score += wordOverlap * 10;
+
+            // Price proximity - up to 15 points
+            const currentPrice = productContext.discount_price || productContext.regular_price;
+            const diffRatio = Math.abs(p.price - currentPrice) / currentPrice;
+            if (diffRatio < 0.2) score += 15;
+            else if (diffRatio < 0.5) score += 8;
+
+            return {
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              image: p.image,
+              price: p.price,
+              originalPrice: p.originalPrice,
+              rating: p.rating || 4.8,
+              reviews: p.reviews || 15,
+              sold: p.sold || 45,
+              freeShipping: p.freeShipping !== false,
+              isBestSeller: p.isBestSeller || false,
+              isNew: p.isNew || false,
+              matchScore: score
+            };
+          });
+
+          // Sort by match score descending, then by popularity (sold)
+          scored.sort((a, b) => {
+            if (b.matchScore !== a.matchScore) {
+              return b.matchScore - a.matchScore;
+            }
+            return b.sold - a.sold;
+          });
+
+          // Filter out low relevance products if category matches are available
+          const categoryMatches = scored.filter(p => p.matchScore >= 50);
+          const finalMatches = categoryMatches.length >= 3 ? categoryMatches : scored;
+
+          setProducts(finalMatches.slice(0, limit));
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Database Fallback (if cache search didn't yield enough products)
+      const currentPrice = productContext.discount_price || productContext.regular_price;
+      const priceMin = currentPrice * 0.5;
+      const priceMax = currentPrice * 2;
+
       let query = supabase
         .from("products")
         .select(`
@@ -76,10 +145,9 @@ export function useRelatedProducts(productContext: ProductContext | null, limit:
           )
         `)
         .eq("status", "active")
-        .neq("id", productContext.id) // Exclude current product
-        .limit(limit * 3); // Fetch more for scoring
+        .neq("id", productContext.id)
+        .limit(limit * 3);
 
-      // If product has category or brand, prioritize matches
       if (productContext.category_id && productContext.brand_id) {
         query = query.or(`category_id.eq.${productContext.category_id},brand_id.eq.${productContext.brand_id}`);
       } else if (productContext.category_id) {
@@ -93,7 +161,6 @@ export function useRelatedProducts(productContext: ProductContext | null, limit:
       if (queryError) throw queryError;
 
       if (!data || data.length === 0) {
-        // Fallback: Get popular products if no matches found
         const { data: fallbackData } = await supabase
           .from("products")
           .select(`
@@ -129,69 +196,29 @@ export function useRelatedProducts(productContext: ProductContext | null, limit:
         return;
       }
 
-      // Score and sort products by relevance
       const scoredProducts = data.map((p: any) => {
         let score = 0;
-
-        // Category match (highest priority) - 40 points
         if (p.category_id && p.category_id === productContext.category_id) {
           score += 40;
         }
-
-        // Brand match - 25 points
         if (p.brand_id && p.brand_id === productContext.brand_id) {
           score += 25;
         }
-
-        // Price range match (within 50% range) - 15 points
         const itemPrice = p.discount_price || p.regular_price;
         if (itemPrice >= priceMin && itemPrice <= priceMax) {
           score += 15;
         }
-
-        // Keyword/tag overlap - 10 points per match
         if (productContext.tags && p.tags) {
           const overlap = productContext.tags.filter((tag: string) => 
             p.tags.includes(tag)
           ).length;
           score += overlap * 10;
         }
-
-        // Name similarity (basic word matching) - 5 points per word
-        const currentWords = productContext.name.toLowerCase().split(/\s+/);
-        const productWords = p.name.toLowerCase().split(/\s+/);
-        const wordOverlap = currentWords.filter((word: string) => 
-          word.length > 2 && productWords.some((pw: string) => pw.includes(word) || word.includes(pw))
-        ).length;
-        score += wordOverlap * 5;
-
-        // Popularity boost - up to 10 points
-        const popularityScore = Math.min((p.sold_count || 0) / 100, 10);
-        score += popularityScore;
-
-        // Rating boost - up to 5 points
-        const ratingScore = ((p.rating_average || 0) / 5) * 5;
-        score += ratingScore;
-
-        // Best seller badge - 5 points
-        if (p.is_best_seller) {
-          score += 5;
-        }
-
         return { ...p, matchScore: score };
       });
 
-      // Sort by score descending, then by sold_count
-      scoredProducts.sort((a, b) => {
-        if (b.matchScore !== a.matchScore) {
-          return b.matchScore - a.matchScore;
-        }
-        return (b.sold_count || 0) - (a.sold_count || 0);
-      });
-
-      // Take top results
-      const topProducts = scoredProducts.slice(0, limit);
-      setProducts(mapToRelatedProducts(topProducts, productContext));
+      scoredProducts.sort((a, b) => b.matchScore - a.matchScore);
+      setProducts(mapToRelatedProducts(scoredProducts.slice(0, limit), productContext));
 
     } catch (err: any) {
       console.error("Error fetching related products:", err);
@@ -210,7 +237,6 @@ export function useRelatedProducts(productContext: ProductContext | null, limit:
 
 function mapToRelatedProducts(data: any[], context: ProductContext): RelatedProduct[] {
   return data.map((p, i) => {
-    // Get primary image or first image
     let image = DEFAULT_IMAGES[i % DEFAULT_IMAGES.length];
     if (p.product_images && p.product_images.length > 0) {
       const primaryImage = p.product_images.find((img: any) => img.is_primary);

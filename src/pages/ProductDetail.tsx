@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, Star, Shield, RotateCcw, Minus, Plus, Loader2, Play, ChevronLeft, ChevronRight, Share2, Zap, MessageSquare, ShieldCheck, Store, Truck, Award, Sparkles, TrendingUp, Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layout/Header";
@@ -115,7 +115,7 @@ function InlineStoreBar({ sellerId, onContactSeller, contactingSeller }: {
     return <div className="h-16 mt-4 rounded-xl bg-muted animate-pulse" />;
   }
 
-  const storeName = store?.shop_name || "Darzo Official";
+  const storeName = store?.shop_name || "Durtup Official";
 
   return (
     <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl border mt-4">
@@ -217,23 +217,36 @@ export default function ProductDetail() {
       return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
     };
 
-    if (raw.product_images && raw.product_images.length > 0) {
+    const addedUrls = new Set<string>();
+
+    if (Array.isArray(raw.product_images) && raw.product_images.length > 0) {
       raw.product_images.forEach((img: any, idx: number) => {
-        product_images.push({
-          id: img.id?.toString() || `img-${idx}`,
-          image_url: resolveUrl(img.product_image),
-          is_primary: idx === 0,
-          sort_order: idx
-        });
-      });
-    } else if (raw.thumbnail_img) {
-      product_images.push({
-        id: `img-0`,
-        image_url: resolveUrl(raw.thumbnail_img),
-        is_primary: true,
-        sort_order: 0
+        const u = resolveUrl(img.product_image || img.image || img.url);
+        if (u && !addedUrls.has(u)) {
+          addedUrls.add(u);
+          product_images.push({
+            id: img.id?.toString() || `img-${idx}`,
+            image_url: u,
+            is_primary: idx === 0,
+            sort_order: idx
+          });
+        }
       });
     }
+
+    if (raw.thumbnail_img) {
+      const u = resolveUrl(raw.thumbnail_img);
+      if (u && !addedUrls.has(u)) {
+        addedUrls.add(u);
+        product_images.push({
+          id: `img-thumb`,
+          image_url: u,
+          is_primary: product_images.length === 0,
+          sort_order: product_images.length
+        });
+      }
+    }
+
     return product_images;
   };
 
@@ -275,6 +288,7 @@ export default function ProductDetail() {
       video_url: raw.video_link || null,
       product_images: imagesArr,
       product_variants: variants,
+      category_id: raw.category || null,
       seller_id: "mohasagor.com.bd"
     };
   };
@@ -289,22 +303,35 @@ export default function ProductDetail() {
         const productId = isApiProduct ? slug.replace('product-', '') : null;
         
         if (isApiProduct && productId) {
-          // Fetch from Edge Function directly
-          const { data: responseData, error: apiError } = await supabase.functions.invoke("supplier-api", {
-            body: { action: "get-product-details", supplierId: "da929859-f7fa-4590-a3ad-f7012eac5b8c", payload: { productId } }
-          });
-          
-          if (!apiError && responseData?.success && responseData.data) {
-            const raw = responseData.data;
-            const mappedImages = mapSupplierImages(raw);
-            const mappedProduct = mapSupplierProduct(raw, slug, mappedImages);
-            
-            setProduct(mappedProduct);
-            trackView(mappedProduct.id);
-            setLoading(false);
-            return;
-          } else {
-            console.error("Error fetching dynamic product details:", apiError || responseData?.error);
+          try {
+            const apiUrl = typeof window !== "undefined" && window.location.hostname === "localhost" 
+              ? "/api/mohasagor/api/reseller/product"
+              : "https://mohasagor.com.bd/api/reseller/product";
+
+            const res = await fetch(apiUrl, {
+              headers: {
+                "api-key": "A8niclztH9JtzS4t",
+                "secret-key": "2ff380917a11d3a7c97bcf6dddfb8adf38194c7d6b726ab12c4d0d5fb136fef8"
+              }
+            });
+
+            if (res.ok) {
+              const responseData = await res.json();
+              const rawProducts = responseData.products || (Array.isArray(responseData) ? responseData : []);
+              const found = rawProducts.find((p: any) => p.id == productId || p.product_code == productId);
+              
+              if (found) {
+                const mappedImages = mapSupplierImages(found);
+                const mappedProduct = mapSupplierProduct(found, slug, mappedImages);
+                
+                setProduct(mappedProduct);
+                trackView(mappedProduct.id);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (apiErr) {
+            console.error("Error fetching Mohasagor product detail:", apiErr);
           }
         }
 
@@ -487,62 +514,44 @@ export default function ProductDetail() {
 
   const handleContactSeller = async () => {
     if (!authUser) {
-      toast({ title: "Please login", description: "You need to login to message a seller", variant: "destructive" });
+      toast({ title: "Please login", description: "You need to login to chat with support", variant: "destructive" });
       navigate("/login");
-      return;
-    }
-    if (!product?.seller_id) {
-      toast({ title: "Cannot contact seller", description: "Seller info not available", variant: "destructive" });
       return;
     }
     setContactingSeller(true);
     try {
-      const { data: resolvedSellerData, error: resolveError } = await supabase.rpc("resolve_product_seller", {
-        _product_seller_id: product.seller_id,
-      });
+      const targetSellerId = product?.seller_id || "admin";
+      const targetProductId = product?.id || null;
+      const convId = `conv-${authUser.id}-${targetSellerId}${targetProductId ? `-${targetProductId}` : ''}`;
 
-      if (resolveError) throw resolveError;
-
-      const sellerRecord = Array.isArray(resolvedSellerData)
-        ? resolvedSellerData[0]
-        : resolvedSellerData;
-
-      if (!sellerRecord?.seller_id) {
-        toast({ title: "Seller not found", variant: "destructive" });
-        setContactingSeller(false);
-        return;
-      }
-
-      // Check if conversation already exists
       const { data: existing } = await supabase
         .from("conversations")
         .select("id")
         .eq("buyer_id", authUser.id)
-        .eq("seller_id", sellerRecord.seller_id)
-        .eq("product_id", product.id)
-        .single();
+        .eq("seller_id", targetSellerId)
+        .eq("product_id", targetProductId)
+        .maybeSingle();
 
-      if (existing) {
+      if (existing?.id) {
         navigate(`/messages/${existing.id}`);
       } else {
-        const { data: newConv, error } = await supabase
+        await supabase
           .from("conversations")
           .insert({
+            id: convId,
             buyer_id: authUser.id,
-            seller_id: sellerRecord.seller_id,
-            product_id: product.id,
-          })
-          .select("id")
-          .single();
-
-        if (error) throw error;
-        navigate(`/messages/${newConv.id}`);
+            seller_id: targetSellerId,
+            product_id: targetProductId,
+            created_at: new Date().toISOString()
+          });
+        navigate(`/messages/${convId}`);
       }
     } catch (err) {
-      console.error("Error contacting seller:", err);
-      toast({ title: "Error", description: "Could not start conversation", variant: "destructive" });
+      console.error("Error contacting support:", err);
+      toast({ title: "Error", description: "Could not start chat", variant: "destructive" });
+    } finally {
+      setContactingSeller(false);
     }
-    setContactingSeller(false);
   };
 
   const inWishlist = product ? isInWishlist(product.id) : false;
@@ -817,18 +826,7 @@ export default function ProductDetail() {
                   )}
                 </div>
 
-                {/* Contact Seller Button */}
-                {product.seller_id && (
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2"
-                    onClick={handleContactSeller}
-                    disabled={contactingSeller}
-                  >
-                    {contactingSeller ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
-                    Contact Seller
-                  </Button>
-                )}
+
 
                 {/* Desktop buttons */}
                 <div className="hidden sm:flex gap-3">
@@ -889,7 +887,7 @@ export default function ProductDetail() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-semibold text-foreground">Darzo Official</span>
+                      <span className="text-sm font-semibold text-foreground">Durtup Official</span>
                       <ShieldCheck className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                     </div>
                     <span className="text-xs text-muted-foreground">Official Store</span>
@@ -951,7 +949,7 @@ export default function ProductDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-foreground text-base">Darzo Official</h4>
+                          <h4 className="font-semibold text-foreground text-base">Durtup Official</h4>
                           <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
                         </div>
                         <p className="text-xs text-muted-foreground">Official Store</p>

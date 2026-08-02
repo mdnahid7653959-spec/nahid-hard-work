@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 
 export interface SuggestProduct {
   id: string;
@@ -50,7 +50,15 @@ function escapeLike(s: string) {
 async function fetchSuggestions(q: string): Promise<SuggestResult> {
   const term = q.trim();
   if (term.length < 2) return { products: [], categories: [], brands: [] };
-  const like = `%${escapeLike(term)}%`;
+  const tokens = term.split(/\s+/).filter((t) => t.length > 0);
+  const tokenOrs = tokens
+    .map((t) => {
+      const esc = escapeLike(t);
+      return `name.ilike.%${esc}%,short_description.ilike.%${esc}%,sku.ilike.%${esc}%`;
+    })
+    .join(",");
+
+  const mainLike = `%${escapeLike(term)}%`;
 
   const [prodRes, catRes, brandRes] = await Promise.all([
     supabase
@@ -60,19 +68,19 @@ async function fetchSuggestions(q: string): Promise<SuggestResult> {
          product_images(image_url, is_primary, sort_order)`
       )
       .eq("status", "active")
-      .or(`name.ilike.${like},sku.ilike.${like},short_description.ilike.${like}`)
+      .or(tokenOrs || `name.ilike.${mainLike}`)
       .order("sold_count", { ascending: false, nullsFirst: false })
-      .limit(8),
+      .limit(10),
     supabase
       .from("categories")
       .select("id, name, slug")
-      .ilike("name", like)
+      .ilike("name", mainLike)
       .limit(5),
     supabase
       .from("brands")
       .select("id, name, slug, logo_url")
       .eq("is_active", true)
-      .ilike("name", like)
+      .ilike("name", mainLike)
       .limit(5),
   ]);
 

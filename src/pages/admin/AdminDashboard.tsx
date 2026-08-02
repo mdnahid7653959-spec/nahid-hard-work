@@ -7,7 +7,7 @@ import {
   FileText, Palette, Tag, Truck, Percent, Layers, Megaphone, Gift,
   Wallet, Activity, BarChart3,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

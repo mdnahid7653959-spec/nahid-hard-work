@@ -11,6 +11,8 @@ import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { ProductSection } from "@/components/home/ProductSection";
 import { PersonalizedFeed } from "@/components/home/PersonalizedFeed";
 import { Flame, Sparkles, TrendingUp, ThumbsUp, Clock } from "lucide-react";
+import { InfiniteProductFeed } from "@/components/home/InfiniteProductFeed";
+
 
 const CJTrendingProducts = lazy(() => import("@/components/home/CJTrendingProducts").then(m => ({ default: m.CJTrendingProducts })));
 const RecentlyViewedSection = lazy(() => import("@/components/home/RecentlyViewedSection"));
@@ -317,6 +319,14 @@ const Index = () => {
             customSectionsMap={customSectionsMap}
           />
         ))}
+
+        {/* Endless Automatic Product Feed */}
+        <section className="w-full px-3 sm:px-4">
+          <div className="max-w-7xl mx-auto">
+            <InfiniteProductFeed />
+          </div>
+        </section>
+
       </main>
       <Footer />
     </div>

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { confirmPasswordReset, updatePassword } from "firebase/auth";
+import { auth } from "@/integrations/firebase/client";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -18,21 +19,6 @@ export default function ResetPassword() {
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if user came from email link
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    
-    if (accessToken) {
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: hashParams.get('refresh_token') || '',
-      });
-      // Clear the hash from URL to prevent token leakage via browser history
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +44,16 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
+      const urlParams = new URLSearchParams(window.location.search);
+      const oobCode = urlParams.get('oobCode');
 
-      if (error) throw error;
+      if (oobCode) {
+        await confirmPasswordReset(auth, oobCode, password);
+      } else if (auth.currentUser) {
+        await updatePassword(auth.currentUser, password);
+      } else {
+        throw new Error("Invalid or expired password reset link.");
+      }
 
       setSuccess(true);
       toast({

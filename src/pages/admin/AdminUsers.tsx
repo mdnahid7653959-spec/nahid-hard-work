@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Edit, MoreHorizontal, Eye, Ban, CheckCircle, Mail, Phone, Calendar, Search, UserX, UserCheck, RefreshCw, MapPin } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { adminDb } from "@/lib/adminDb";
 import { useAdminCacheInvalidation } from "@/hooks/useRealtimeSync";
 import { AdminLayout } from "@/components/admin/AdminLayout";

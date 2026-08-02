@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { 
+  User as FirebaseUser, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut, 
+  onAuthStateChanged,
+  updateProfile
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/integrations/firebase/client";
 
 interface Profile {
   id: string;
@@ -12,8 +20,8 @@ interface Profile {
 }
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: (FirebaseUser & { id: string }) | null;
+  session: any | null;
   profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
@@ -25,18 +33,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Cache profile data to avoid repeated fetches
+// Cache profile data in memory
 const profileCache = new Map<string, Profile>();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    // Check cache first
     const cached = profileCache.get(userId);
     if (cached) {
       setProfile(cached);
@@ -44,95 +49,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-      
-      if (error) throw error;
-      profileCache.set(userId, data);
-      setProfile(data);
+      const docRef = doc(db, "profiles", userId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Profile;
+        profileCache.set(userId, data);
+        setProfile(data);
+      } else {
+        const defaultProf: Profile = {
+          id: userId,
+          user_id: userId,
+          email: auth.currentUser?.email || "",
+          full_name: auth.currentUser?.displayName || null,
+          role: "customer",
+          avatar_url: auth.currentUser?.photoURL || null
+        };
+        setProfile(defaultProf);
+      }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("Error fetching profile from Firebase:", error);
       setProfile(null);
     }
   }, []);
 
   useEffect(() => {
-    // Fast initial check - don't wait for profile
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        setInitialized(true);
-        
-        // Fetch profile in background
-        if (session?.user?.id) {
-          fetchProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error("Auth init error:", error);
-        setLoading(false);
-        setInitialized(true);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        fetchProfile(firebaseUser.uid);
+      } else {
+        setProfile(null);
       }
-    };
-    
-    initAuth();
+      setLoading(false);
+    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user?.id) {
-          // Don't await - let it happen in background
-          fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-        
-        if (!initialized) {
-          setLoading(false);
-          setInitialized(true);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [fetchProfile, initialized]);
+    return () => unsubscribe();
+  }, [fetchProfile]);
 
   const signUp = useCallback(async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName }
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const firebaseUser = userCredential.user;
+    
+    if (firebaseUser) {
+      await updateProfile(firebaseUser, { displayName: fullName });
+      
+      const newProf: Profile = {
+        id: firebaseUser.uid,
+        user_id: firebaseUser.uid,
+        email: email,
+        full_name: fullName,
+        role: "customer",
+        avatar_url: null
+      };
+
+      try {
+        await setDoc(doc(db, "profiles", firebaseUser.uid), newProf, { merge: true });
+        profileCache.set(firebaseUser.uid, newProf);
+        setProfile(newProf);
+      } catch (err) {
+        console.error("Error creating Firebase profile document:", err);
       }
-    });
-    if (error) throw error;
+    }
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    await signInWithEmailAndPassword(auth, email, password);
   }, []);
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    await firebaseSignOut(auth);
     setProfile(null);
     profileCache.clear();
   }, []);
+
+  const userWithId = useMemo(() => {
+    if (!user) return null;
+    return new Proxy(user, {
+      get(target, prop) {
+        if (prop === 'id') return target.uid;
+        const val = (target as any)[prop];
+        return typeof val === 'function' ? val.bind(target) : val;
+      }
+    }) as any;
+  }, [user]);
 
   const isAdmin = profile?.role === "admin";
   const isSeller = profile?.role === "seller" || isAdmin;
 
   const value = useMemo(() => ({
-    user,
-    session,
+    user: userWithId,
+    session: userWithId ? { user: userWithId } : null,
     profile,
     loading,
     signUp,
@@ -140,11 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     isAdmin,
     isSeller
-  }), [user, session, profile, loading, signUp, signIn, signOut, isAdmin, isSeller]);
+  }), [userWithId, profile, loading, signUp, signIn, signOut, isAdmin, isSeller]);
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }

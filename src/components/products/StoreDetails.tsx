@@ -1,6 +1,6 @@
 import { Star, MessageSquare, Package, Calendar, ShieldCheck, Loader2, Store } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -61,7 +61,7 @@ export function StoreDetails({ sellerId, onContactSeller, contactingSeller }: St
     ? new Date(store.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short" })
     : null;
 
-  const storeName = store?.shop_name || "Darzo Official";
+  const storeName = store?.shop_name || "Durtup Official";
 
   return (
     <div className="bg-card rounded-2xl border p-4 sm:p-6">

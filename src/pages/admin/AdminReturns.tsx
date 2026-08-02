@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { adminDb } from "@/lib/adminDb";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import {
   RotateCcw,

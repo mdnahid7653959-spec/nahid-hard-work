@@ -1,1 +1,0 @@
-UPDATE public.admin_credentials SET password_hash = 'pbkdf2$150000$oBlNFHnbEZVeAthxfukpSQ==$nyOim3Wo5rw0SOnuTdBr0mMXtO2TzN5tS7lkAXdu20I=', is_active = true, updated_at = now() WHERE username = 'HI Admin';

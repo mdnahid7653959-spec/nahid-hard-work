@@ -169,8 +169,11 @@ const App = () => (
                           {/* Public Routes - Lazy loaded */}
                           <Route path="/forgot-password" element={<ForgotPassword />} />
                           <Route path="/reset-password" element={<ResetPassword />} />
-                         <Route path="/products" element={<Products />} />
-                         <Route path="/search" element={<SearchPage />} />
+                          <Route path="/products" element={<Products />} />
+                          <Route path="/flash-sale" element={<Products />} />
+                          <Route path="/new-arrivals" element={<Products />} />
+                          <Route path="/free-shipping" element={<Products />} />
+                          <Route path="/search" element={<SearchPage />} />
 
                           <Route path="/product/:slug" element={<ProductDetail />} />
                           <Route path="/product/cj/:id" element={<CJProductDetail />} />

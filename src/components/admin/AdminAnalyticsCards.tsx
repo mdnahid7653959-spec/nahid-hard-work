@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import {
   DollarSign, ShoppingCart, TrendingUp, Users, Package, AlertTriangle,
   Wallet, PieChart as PieChartIcon, Percent, ArrowUpRight, TrendingDown

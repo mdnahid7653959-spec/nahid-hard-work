@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, MoreHorizontal } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { adminDb } from "@/lib/adminDb";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";

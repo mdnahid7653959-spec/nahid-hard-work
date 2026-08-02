@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import {
   Loader2, Upload, Pencil, Eye, EyeOff, Trash2, RotateCcw, Save, Check, Cpu, Shirt,
   Home as HomeIcon, Sparkles, ImagePlus, Plus, Move, Maximize2, Palette, Type,

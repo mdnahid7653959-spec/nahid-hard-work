@@ -2,7 +2,7 @@
 // Provides type-safe DB interactions, automatic session authentication, high-speed query caching,
 // range pagination support, auto-retry with exponential backoff, and full error normalization.
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 
 const ADMIN_SESSION_KEY = "megamart_admin_session";
 

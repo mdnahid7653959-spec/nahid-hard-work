@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Smartphone, Shirt, Home, Dumbbell, Gamepad2, Sparkles, Car, Gem, Gift, Percent, Crown, Truck, Star, ArrowRight, Zap, Tag, ShoppingBag, Heart, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 
 const iconMap: Record<string, any> = {
