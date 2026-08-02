@@ -150,7 +150,7 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
       };
     }
 
-    const searchResult = await this.search(queryStr, { limit: 5 });
+    const searchResult = await this.search(queryStr, { limit: 8 });
 
     const suggestedProducts = searchResult.products.map((p) => ({
       id: p.id,

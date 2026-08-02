@@ -60,7 +60,7 @@ export function SmartSearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data, isFetching } = useSearchSuggestions(query);
-  const hasQuery = query.trim().length >= 2;
+  const hasQuery = query.trim().length >= 1;
 
   useEffect(() => {
     setRecent(getRecentSearches());

@@ -88,7 +88,7 @@ export default function SearchPage() {
     setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
 
-  const hasQuery = query.trim().length >= 2;
+  const hasQuery = query.trim().length >= 1;
 
   const submit = (t: string) => {
     const term = t.trim();
