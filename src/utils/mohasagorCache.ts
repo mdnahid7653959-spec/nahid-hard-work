@@ -81,9 +81,7 @@ export async function fetchAllPagesMohasagorProducts(): Promise<Product[]> {
   isFetchingAllPages = true;
 
   try {
-    const baseApiUrl = typeof window !== "undefined" && window.location.hostname === "localhost"
-      ? "/api/mohasagor/api/reseller/product"
-      : "https://mohasagor.com.bd/api/reseller/product";
+    const baseApiUrl = "/api/mohasagor/api/reseller/product";
 
     const headers = {
       "api-key": "A8niclztH9JtzS4t",

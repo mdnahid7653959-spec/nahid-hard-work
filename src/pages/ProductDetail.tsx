@@ -304,9 +304,7 @@ export default function ProductDetail() {
         
         if (isApiProduct && productId) {
           try {
-            const apiUrl = typeof window !== "undefined" && window.location.hostname === "localhost" 
-              ? "/api/mohasagor/api/reseller/product"
-              : "https://mohasagor.com.bd/api/reseller/product";
+            const apiUrl = "/api/mohasagor/api/reseller/product";
 
             const res = await fetch(apiUrl, {
               headers: {
