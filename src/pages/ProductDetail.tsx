@@ -320,8 +320,12 @@ export default function ProductDetail() {
             product_variants (
               id,
               product_id,
-              attribute,
-              variant
+              name,
+              color,
+              size,
+              storage,
+              price,
+              image_url
             ),
             supplier_product_mappings (
               supplier_id,
@@ -332,6 +336,26 @@ export default function ProductDetail() {
         if (error) {
           console.error("Error fetching product:", error);
         } else if (data) {
+          // Format local DB variants if present
+          const dbVariants: ProductVariant[] = [];
+          if (data.product_variants && Array.isArray(data.product_variants)) {
+            data.product_variants.forEach((v: any, idx: number) => {
+              if (v.size) {
+                dbVariants.push({ id: v.id || idx, product_id: data.id, attribute: "Size", variant: v.size });
+              }
+              if (v.color) {
+                dbVariants.push({ id: v.id || idx + 1000, product_id: data.id, attribute: "Color", variant: v.color });
+              }
+              if (v.storage) {
+                dbVariants.push({ id: v.id || idx + 2000, product_id: data.id, attribute: "Storage", variant: v.storage });
+              }
+              if (!v.size && !v.color && !v.storage && v.name) {
+                dbVariants.push({ id: v.id || idx, product_id: data.id, attribute: "Option", variant: v.name });
+              }
+            });
+          }
+          data.product_variants = dbVariants;
+
           // If the product is mapped to a supplier, let's fetch live details
           const mapping = data.supplier_product_mappings && data.supplier_product_mappings[0];
           const isMohasagor = data.sku?.startsWith("MOH-") || (mapping && mapping.supplier_sku);
@@ -348,12 +372,22 @@ export default function ProductDetail() {
 
               if (!apiError && responseData?.success && responseData.data) {
                 const raw = responseData.data;
-                const mappedImages = mapSupplierImages(raw);
+                let mappedImages = mapSupplierImages(raw);
+                
+                // Fallback to local DB images if API returns no images
+                if (mappedImages.length === 0 && data.product_images && data.product_images.length > 0) {
+                  mappedImages = data.product_images;
+                }
+                
                 const mappedProduct = mapSupplierProduct(raw, slug, mappedImages);
-                // Keep local UUID and seller metadata
                 mappedProduct.id = data.id;
                 if (data.seller_id) {
                   mappedProduct.seller_id = data.seller_id;
+                }
+                
+                // If API returned no variants, keep local DB variants
+                if ((!mappedProduct.product_variants || mappedProduct.product_variants.length === 0) && dbVariants.length > 0) {
+                  mappedProduct.product_variants = dbVariants;
                 }
                 
                 setProduct(mappedProduct);
@@ -367,7 +401,7 @@ export default function ProductDetail() {
           }
 
           // Fallback to local DB data
-          setProduct(data);
+          setProduct(data as unknown as Product);
           // Pre-select first image if present
           setSelectedImage(0);
           if (data.id) {
