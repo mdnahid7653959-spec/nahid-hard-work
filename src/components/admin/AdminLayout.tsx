@@ -30,7 +30,8 @@ import {
   RotateCcw,
   Wallet,
   Banknote,
-  Link2
+  Link2,
+  Search
 } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ interface AdminLayoutProps {
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
+  { icon: Search, label: "Smart Search", href: "/admin/search" },
   { icon: Package, label: "Products", href: "/admin/products" },
   { icon: Layers, label: "Categories", href: "/admin/categories" },
   { icon: Tag, label: "Brands", href: "/admin/brands" },

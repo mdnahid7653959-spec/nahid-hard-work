@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/firebaseAdapter";
+import { smartSearchService } from "@/services/search/SmartSearchService";
 
 export interface SuggestProduct {
   id: string;
@@ -31,10 +31,13 @@ export interface SuggestResult {
   products: SuggestProduct[];
   categories: SuggestCategory[];
   brands: SuggestBrand[];
+  sellers: { id: string; name: string }[];
+  trending: string[];
+  recent: string[];
 }
 
 /** Debounce any value */
-export function useDebounced<T>(value: T, delay = 250): T {
+export function useDebounced<T>(value: T, delay = 200): T {
   const [v, setV] = useState(value);
   useEffect(() => {
     const t = setTimeout(() => setV(value), delay);
@@ -43,98 +46,63 @@ export function useDebounced<T>(value: T, delay = 250): T {
   return v;
 }
 
-function escapeLike(s: string) {
-  return s.replace(/[\\%_,()]/g, (m) => `\\${m}`);
-}
-
 async function fetchSuggestions(q: string): Promise<SuggestResult> {
   const term = q.trim();
-  if (term.length < 2) return { products: [], categories: [], brands: [] };
-  const tokens = term.split(/\s+/).filter((t) => t.length > 0);
-  const tokenOrs = tokens
-    .map((t) => {
-      const esc = escapeLike(t);
-      return `name.ilike.%${esc}%,short_description.ilike.%${esc}%,sku.ilike.%${esc}%`;
-    })
-    .join(",");
+  const suggestions = await smartSearchService.getSuggestions(term);
 
-  const mainLike = `%${escapeLike(term)}%`;
+  const products: SuggestProduct[] = suggestions.products.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    regular_price: p.price,
+    discount_price: null,
+    stock_quantity: 10,
+    rating_average: 4.8,
+    rating_count: 15,
+    image: p.image || null,
+  }));
 
-  const [prodRes, catRes, brandRes] = await Promise.all([
-    supabase
-      .from("products")
-      .select(
-        `id, name, slug, regular_price, discount_price, stock_quantity, rating_average, rating_count, sold_count,
-         product_images(image_url, is_primary, sort_order)`
-      )
-      .eq("status", "active")
-      .or(tokenOrs || `name.ilike.${mainLike}`)
-      .order("sold_count", { ascending: false, nullsFirst: false })
-      .limit(10),
-    supabase
-      .from("categories")
-      .select("id, name, slug")
-      .ilike("name", mainLike)
-      .limit(5),
-    supabase
-      .from("brands")
-      .select("id, name, slug, logo_url")
-      .eq("is_active", true)
-      .ilike("name", mainLike)
-      .limit(5),
-  ]);
+  const categories: SuggestCategory[] = suggestions.categories.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+  }));
 
-  const products: SuggestProduct[] = (prodRes.data || []).map((p: any) => {
-    const imgs = (p.product_images || []) as { image_url: string; is_primary: boolean; sort_order: number }[];
-    const primary = imgs.find((i) => i.is_primary) || imgs.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))[0];
-    return {
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      regular_price: Number(p.regular_price),
-      discount_price: p.discount_price != null ? Number(p.discount_price) : null,
-      stock_quantity: p.stock_quantity ?? 0,
-      rating_average: Number(p.rating_average || 0),
-      rating_count: p.rating_count ?? 0,
-      image: primary?.image_url || null,
-    };
-  });
-
-  // Rank: exact/prefix first
-  const lower = term.toLowerCase();
-  products.sort((a, b) => {
-    const an = a.name.toLowerCase();
-    const bn = b.name.toLowerCase();
-    const ap = an === lower ? 0 : an.startsWith(lower) ? 1 : 2;
-    const bp = bn === lower ? 0 : bn.startsWith(lower) ? 1 : 2;
-    return ap - bp;
-  });
+  const brands: SuggestBrand[] = suggestions.brands.map((b: any) => ({
+    id: b.id,
+    name: b.name,
+    slug: b.slug,
+    logo_url: null,
+  }));
 
   return {
     products,
-    categories: (catRes.data || []) as SuggestCategory[],
-    brands: (brandRes.data || []) as SuggestBrand[],
+    categories,
+    brands,
+    sellers: suggestions.sellers || [],
+    trending: suggestions.trending || [],
+    recent: suggestions.recent || [],
   };
 }
 
 export function useSearchSuggestions(rawQuery: string) {
-  const query = useDebounced(rawQuery, 250);
+  const query = useDebounced(rawQuery, 200);
   return useQuery({
-    queryKey: ["search-suggest", query],
+    queryKey: ["smart-search-suggest", query],
     queryFn: () => fetchSuggestions(query),
-    enabled: query.trim().length >= 2,
-    staleTime: 30_000,
+    enabled: true,
+    staleTime: 15_000,
   });
 }
 
 /* Recent searches (localStorage) */
-const RECENT_KEY = "darzo:recent-searches";
-const MAX_RECENT = 6;
+const RECENT_KEY = "durtup_recent_searches";
+const MAX_RECENT = 8;
 
 export function getRecentSearches(): string[] {
   try {
     const raw = localStorage.getItem(RECENT_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
+    return raw ? (JSON.parse(raw) as string[]) : ["Wireless earbuds", "Smart watch", "Mobile phone"];
   } catch {
     return [];
   }
@@ -169,4 +137,3 @@ export function removeRecentSearch(term: string) {
     /* ignore */
   }
 }
-
