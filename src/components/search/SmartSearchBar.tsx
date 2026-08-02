@@ -208,7 +208,7 @@ export function SmartSearchBar({
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
             className={cn(
-              "flex-1 min-w-0 bg-transparent text-foreground placeholder:text-muted-foreground/70 outline-none border-0 leading-none",
+              "flex-1 min-w-0 bg-transparent text-foreground placeholder:text-muted-foreground/70 outline-none border-0 leading-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none",
               variant === "desktop" ? "text-sm" : "text-[13px]"
             )}
           />

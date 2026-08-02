@@ -111,12 +111,13 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky search header */}
-      <div className="sticky top-0 z-40 bg-primary text-primary-foreground shadow-md">
-        <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="sticky top-0 z-40 bg-primary text-primary-foreground shadow-md w-full">
+        <div className="max-w-2xl mx-auto flex items-center gap-2 px-3 py-2 sm:px-4">
           <button
+            type="button"
             aria-label="Back"
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-full hover:bg-white/10 active:scale-95 transition"
+            className="p-1.5 rounded-full hover:bg-white/10 active:scale-95 transition shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -125,20 +126,20 @@ export default function SearchPage() {
               e.preventDefault();
               submit(query);
             }}
-            className="flex-1"
+            className="flex-1 min-w-0"
           >
-            <div className="flex items-center gap-2 bg-background text-foreground rounded-full h-10 pl-3.5 pr-1 shadow-inner">
+            <div className="flex items-center gap-2 bg-background text-foreground rounded-full h-10 px-3 shadow-inner w-full">
               <SearchIcon className="h-4 w-4 text-muted-foreground shrink-0" />
               <input
                 ref={inputRef}
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search products, brands and categories..."
-                className="flex-1 min-w-0 bg-transparent outline-none border-0 text-[13px] placeholder:text-muted-foreground/70"
+                placeholder="Search products, brands, categories..."
+                className="flex-1 min-w-0 bg-transparent outline-none border-0 text-[13px] placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
               />
               {isFetching && hasQuery && (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
               )}
               {query && (
                 <button
@@ -148,18 +149,11 @@ export default function SearchPage() {
                     setQuery("");
                     inputRef.current?.focus();
                   }}
-                  className="p-1 rounded-full text-muted-foreground hover:bg-muted"
+                  className="p-1 rounded-full text-muted-foreground hover:bg-muted shrink-0"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
-              <button
-                type="submit"
-                aria-label="Search"
-                className="h-8 w-8 grid place-items-center rounded-full bg-primary text-primary-foreground active:scale-95 transition shrink-0"
-              >
-                <SearchIcon className="h-3.5 w-3.5" />
-              </button>
             </div>
           </form>
         </div>
