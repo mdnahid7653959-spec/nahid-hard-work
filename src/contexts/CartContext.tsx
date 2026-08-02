@@ -7,6 +7,7 @@ interface CartItem {
   id: string;
   product_id: string;
   quantity: number;
+  variant_id?: string | null;
   product: {
     id: string;
     name: string;
@@ -23,7 +24,7 @@ interface CartContextType {
   loading: boolean;
   itemCount: number;
   subtotal: number;
-  addToCart: (productId: string, quantity?: number) => Promise<void>;
+  addToCart: (productId: string, quantity?: number, variants?: Record<string, string>) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -62,6 +63,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           id,
           product_id,
           quantity,
+          variant_id,
           product:products(id, name, slug, regular_price, discount_price, stock_quantity, product_images(image_url, sort_order))
         `)
         .eq("user_id", user.id);
@@ -99,6 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               id: item.id || `local-${item.product_id}`,
               product_id: item.product_id,
               quantity: item.quantity,
+              variant_id: item.variant_id,
               product,
               image: sorted[0]?.image_url,
             };
@@ -144,10 +147,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     mergeLocalCart();
   }, [user, getLocalCart, fetchCart]);
 
-  const addToCart = useCallback(async (productId: string, quantity: number = 1) => {
+  const addToCart = useCallback(async (productId: string, quantity: number = 1, variants?: Record<string, string>) => {
+    const variantStr = variants ? JSON.stringify(variants) : null;
+    
     if (user) {
-      // Check if already in cart
-      const existing = items.find(item => item.product_id === productId);
+      // Check if already in cart with same variants
+      const existing = items.find(item => item.product_id === productId && (item as any).variant_id === variantStr);
       
       if (existing) {
         await updateQuantity(existing.id, existing.quantity + quantity);
@@ -155,7 +160,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.from("cart_items").insert({
           user_id: user.id,
           product_id: productId,
-          quantity
+          quantity,
+          variant_id: variantStr
         });
 
         if (error) {
@@ -166,12 +172,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else {
       // Local cart for guests
       const localCart = getLocalCart();
-      const existing = localCart.find((item: any) => item.product_id === productId);
+      const existing = localCart.find((item: any) => item.product_id === productId && item.variant_id === variantStr);
       
       if (existing) {
         existing.quantity += quantity;
       } else {
-        localCart.push({ product_id: productId, quantity, id: `local-${Date.now()}` });
+        localCart.push({ product_id: productId, quantity, variant_id: variantStr, id: `local-${Date.now()}` });
       }
       
       setLocalCart(localCart);

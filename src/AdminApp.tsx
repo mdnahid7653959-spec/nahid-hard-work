@@ -43,6 +43,8 @@ const AdminHomePromos = lazy(() => import("./pages/admin/AdminHomePromos"));
 const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
+const AdminVisualEditor = lazy(() => import("./pages/admin/AdminVisualEditor"));
+
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -113,6 +115,9 @@ const AdminApp = () => (
                 <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
                 <Route path="/admin/wallet" element={<AdminProtectedRoute><AdminWallet /></AdminProtectedRoute>} />
                 <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
+                <Route path="/admin/visual-editor" element={<AdminProtectedRoute><AdminVisualEditor /></AdminProtectedRoute>} />
+                <Route path="/admin/theme-builder" element={<AdminProtectedRoute><AdminVisualEditor /></AdminProtectedRoute>} />
+
                 
                 {/* Catch-all redirects to admin */}
                 <Route path="*" element={<Navigate to="/admin/login" replace />} />

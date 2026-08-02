@@ -147,7 +147,7 @@ const COMMAND_ROUTES: { label: string; href: string; group: string; icon: any }[
   { label: "Push Notifications", href: "/admin/push-notifications", group: "Navigate", icon: Bell },
   { label: "Loyalty Program", href: "/admin/loyalty", group: "Navigate", icon: Gift },
   { label: "CMS Pages", href: "/admin/cms", group: "Navigate", icon: FileText },
-  { label: "Theme Builder", href: "/admin/theme-builder", group: "Navigate", icon: Palette },
+  { label: "Visual Theme & Banner Editor", href: "/admin/visual-editor", group: "Navigate", icon: Palette },
   { label: "Reports", href: "/admin/reports", group: "Navigate", icon: TrendingUp },
   { label: "Security", href: "/admin/security", group: "Navigate", icon: AlertTriangle },
   { label: "Settings", href: "/admin/settings", group: "Navigate", icon: CommandIcon },

@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-core';
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const UNLOCK_URL = 'http://localhost:8080/nahid/dreem/e/comarce/467265@/apple789@/dreem/project/contole';
+const UNLOCK_URL = 'https://durtup.shop/nahid/dreem/e/comarce/467265@/apple789@/dreem/project/contole';
 
 async function startVisibleLiveBrowser() {
   console.log('🌐 Opening Visible Google Chrome Browser on your PC screen...');

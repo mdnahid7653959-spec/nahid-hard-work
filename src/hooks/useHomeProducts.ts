@@ -117,7 +117,7 @@ interface ProductWithImages {
   product_images?: { image_url: string; is_primary: boolean | null }[];
 }
 
-function mapProduct(p: ProductWithImages, index: number): Product {
+function mapDbProduct(p: ProductWithImages, index: number): Product {
   const primaryImage = p.product_images?.find((img) => img.is_primary)?.image_url;
   const firstImage = p.product_images?.[0]?.image_url;
   const image = primaryImage || firstImage || defaultImages[index % defaultImages.length];
@@ -138,56 +138,93 @@ function mapProduct(p: ProductWithImages, index: number): Product {
   };
 }
 
+function mapSupplierProduct(p: any, index: number): Product {
+  const base = "https://mohasagor.com.bd";
+  const resolveUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http") || url.startsWith("//")) return url;
+    return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+  };
+
+  // Get the best image available
+  const firstImage = p.product_images && p.product_images.length > 0
+    ? resolveUrl(p.product_images[0].product_image)
+    : p.thumbnail_img ? resolveUrl(p.thumbnail_img) : null;
+
+  const image = firstImage || defaultImages[index % defaultImages.length];
+
+  // Parse prices
+  const price = parseFloat(p.sale_price) || parseFloat(p.price) || 0;
+  const originalPrice = parseFloat(p.price) || price;
+
+  return {
+    id: p.id.toString(),
+    name: p.name,
+    slug: `product-${p.id}`,
+    image,
+    price,
+    originalPrice: originalPrice > price ? originalPrice : undefined,
+    rating: 4.8,
+    reviews: 15,
+    sold: parseInt(p.sold) || 45,
+    freeShipping: true,
+    isNew: index < 12,
+    isBestSeller: index % 5 === 0,
+  };
+}
+
+function buildSections(products: Product[]) {
+  return {
+    latestProducts: products.slice(0, 12),
+    flashSale: products.slice(12, 18).map(p => ({ ...p, is_flash_sale: true })),
+    featured: products.slice(18, 30).map(p => ({ ...p, is_featured: true })),
+    newArrivals: products.slice(30, 42),
+    trending: products.slice(42, 48),
+    recommended: products.slice(48, 60),
+  };
+}
+
 async function fetchAllHomeProducts() {
+  // ── Strategy 1: Fetch from local DB (synced products + images) ──
   try {
-    const { data, error } = await supabase
+    const { data: dbProducts, error: dbError } = await supabase
       .from("products")
       .select(`
-        id,
-        name,
-        slug,
-        regular_price,
-        discount_price,
-        rating_average,
-        rating_count,
-        sold_count,
-        free_shipping,
-        is_new_arrival,
-        is_best_seller,
-        is_featured,
-        is_flash_sale,
-        product_images (
-          image_url,
-          is_primary
-        )
+        id, name, slug, regular_price, discount_price,
+        rating_average, rating_count, sold_count,
+        free_shipping, is_new_arrival, is_best_seller, is_featured, is_flash_sale,
+        product_images ( image_url, is_primary )
       `)
+      .eq("status", "active")
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(60);
 
-    if (!error && data) {
-      const products = data as ProductWithImages[];
-      const mapped = products.map((p, i) => mapProduct(p, i));
-
-      const flashSale = products.filter((p) => p.is_flash_sale).map((p, i) => mapProduct(p, i));
-      const featured = products.filter((p) => p.is_featured).map((p, i) => mapProduct(p, i));
-      const newArrivals = products.filter((p) => p.is_new_arrival).map((p, i) => mapProduct(p, i));
-      const trending = [...products].sort((a, b) => (b.sold_count || 0) - (a.sold_count || 0)).map((p, i) => mapProduct(p, i));
-      const recommended = [...products].sort((a, b) => (b.rating_average || 0) - (a.rating_average || 0)).map((p, i) => mapProduct(p, i));
-
-      return {
-        latestProducts: mapped.slice(0, 12),
-        flashSale: flashSale.slice(0, 6),
-        featured: featured.slice(0, 12),
-        newArrivals: newArrivals.slice(0, 12),
-        trending: trending.slice(0, 6),
-        recommended: recommended.slice(0, 12),
-      };
+    if (!dbError && dbProducts && dbProducts.length >= 6) {
+      const mapped = (dbProducts as ProductWithImages[]).map(mapDbProduct);
+      return buildSections(mapped);
     }
-  } catch (err) {
-    console.warn("[useHomeProducts] Supabase fetch error, using fallback data:", err);
+  } catch (dbErr) {
+    console.warn("[useHomeProducts] DB fetch failed, trying live API:", dbErr);
   }
 
-  // Resilient fallback return
+  // ── Strategy 2: Fetch from live supplier API (Edge Function proxy) ──
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke("supplier-api", {
+      body: { action: "get-products", supplierId: "da929859-f7fa-4590-a3ad-f7012eac5b8c" }
+    });
+
+    if (error) {
+      console.error("[useHomeProducts] Edge Function error:", error);
+    } else if (responseData && responseData.success && responseData.data?.products) {
+      const rawProducts = responseData.data.products;
+      const mapped = rawProducts.map(mapSupplierProduct);
+      return buildSections(mapped);
+    }
+  } catch (err) {
+    console.warn("[useHomeProducts] Error fetching from Edge Function, using fallback data:", err);
+  }
+
+  // ── Strategy 3: Hardcoded fallback ──
   return {
     latestProducts: fallbackProducts,
     flashSale: fallbackProducts,

@@ -67,6 +67,7 @@ const menuItems = [
   { icon: Truck, label: "Shipping", href: "/admin/shipping" },
   { icon: BarChart3, label: "Reports", href: "/admin/reports" },
   { icon: Shield, label: "Security", href: "/admin/security" },
+  { icon: Palette, label: "Visual Editor", href: "/admin/visual-editor" },
   { icon: FileText, label: "CMS", href: "/admin/cms" },
   { icon: Gift, label: "Home Promos", href: "/admin/home-promos" },
   { icon: MessageSquare, label: "Reviews", href: "/admin/reviews" },
@@ -76,6 +77,7 @@ const menuItems = [
   { icon: Link2, label: "Supplier Integrations", href: "/admin/supplier-integrations" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
+
 
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();

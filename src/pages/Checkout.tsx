@@ -284,7 +284,8 @@ export default function Checkout() {
         product_name: item.product.name,
         quantity: item.quantity,
         price: item.product.discount_price || item.product.regular_price,
-        total: (item.product.discount_price || item.product.regular_price) * item.quantity
+        total: (item.product.discount_price || item.product.regular_price) * item.quantity,
+        variant_id: item.variant_id || null
       }));
 
       // Add CJ order items (no product_id since they're external)
@@ -313,16 +314,20 @@ export default function Checkout() {
         if (productIds.length > 0) {
           const { data: products } = await supabase
             .from("products")
-            .select("id, seller_id")
+            .select("id, seller_id, sku")
             .in("id", productIds);
           
           if (products && products.length > 0) {
-            const hasMohasagorItems = products.some(p => p.seller_id === "mohasagor.com.bd" || p.seller_id === "Mohasagor");
+            const hasMohasagorItems = products.some(p => 
+              p.seller_id === "mohasagor.com.bd" || 
+              p.seller_id === "Mohasagor" || 
+              p.sku?.startsWith("MOH-")
+            );
             if (hasMohasagorItems) {
               await supabase.functions.invoke("supplier-api", {
                 body: {
                   action: "forward-order",
-                  supplierId: "mohasagor-integration-id",
+                  supplierId: "da929859-f7fa-4590-a3ad-f7012eac5b8c", // Use the valid UUID supplierId we seeded
                   payload: {
                     orderId: order.id,
                     shipping_address: {

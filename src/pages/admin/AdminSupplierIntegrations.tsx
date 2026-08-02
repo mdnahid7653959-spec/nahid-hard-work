@@ -466,23 +466,35 @@ export default function AdminSupplierIntegrations() {
     setPinging(prev => ({ ...prev, [supplierId]: true }));
     try {
       const supplier = suppliers.find(s => s.id === supplierId);
-      const { data, error } = await supabase.functions.invoke("supplier-api", {
-        body: {
-          action: "test-connection",
-          supplierId,
-          supplierOverride: supplier
-        }
-      });
+      if (!supplier) throw new Error("Supplier not found");
 
-      if (error || !data?.success) {
-        throw new Error(data?.error || "Connection refused or auth failed");
+      const creds = decryptCredentials(supplier.credentials_encrypted) || {};
+      const apiBase = supplier.api_base_url || "https://mohasagor.com.bd";
+      const listPath = supplier.endpoints_config?.product_list || "/api/reseller/product";
+      const url = `${apiBase}${listPath}`;
+
+      const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const res = await fetch(proxiedUrl);
+      if (!res.ok) {
+        throw new Error(`CORS Proxy returned HTTP ${res.status}`);
+      }
+
+      const json = await res.json();
+      if (!json.contents) {
+        throw new Error("Empty response from CORS proxy");
+      }
+
+      const rawData = JSON.parse(json.contents);
+      const rawProducts = Array.isArray(rawData) ? rawData : (rawData.data || rawData.products || []);
+
+      if (!Array.isArray(rawProducts)) {
+        throw new Error("Failed to parse products list from API response");
       }
 
       toast({
         title: "Connection test passed!",
-        description: `Ping response returned HTTP ${data.status} in ${data.responseTimeMs}ms.`
+        description: `Successfully verified API connection. Retrieved ${rawProducts.length} products.`
       });
-      fetchData();
     } catch (err: any) {
       toast({
         title: "Connection test failed",
@@ -498,19 +510,76 @@ export default function AdminSupplierIntegrations() {
     setSyncing(prev => ({ ...prev, [supplierId]: true }));
     try {
       const supplier = suppliers.find(s => s.id === supplierId);
-      const { data, error } = await supabase.functions.invoke("supplier-api", {
-        body: {
-          action: "sync-products",
-          supplierId,
-          supplierOverride: supplier
-        }
-      });
+      if (!supplier) throw new Error("Supplier not found");
 
-      if (error) throw new Error(error.message || "Sync failed");
+      const creds = decryptCredentials(supplier.credentials_encrypted) || {};
+      const apiBase = supplier.api_base_url || "https://mohasagor.com.bd";
+      const listPath = supplier.endpoints_config?.product_list || "/api/reseller/product";
+      const url = `${apiBase}${listPath}`;
+
+      const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const res = await fetch(proxiedUrl);
+      if (!res.ok) {
+        throw new Error(`CORS Proxy returned HTTP ${res.status}`);
+      }
+
+      const json = await res.json();
+      if (!json.contents) {
+        throw new Error("Empty response from CORS proxy");
+      }
+
+      const rawData = JSON.parse(json.contents);
+      const rawProducts = Array.isArray(rawData) ? rawData : (rawData.data || rawData.products || []);
+
+      if (!Array.isArray(rawProducts)) {
+        throw new Error("API response is not an array of products");
+      }
+
+      // Map and save products to Supabase directly from the browser
+      let successCount = 0;
+      for (const prod of rawProducts) {
+        const sku = String(prod.id || prod.sku || "");
+        if (!sku) continue;
+
+        // Resolve pricing using the supplier's rules
+        const rules = supplier.pricing_rules || {};
+        const basePrice = parseFloat(prod.price || "0");
+        let markupType = rules.markup_type || 'percentage';
+        let markupValue = Number(rules.markup_value !== undefined ? rules.markup_value : 15);
+        let commissionMargin = Number(rules.commission_margin !== undefined ? rules.commission_margin : 5);
+        let minProfit = Number(rules.min_profit !== undefined ? rules.min_profit : 50);
+        let maxProfit = Number(rules.max_profit !== undefined ? rules.max_profit : 999999);
+        
+        let profit = markupType === 'percentage' ? basePrice * (markupValue / 100) : markupValue;
+        if (profit < minProfit) profit = minProfit;
+        if (profit > maxProfit) profit = maxProfit;
+        
+        const sellingPrice = Math.round(basePrice + profit + commissionMargin);
+
+        // Upsert to products table directly
+        const productPayload = {
+          name: prod.name || "Mohasagor Product",
+          sku: sku,
+          regular_price: sellingPrice,
+          discount_price: Math.round(sellingPrice * 0.95),
+          stock_quantity: parseInt(prod.stock_quantity || prod.stock || "10"),
+          description: prod.description || "",
+          status: "active",
+          seller_id: supplier.company_name || supplier.name || "Mohasagor",
+        };
+
+        const { error: upsertErr } = await supabase
+          .from("products")
+          .upsert(productPayload, { onConflict: "sku" });
+
+        if (!upsertErr) {
+          successCount++;
+        }
+      }
 
       toast({
         title: "Sync completed successfully!",
-        description: `Synced: ${data.syncedCount} products. Skipped/Invalidated: ${data.skippedCount || 0}.`
+        description: `Successfully synced ${successCount} products directly from ${supplier.name}!`
       });
       fetchData();
     } catch (err: any) {

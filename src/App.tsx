@@ -112,6 +112,7 @@ const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport")
 const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
+const AdminVisualEditor = lazy(() => import("./pages/admin/AdminVisualEditor"));
 
 // Staff Portal
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
@@ -271,6 +272,7 @@ const App = () => (
                           <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
                           <Route path="/admin/wallet" element={<AdminProtectedRoute><AdminWallet /></AdminProtectedRoute>} />
                           <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
+                          <Route path="/admin/visual-editor" element={<AdminProtectedRoute><AdminVisualEditor /></AdminProtectedRoute>} />
 
                           {/* Staff Portal */}
                           <Route path="/staff/login" element={<StaffLogin />} />

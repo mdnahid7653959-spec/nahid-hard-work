@@ -24,6 +24,12 @@ interface ProductImage {
   is_primary: boolean | null;
   sort_order: number | null;
 }
+interface ProductVariant {
+  id: number;
+  product_id: number;
+  attribute: string;
+  variant: string;
+}
 interface Product {
   id: string;
   name: string;
@@ -43,6 +49,7 @@ interface Product {
   color?: string | null;
   video_url?: string | null;
   product_images?: ProductImage[];
+  product_variants?: ProductVariant[];
   category_id?: string | null;
   brand_id?: string | null;
   tags?: string[] | null;
@@ -155,6 +162,7 @@ export default function ProductDetail() {
   const [showVideo, setShowVideo] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const {
     addToCart
   } = useCart();
@@ -198,44 +206,222 @@ export default function ProductDetail() {
       setShowVideo(false);
     }
   };
+  // Helper to map images from Mohasagor API
+  const mapSupplierImages = (raw: any): ProductImage[] => {
+    const product_images: ProductImage[] = [];
+    const base = "https://mohasagor.com.bd";
+    
+    const resolveUrl = (url: string) => {
+      if (!url) return "";
+      if (url.startsWith("http") || url.startsWith("//")) return url;
+      return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+    };
+
+    if (raw.product_images && raw.product_images.length > 0) {
+      raw.product_images.forEach((img: any, idx: number) => {
+        product_images.push({
+          id: img.id?.toString() || `img-${idx}`,
+          image_url: resolveUrl(img.product_image),
+          is_primary: idx === 0,
+          sort_order: idx
+        });
+      });
+    } else if (raw.thumbnail_img) {
+      product_images.push({
+        id: `img-0`,
+        image_url: resolveUrl(raw.thumbnail_img),
+        is_primary: true,
+        sort_order: 0
+      });
+    }
+    return product_images;
+  };
+
+  // Helper to map supplier product to Product interface
+  const mapSupplierProduct = (raw: any, productSlug: string, imagesArr: ProductImage[]): Product => {
+    const price = parseFloat(raw.sale_price) || parseFloat(raw.price) || 0;
+    const originalPrice = parseFloat(raw.price) || price;
+    
+    // 15% markup + 5% commission matching sync logic
+    const markup = price * 0.15;
+    const commission = price * 0.05;
+    const sellingPrice = Math.round(price + markup + commission);
+    const regularSellingPrice = Math.round(originalPrice * 1.2);
+
+    const variants = (raw.product_variants || []).map((v: any) => ({
+      id: parseInt(v.id) || Math.floor(Math.random() * 100000),
+      product_id: parseInt(raw.id) || 0,
+      attribute: v.attribute || "Color",
+      variant: v.variant,
+    }));
+
+    return {
+      id: raw.id.toString(),
+      name: raw.name,
+      slug: productSlug,
+      short_description: null,
+      description: raw.details || null,
+      regular_price: regularSellingPrice,
+      discount_price: regularSellingPrice > sellingPrice ? sellingPrice : null,
+      stock_quantity: parseInt(raw.stock_quantity) || parseInt(raw.stock) || 50,
+      free_shipping: true,
+      rating_average: 4.8,
+      rating_count: 15,
+      sold_count: parseInt(raw.sold) || 45,
+      is_featured: false,
+      warranty_info: null,
+      return_policy: null,
+      color: raw.color || null,
+      video_url: raw.video_link || null,
+      product_images: imagesArr,
+      product_variants: variants,
+      seller_id: "mohasagor.com.bd"
+    };
+  };
+
   useEffect(() => {
     async function fetchProduct() {
       if (!slug) return;
-      const {
-        data,
-        error
-      } = await supabase.from("products").select(`
-          *,
-          product_images (
-            id,
-            image_url,
-            is_primary,
-            sort_order
-          )
-        `).eq("slug", slug).single();
-      if (error) {
-        console.error("Error fetching product:", error);
-      } else {
-        setProduct(data);
-        // Track product view
-        if (data?.id) {
-          trackView(data.id);
+      
+      try {
+        // Check if this is a dynamic API product
+        const isApiProduct = slug.startsWith('product-');
+        const productId = isApiProduct ? slug.replace('product-', '') : null;
+        
+        if (isApiProduct && productId) {
+          // Fetch from Edge Function directly
+          const { data: responseData, error: apiError } = await supabase.functions.invoke("supplier-api", {
+            body: { action: "get-product-details", supplierId: "da929859-f7fa-4590-a3ad-f7012eac5b8c", payload: { productId } }
+          });
+          
+          if (!apiError && responseData?.success && responseData.data) {
+            const raw = responseData.data;
+            const mappedImages = mapSupplierImages(raw);
+            const mappedProduct = mapSupplierProduct(raw, slug, mappedImages);
+            
+            setProduct(mappedProduct);
+            trackView(mappedProduct.id);
+            setLoading(false);
+            return;
+          } else {
+            console.error("Error fetching dynamic product details:", apiError || responseData?.error);
+          }
         }
+
+        // Standard Local DB Fetching with relations
+        const { data, error } = await supabase.from("products").select(`
+            *,
+            product_images (
+              id,
+              image_url,
+              is_primary,
+              sort_order
+            ),
+            product_variants (
+              id,
+              product_id,
+              attribute,
+              variant
+            ),
+            supplier_product_mappings (
+              supplier_id,
+              supplier_sku
+            )
+          `).eq("slug", slug).maybeSingle();
+
+        if (error) {
+          console.error("Error fetching product:", error);
+        } else if (data) {
+          // If the product is mapped to a supplier, let's fetch live details
+          const mapping = data.supplier_product_mappings && data.supplier_product_mappings[0];
+          const isMohasagor = data.sku?.startsWith("MOH-") || (mapping && mapping.supplier_sku);
+          if (isMohasagor) {
+            try {
+              const supplierSku = mapping?.supplier_sku || data.sku.replace("MOH-", "");
+              const { data: responseData, error: apiError } = await supabase.functions.invoke("supplier-api", {
+                body: { 
+                  action: "get-product-details", 
+                  supplierId: mapping?.supplier_id || "da929859-f7fa-4590-a3ad-f7012eac5b8c", 
+                  payload: { productId: supplierSku } 
+                }
+              });
+
+              if (!apiError && responseData?.success && responseData.data) {
+                const raw = responseData.data;
+                const mappedImages = mapSupplierImages(raw);
+                const mappedProduct = mapSupplierProduct(raw, slug, mappedImages);
+                // Keep local UUID and seller metadata
+                mappedProduct.id = data.id;
+                if (data.seller_id) {
+                  mappedProduct.seller_id = data.seller_id;
+                }
+                
+                setProduct(mappedProduct);
+                trackView(data.id);
+                setLoading(false);
+                return;
+              }
+            } catch (err) {
+              console.warn("Failed to fetch live product details, using local DB data:", err);
+            }
+          }
+
+          // Fallback to local DB data
+          setProduct(data);
+          // Pre-select first image if present
+          setSelectedImage(0);
+          if (data.id) {
+            trackView(data.id);
+          }
+        }
+      } catch (err) {
+        console.error("ProductDetail catch error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchProduct();
   }, [slug, trackView]);
   const handleAddToCart = async () => {
     if (!product) return;
+    
+    // Check if there are variants and they haven't all been selected
+    if (product.product_variants && product.product_variants.length > 0) {
+       // Group variants by attribute to check if all attributes have a selection
+       const attributes = Array.from(new Set(product.product_variants.map(v => v.attribute)));
+       const unselected = attributes.filter(attr => !selectedVariants[attr]);
+       if (unselected.length > 0) {
+         toast({
+           title: "Selection Required",
+           description: `Please select: ${unselected.join(", ")}`,
+           variant: "destructive"
+         });
+         return;
+       }
+    }
+
     setAddingToCart(true);
-    await addToCart(product.id, quantity);
+    await addToCart(product.id, quantity, selectedVariants);
     setAddingToCart(false);
   };
   const handleBuyNow = async () => {
     if (!product) return;
+    
+    if (product.product_variants && product.product_variants.length > 0) {
+       const attributes = Array.from(new Set(product.product_variants.map(v => v.attribute)));
+       const unselected = attributes.filter(attr => !selectedVariants[attr]);
+       if (unselected.length > 0) {
+         toast({
+           title: "Selection Required",
+           description: `Please select: ${unselected.join(", ")}`,
+           variant: "destructive"
+         });
+         return;
+       }
+    }
+
     setBuyingNow(true);
-    await addToCart(product.id, quantity);
+    await addToCart(product.id, quantity, selectedVariants);
     setBuyingNow(false);
     navigate("/checkout");
   };
@@ -403,6 +589,11 @@ export default function ProductDetail() {
                       </div>
                     )}
 
+                    {/* Image Counter Badge */}
+                    <div className="absolute top-3 right-16 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur text-white text-xs font-bold shadow-md">
+                      {selectedImage + 1} / {(product as any).video_url ? images.length + 1 : images.length}
+                    </div>
+
                     {/* Image navigation arrows */}
                     <button onClick={() => {
                       setSelectedImage(Math.max(0, selectedImage - 1));
@@ -538,6 +729,34 @@ export default function ProductDetail() {
                   <span className="text-sm text-muted-foreground">{(product as any).color}</span>
                 </div>}
 
+              {/* Product Variants (Color, Size, etc.) */}
+              {product.product_variants && product.product_variants.length > 0 && (
+                <div className="space-y-4 pt-4 border-t">
+                  {Array.from(new Set(product.product_variants.map(v => v.attribute))).map(attribute => {
+                    const variantsForAttr = product.product_variants!.filter(v => v.attribute === attribute);
+                    return (
+                      <div key={attribute}>
+                        <h4 className="text-sm font-medium mb-2">{attribute}: <span className="text-muted-foreground">{selectedVariants[attribute] || 'Select one'}</span></h4>
+                        <div className="flex flex-wrap gap-2">
+                          {variantsForAttr.map(variant => (
+                            <button
+                              key={variant.id}
+                              onClick={() => setSelectedVariants(prev => ({ ...prev, [attribute]: variant.variant }))}
+                              className={`px-4 py-2 border rounded-xl text-sm font-medium transition-all
+                                ${selectedVariants[attribute] === variant.variant 
+                                  ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary' 
+                                  : 'border-muted hover:border-primary/50 text-muted-foreground hover:text-foreground'}`}
+                            >
+                              {variant.variant}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Quantity & Add to Cart */}
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center gap-4">
@@ -654,7 +873,17 @@ export default function ProductDetail() {
                     <span className="w-1 h-5 bg-gradient-to-b from-primary to-warning rounded-full" />
                     Description
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{product.description}</p>
+                  {/<[a-z][\s\S]*>/i.test(product.description) ? (
+                    <div
+                      className="text-muted-foreground text-sm leading-relaxed prose prose-sm max-w-none
+                        [&_img]:max-w-full [&_img]:rounded-lg [&_table]:w-full [&_table]:border-collapse
+                        [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2
+                        [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                      dangerouslySetInnerHTML={{ __html: product.description }}
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{product.description}</p>
+                  )}
                 </div>}
 
             </div>

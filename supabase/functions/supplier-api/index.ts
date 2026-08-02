@@ -214,15 +214,15 @@ serve(async (req) => {
         endpoints_config: {
           product_list: "/api/reseller/product",
           category_list_path: "/api/reseller/category",
-          response_root_path: "",
+          response_root_path: "products",
           sku_path: "id",
           name_path: "name",
           price_path: "price",
           stock_path: "stock_quantity",
-          image_path: "thumbnail_image",
+          image_path: "thumbnail_img",
           category_id_path: "category_id",
           category_name_path: "category",
-          description_path: "description"
+          description_path: "details"
         },
         pricing_rules: {
           markup_type: "percentage",
@@ -260,7 +260,10 @@ serve(async (req) => {
       };
 
       if (authType === "apikey") {
-        if (creds.api_key_header) {
+        if (creds.secret_key) {
+          headers["api-key"] = creds.api_key;
+          headers["secret-key"] = creds.secret_key;
+        } else if (creds.api_key_header) {
           headers[creds.api_key_header] = creds.api_key;
         } else {
           headers["Authorization"] = `ApiKey ${creds.api_key}`;
@@ -483,7 +486,7 @@ serve(async (req) => {
             weight: sWeight,
             dimensions: sDim,
             status: "active",
-            seller_id: supplier.company_name || supplier.name, // set supplier name as seller info
+            seller_id: null,
             category_id: localCategoryId, // set the mapped category ID
           };
 
@@ -509,23 +512,58 @@ serve(async (req) => {
             last_synced_at: new Date().toISOString(),
           }, { onConflict: "product_id" });
 
-          // Extract and insert image if configured
-          let imgUrl = getNestedValue(rawProd, endpoints.image_path || "image");
-          if (imgUrl) {
-            // Resolve relative image URLs using the supplier base URL
-            if (typeof imgUrl === "string" && !imgUrl.startsWith("http") && !imgUrl.startsWith("//")) {
-              const base = supplier.api_base_url.replace(/\/$/, "");
-              if (imgUrl.startsWith("/")) {
-                imgUrl = `${base}${imgUrl}`;
-              } else {
-                imgUrl = `${base}/${imgUrl}`;
+          // Extract and insert images if configured
+          // Check for array of images first (like product_images)
+          const rawImages = getNestedValue(rawProd, "product_images") || [];
+          
+          let imgUrlsToSync: string[] = [];
+          
+          if (Array.isArray(rawImages) && rawImages.length > 0) {
+            rawImages.forEach((imgObj: any) => {
+              if (imgObj && imgObj.product_image) {
+                imgUrlsToSync.push(imgObj.product_image);
+              } else if (typeof imgObj === "string") {
+                imgUrlsToSync.push(imgObj);
+              }
+            });
+          }
+          
+          // Fallback to single thumbnail if no array found
+          if (imgUrlsToSync.length === 0) {
+            let singleImg = getNestedValue(rawProd, endpoints.image_path || "image");
+            if (singleImg && typeof singleImg === "string") {
+              imgUrlsToSync.push(singleImg);
+            }
+          }
+
+          if (imgUrlsToSync.length > 0) {
+            // Check existing images
+            const { data: existingImgs } = await supabase
+              .from("product_images")
+              .select("id, image_url")
+              .eq("product_id", upsertedProduct.id);
+              
+            const existingUrls = existingImgs?.map(i => i.image_url) || [];
+
+            // Insert new ones
+            for (let i = 0; i < imgUrlsToSync.length; i++) {
+              let imgUrl = imgUrlsToSync[i];
+              
+              // Resolve relative image URLs using the supplier base URL
+              if (typeof imgUrl === "string" && !imgUrl.startsWith("http") && !imgUrl.startsWith("//")) {
+                const base = supplier.api_base_url.replace(/\/$/, "");
+                imgUrl = imgUrl.startsWith("/") ? `${base}${imgUrl}` : `${base}/${imgUrl}`;
+              }
+              
+              if (!existingUrls.includes(imgUrl)) {
+                await supabase.from("product_images").insert({
+                  product_id: upsertedProduct.id,
+                  image_url: imgUrl,
+                  is_primary: i === 0 && existingUrls.length === 0, // First image is primary if none exist
+                  sort_order: i
+                });
               }
             }
-            await supabase.from("product_images").upsert({
-              product_id: upsertedProduct.id,
-              image_url: imgUrl,
-              is_primary: true,
-            }, { onConflict: "product_id, image_url" });
           }
 
           successCount++;
@@ -572,10 +610,10 @@ serve(async (req) => {
           throw new Error("Missing orderId in payload");
         }
 
-        // Fetch local order items matching mappings
+        // Fetch local order items matching mappings (Wait, the user wants us to push it automatically)
         const { data: items, error: itemsErr } = await supabase
           .from("order_items")
-          .select("id, product_id, quantity, price, products(sku, name)")
+          .select("id, product_id, quantity, price, variant_id, products(sku, name)")
           .eq("order_id", orderId);
 
         if (itemsErr || !items || items.length === 0) {
@@ -583,64 +621,73 @@ serve(async (req) => {
         }
 
         const headers = await prepareHeaders();
-        const orderPath = endpoints.create_order || "/orders";
+        // Since user didn't specify, default to standard order endpoint
+        const orderPath = endpoints.create_order || "/api/reseller/order/create";
         const orderUrl = orderPath.startsWith("http") ? orderPath : `${supplier.api_base_url}${orderPath}`;
 
         let itemsForwarded = 0;
 
         for (const item of items) {
-          // Check if this item is mapped to the current supplier
-          const { data: mapping } = await supabase
-            .from("supplier_product_mappings")
-            .select("*")
-            .eq("product_id", item.product_id)
-            .eq("supplier_id", supplierId)
-            .maybeSingle();
+          const skuToForward = item.products?.sku || `MOH-${item.product_id}`; // fallback
 
-          if (!mapping) continue;
+          let itemVariants = {};
+          if (item.variant_id) {
+            try {
+              itemVariants = JSON.parse(item.variant_id);
+            } catch (e) {
+              console.error("Failed to parse variant_id", item.variant_id);
+            }
+          }
 
-          // Build forward request payload
+          // Map the user checkout payload exactly as requested by user
+          // Pass full customer name, delivery address, phone number, and variants
           const forwardPayload = {
             order_reference: orderId,
-            sku: mapping.supplier_sku,
+            sku: skuToForward,
             quantity: item.quantity,
-            shipping_address: payload.shipping_address || {},
+            customer_name: payload.shipping_address?.name || "",
+            delivery_address: payload.shipping_address?.address || "",
+            phone_number: payload.shipping_address?.phone || "",
+            city: payload.shipping_address?.city || "",
+            variants: itemVariants // Pass variants dynamically
           };
 
-          const apiResponse = await fetch(orderUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(forwardPayload),
-          });
-
-          if (apiResponse.ok) {
-            const resData = await apiResponse.json();
-            const supplierOrderId = getNestedValue(resData, endpoints.order_id_path || "order_id") || "SUPL-" + Date.now();
-            const trackingNum = getNestedValue(resData, endpoints.tracking_path || "tracking_number") || "";
-
-            // Update mapping status
-            await supabase
-              .from("supplier_product_mappings")
-              .update({
-                sync_status: "synced",
-                last_synced_at: new Date().toISOString(),
-              })
-              .eq("id", mapping.id);
-
-            // Log successful forwarding
-            await supabase.from("supplier_sync_logs").insert({
-              supplier_id: supplierId,
-              action_type: "order_forward",
-              status: "success",
-              response_time_ms: Date.now() - startTime,
-              message: `Order item ${item.product_id} forwarded successfully. Supplier Order ID: ${supplierOrderId}. Tracking: ${trackingNum}`,
-              error_details: { response: resData },
+          try {
+            const apiResponse = await fetch(orderUrl, {
+              method: "POST",
+              headers,
+              body: JSON.stringify(forwardPayload),
             });
 
-            itemsForwarded++;
-          } else {
-            const errRes = await apiResponse.text();
-            throw new Error(`Supplier API order place failed with status ${apiResponse.status}: ${errRes}`);
+            if (apiResponse.ok) {
+              const resData = await apiResponse.json();
+              const supplierOrderId = resData.order_id || "SUPL-" + Date.now();
+              const trackingNum = resData.tracking_number || "";
+
+              await supabase.from("supplier_sync_logs").insert({
+                supplier_id: supplierId,
+                action_type: "order_forward",
+                status: "success",
+                response_time_ms: Date.now() - startTime,
+                message: `Order item ${item.product_id} forwarded successfully. Supplier Order ID: ${supplierOrderId}. Tracking: ${trackingNum}`,
+                error_details: { response: resData },
+              });
+
+              itemsForwarded++;
+            } else {
+              const errRes = await apiResponse.text();
+              throw new Error(`Supplier API order place failed with status ${apiResponse.status}: ${errRes}`);
+            }
+          } catch (e: any) {
+             console.error("Failed to forward item:", e);
+             await supabase.from("supplier_sync_logs").insert({
+               supplier_id: supplierId,
+               action_type: "order_forward",
+               status: "failed",
+               response_time_ms: Date.now() - startTime,
+               message: `Failed to forward item ${item.product_id}`,
+               error_details: { error: e.toString() }
+             });
           }
         }
 
@@ -660,6 +707,72 @@ serve(async (req) => {
           message: `Order forwarding failed: ${err.message}`,
           error_details: { error: err.toString() },
         });
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // 4. Dynamic API Proxy: get-products
+    if (action === "get-products") {
+      try {
+        const headers = await prepareHeaders();
+        const listPath = endpoints.product_list || "/products";
+        const listUrl = listPath.startsWith("http") ? listPath : `${supplier.api_base_url}${listPath}`;
+
+        const response = await fetch(listUrl, {
+          method: "GET",
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Supplier API returned status ${response.status}`);
+        }
+
+        const rawData = await response.json();
+        
+        return new Response(
+          JSON.stringify({ success: true, data: rawData }),
+          { status: 200, headers: corsHeaders }
+        );
+      } catch (err: any) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // 5. Dynamic API Proxy: get-product-details
+    if (action === "get-product-details") {
+      try {
+        const { productId } = payload;
+        if (!productId) throw new Error("Missing productId in payload");
+
+        const headers = await prepareHeaders();
+        // Fallback to fetch all and filter if no specific endpoint exists
+        const listPath = endpoints.product_list || "/products";
+        const listUrl = listPath.startsWith("http") ? listPath : `${supplier.api_base_url}${listPath}`;
+
+        const response = await fetch(listUrl, {
+          method: "GET",
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Supplier API returned status ${response.status}`);
+        }
+
+        const rawData = await response.json();
+        const rawProducts = rawData.products || [];
+        
+        // Find specific product by ID or SKU
+        const productDetail = rawProducts.find((p: any) => p.id == productId || p.product_code == productId);
+        
+        if (!productDetail) {
+           throw new Error("Product not found in supplier catalog");
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, data: productDetail }),
+          { status: 200, headers: corsHeaders }
+        );
+      } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
       }
     }

@@ -55,7 +55,7 @@ function getLocalSuppliers(): any[] {
   };
 
   const defaultSupplier = {
-    id: "mohasagor-integration-id",
+    id: "da929859-f7fa-4590-a3ad-f7012eac5b8c",
     name: "Mohasagor",
     company_name: "mohasagor.com.bd",
     api_base_url: "https://mohasagor.com.bd",
@@ -68,15 +68,15 @@ function getLocalSuppliers(): any[] {
     endpoints_config: {
       product_list: "/api/reseller/product",
       category_list_path: "/api/reseller/category",
-      response_root_path: "",
+      response_root_path: "products",
       sku_path: "id",
       name_path: "name",
       price_path: "price",
       stock_path: "stock_quantity",
-      image_path: "thumbnail_image",
+      image_path: "thumbnail_img",
       category_id_path: "category_id",
       category_name_path: "category",
-      description_path: "description"
+      description_path: "details"
     },
     pricing_rules: {
       markup_type: "percentage",
