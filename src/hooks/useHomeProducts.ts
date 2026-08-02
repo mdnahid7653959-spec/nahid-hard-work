@@ -243,9 +243,7 @@ async function fetchAllHomeProducts() {
 
   // ── Strategy 2: Fetch directly from live supplier API (Mohasagor API) ──
   try {
-    const apiUrl = typeof window !== "undefined" && window.location.hostname === "localhost" 
-      ? "/api/mohasagor/api/reseller/product"
-      : "https://mohasagor.com.bd/api/reseller/product";
+    const apiUrl = "/api/mohasagor/api/reseller/product";
 
     const res = await fetch(apiUrl, {
       headers: {
