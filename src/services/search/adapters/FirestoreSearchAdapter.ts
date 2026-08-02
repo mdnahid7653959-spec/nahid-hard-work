@@ -1,4 +1,4 @@
-import { collection, getDocs, query as fsQuery, where, limit as fsLimit } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import {
   ISearchEngineAdapter,
@@ -10,6 +10,7 @@ import {
 import { synonymManager } from "../SynonymManager";
 import { fuzzyMatchToken, tokenizeText, normalizeText, getEditDistance } from "../FuzzySearchEngine";
 import { searchAnalytics } from "../SearchAnalyticsService";
+import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
 
 const defaultImages = [
   "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop",
@@ -28,6 +29,13 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
   private lastFetchTime = 0;
   private CACHE_TTL = 3 * 60 * 1000; // 3 minutes cache
 
+  constructor() {
+    // Warm up index in background
+    setTimeout(() => {
+      this.buildIndex().catch(() => {});
+    }, 100);
+  }
+
   public async buildIndex(products?: any[]): Promise<void> {
     const now = Date.now();
     if (this.isLoaded && now - this.lastFetchTime < this.CACHE_TTL && !products) {
@@ -40,11 +48,53 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
       if (products && products.length > 0) {
         this.indexedProducts = products;
       } else {
-        // Fetch from Firestore products collection
-        const snap = await getDocs(collection(db, "products"));
-        let list: any[] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        let list: any[] = [];
 
-        // Fallback: If local Firestore is empty, fetch live catalog via proxy
+        // 1. Fetch from Firestore products collection
+        try {
+          const snap = await getDocs(collection(db, "products"));
+          if (!snap.empty) {
+            list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          }
+        } catch (e) {
+          console.warn("[FirestoreSearchAdapter] Firestore read warning:", e);
+        }
+
+        // 2. Fetch/merge live products from mohasagorCache
+        try {
+          const cached = await getCachedMohasagorProducts();
+          if (cached && cached.length > 0) {
+            const existingIds = new Set(list.map((item) => item.id.toString()));
+            cached.forEach((p: any, idx: number) => {
+              const pid = p.id.toString();
+              if (!existingIds.has(pid)) {
+                list.push({
+                  id: pid,
+                  name: p.name,
+                  slug: p.slug || `product-${pid}`,
+                  regular_price: p.originalPrice || p.price || 0,
+                  discount_price: p.originalPrice ? p.price : null,
+                  price: p.price || 0,
+                  category: p.category || "General",
+                  brand: p.brand || "Generic",
+                  seller_name: "Durtup Marketplace",
+                  sku: p.sku || `SKU-${pid}`,
+                  image: p.image,
+                  product_images: [{ image_url: p.image || defaultImages[idx % defaultImages.length] }],
+                  rating_average: p.rating || 4.8,
+                  rating_count: p.reviews || 15,
+                  sold_count: p.sold || 45,
+                  in_stock: true,
+                  status: "active"
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("[FirestoreSearchAdapter] Mohasagor master cache fetch error:", e);
+        }
+
+        // 3. Additional API proxy fallback if list is still empty
         if (list.length === 0) {
           try {
             const res = await fetch("/api/mohasagor/api/reseller/product", {
@@ -67,6 +117,7 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
                   brand: p.brand_name || "Generic",
                   seller_name: "Mohasagor Marketplace",
                   sku: p.sku || `MOH-${p.id}`,
+                  image: p.thumbnail_img ? `https://mohasagor.com.bd/${p.thumbnail_img}` : defaultImages[idx % defaultImages.length],
                   product_images: p.product_images
                     ? p.product_images.map((img: any) => ({
                         image_url: img.product_image?.startsWith("http")
@@ -83,7 +134,7 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
               }
             }
           } catch (e) {
-            console.warn("[FirestoreSearchAdapter] Catalog proxy warning:", e);
+            console.warn("[FirestoreSearchAdapter] Direct API proxy fallback error:", e);
           }
         }
 
@@ -203,7 +254,6 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
       const pBrand = (p.brand || "").toLowerCase();
       const pSku = (p.sku || "").toLowerCase();
       const pTags = Array.isArray(p.tags) ? p.tags.map((t: string) => t.toLowerCase()) : [];
-      const pSeller = (p.seller_name || "").toLowerCase();
 
       // Check Exact SKU
       if (queryStr && (pSku === queryStr || pSku.includes(queryStr))) {
@@ -211,41 +261,49 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
         matchType = "sku";
       }
 
-      // Check Exact Name Match
+      // Check Name Matches (exact, startsWith, or includes substring anywhere)
       if (pName === queryStr) {
         score += 100;
         matchType = "exact";
       } else if (pName.startsWith(queryStr)) {
-        score += 75;
+        score += 85;
         matchType = "prefix";
       } else if (pName.includes(queryStr)) {
-        score += 55;
+        score += 65;
         matchType = "partial";
+      }
+
+      // Check Category / Brand / Description Includes
+      if (pCat.includes(queryStr)) {
+        score += 55;
+        if (matchType === "partial") matchType = "semantic";
+      }
+      if (pBrand.includes(queryStr)) {
+        score += 50;
+      }
+      if (pDesc.includes(queryStr)) {
+        score += 30;
       }
 
       // Check Expanded Terms & Synonyms
       for (const term of expandedTerms) {
         if (!term) continue;
         if (pName.includes(term)) {
-          score += 65;
+          score += 60;
           if (matchType !== "exact" && matchType !== "sku") matchType = "synonym";
         }
         if (pCat.includes(term)) {
-          score += 50;
-          if (matchType === "partial") matchType = "semantic";
-        }
-        if (pBrand.includes(term)) {
           score += 45;
         }
-        if (pTags.some((tag: string) => tag.includes(term))) {
+        if (pBrand.includes(term)) {
           score += 40;
         }
-        if (pDesc.includes(term)) {
-          score += 25;
+        if (pTags.some((tag: string) => tag.includes(term))) {
+          score += 35;
         }
       }
 
-      // Fuzzy Typo Matching for single/multi-word queries
+      // Fuzzy Typo Matching for queries >= 3 chars
       if (score === 0 && queryStr.length >= 3) {
         const queryTokens = tokenizeText(queryStr);
         const nameTokens = tokenizeText(pName);
@@ -273,7 +331,7 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
         // Map primary image
         const primaryImage = p.product_images?.find((i: any) => i.is_primary)?.image_url;
         const firstImage = p.product_images?.[0]?.image_url;
-        const image = primaryImage || firstImage || defaultImages[0];
+        const image = p.image || primaryImage || firstImage || defaultImages[0];
 
         scoredProducts.push({
           id: p.id,
@@ -282,9 +340,9 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
           image,
           price: parseFloat(p.discount_price || p.regular_price || p.price) || 0,
           originalPrice: p.discount_price ? parseFloat(p.regular_price) : undefined,
-          rating: Number(p.rating_average) || 4.7,
-          reviews: p.rating_count || 12,
-          sold: p.sold_count || 35,
+          rating: Number(p.rating_average) || 4.8,
+          reviews: p.rating_count || 15,
+          sold: p.sold_count || 40,
           category: p.category,
           brand: p.brand,
           sellerId: p.seller_id,
