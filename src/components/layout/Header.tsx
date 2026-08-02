@@ -152,21 +152,21 @@ export function Header() {
               <button className="lg:hidden p-1.5 hover:bg-white/10 rounded-md transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
-            </div>
 
-            <Link 
-              to="/" 
-              className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center gap-2 shrink-0 group py-0.5 z-10"
-            >
-              <img 
-                alt="Durtup.shop" 
-                className="h-9 sm:h-10 md:h-11 lg:h-12 w-auto object-contain transition-transform group-hover:scale-105 filter drop-shadow-sm" 
-                src={(logoUrl && !logoUrl.endsWith(".png")) ? logoUrl : "/durtup-logo.svg"} 
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/durtup-logo.svg";
-                }}
-              />
-            </Link>
+              <Link 
+                to="/" 
+                className="flex items-center gap-2 shrink-0 group py-0.5 z-10"
+              >
+                <img 
+                  alt="Durtup.shop" 
+                  className="h-8 sm:h-10 md:h-11 lg:h-12 w-auto object-contain transition-transform group-hover:scale-105 filter drop-shadow-sm" 
+                  src={(logoUrl && !logoUrl.endsWith(".png")) ? logoUrl : "/durtup-logo.svg"} 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/durtup-logo.svg";
+                  }}
+                />
+              </Link>
+            </div>
 
             {/* Search bar - Perfectly Centered */}
             {showSearch && (
