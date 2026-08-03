@@ -242,71 +242,85 @@ export default function ProductDetail() {
     const product_images: ProductImage[] = [];
     const base = "https://mohasagor.com.bd";
     
-    const resolveUrl = (url: string) => {
-      if (!url) return "";
-      if (url.startsWith("http") || url.startsWith("//")) return url;
-      return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+    const resolveUrl = (url: any): string => {
+      if (!url || typeof url !== "string") return "";
+      const trimmed = url.trim();
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+        return trimmed;
+      }
+      if (trimmed.startsWith("//")) return `https:${trimmed}`;
+      return trimmed.startsWith("/") ? `${base}${trimmed}` : `${base}/${trimmed}`;
     };
 
     const addedUrls = new Set<string>();
-
-    if (Array.isArray(raw.product_images) && raw.product_images.length > 0) {
-      raw.product_images.forEach((img: any, idx: number) => {
-        const u = resolveUrl(img.product_image || img.image || img.url);
-        if (u && !addedUrls.has(u)) {
-          addedUrls.add(u);
-          product_images.push({
-            id: img.id?.toString() || `img-${idx}`,
-            image_url: u,
-            is_primary: idx === 0,
-            sort_order: idx
-          });
-        }
-      });
-    }
-
-    if (raw.thumbnail_img) {
-      const u = resolveUrl(raw.thumbnail_img);
+    const addImg = (url: any) => {
+      const u = resolveUrl(url);
       if (u && !addedUrls.has(u)) {
         addedUrls.add(u);
         product_images.push({
-          id: `img-thumb`,
+          id: `img-${product_images.length}`,
           image_url: u,
           is_primary: product_images.length === 0,
           sort_order: product_images.length
         });
       }
+    };
+
+    // 1. Check raw.product_images array (objects or strings)
+    if (Array.isArray(raw.product_images) && raw.product_images.length > 0) {
+      raw.product_images.forEach((img: any) => {
+        if (typeof img === "string") {
+          addImg(img);
+        } else if (img && typeof img === "object") {
+          addImg(img.product_image || img.image_url || img.image || img.url);
+        }
+      });
     }
+
+    // 2. Check raw.images array (objects or strings)
+    if (Array.isArray(raw.images) && raw.images.length > 0) {
+      raw.images.forEach((img: any) => {
+        if (typeof img === "string") {
+          addImg(img);
+        } else if (img && typeof img === "object") {
+          addImg(img.image_url || img.url || img.image);
+        }
+      });
+    }
+
+    // 3. Single image properties
+    if (raw.thumbnail_img) addImg(raw.thumbnail_img);
+    if (raw.image_url) addImg(raw.image_url);
+    if (raw.image) addImg(raw.image);
+    if (raw.thumbnail) addImg(raw.thumbnail);
 
     return product_images;
   };
 
-  // Helper to map supplier product to Product interface
+  // Helper to map supplier product to Product interface (Price MUST match card price exactly)
   const mapSupplierProduct = (raw: any, productSlug: string, imagesArr: ProductImage[]): Product => {
-    const price = parseFloat(raw.sale_price) || parseFloat(raw.price) || 0;
-    const originalPrice = parseFloat(raw.price) || price;
+    const rawSalePrice = parseFloat(raw.sale_price) || parseFloat(raw.discount_price) || 0;
+    const rawRegularPrice = parseFloat(raw.price) || parseFloat(raw.regular_price) || rawSalePrice;
     
-    // 15% markup + 5% commission matching sync logic
-    const markup = price * 0.15;
-    const commission = price * 0.05;
-    const sellingPrice = Math.round(price + markup + commission);
-    const regularSellingPrice = Math.round(originalPrice * 1.2);
+    // Exact selling price matching card display (no extra markup multiplier)
+    const sellingPrice = rawSalePrice > 0 ? rawSalePrice : rawRegularPrice;
+    const regularPrice = rawRegularPrice > sellingPrice ? rawRegularPrice : (sellingPrice > 0 ? Math.round(sellingPrice * 1.25) : 0);
 
     const variants = (raw.product_variants || []).map((v: any) => ({
       id: parseInt(v.id) || Math.floor(Math.random() * 100000),
       product_id: parseInt(raw.id) || 0,
-      attribute: v.attribute || "Color",
-      variant: v.variant,
+      attribute: v.attribute || "Option",
+      variant: v.variant || v.name || v.color || v.size,
     }));
 
     return {
       id: raw.id.toString(),
-      name: raw.name,
+      name: raw.name || raw.title || "Product",
       slug: productSlug,
       short_description: null,
-      description: raw.details || null,
-      regular_price: regularSellingPrice,
-      discount_price: regularSellingPrice > sellingPrice ? sellingPrice : null,
+      description: raw.details || raw.description || "High quality product.",
+      regular_price: regularPrice,
+      discount_price: regularPrice > sellingPrice ? sellingPrice : null,
       stock_quantity: parseInt(raw.stock_quantity) || parseInt(raw.stock) || 50,
       free_shipping: true,
       rating_average: 4.8,
@@ -330,7 +344,11 @@ export default function ProductDetail() {
       setLoading(true);
       const targetSlug = decodeURIComponent(slug).trim();
       const targetLower = targetSlug.toLowerCase();
-      const cleanId = targetLower.replace('product-', '').replace('supplier-', '');
+      
+      // Extract numeric ID suffix if present (e.g. "stylishcomfortable-sports-t-shirt-4-four-pis-combo-offer-9749" -> "9749")
+      const suffixMatch = targetLower.match(/-(\d+)$/);
+      const extractedId = suffixMatch ? suffixMatch[1] : "";
+      const cleanId = extractedId || targetLower.replace('product-', '').replace('supplier-', '');
 
       try {
         // 1. Check Local Storage Admin Products (Instant 0ms)
@@ -541,10 +559,13 @@ export default function ProductDetail() {
             const foundSp = cachedMohasagor.find(
               (sp: any) =>
                 String(sp.id) === cleanId ||
+                (extractedId && String(sp.id) === extractedId) ||
                 sp.slug === targetSlug ||
                 sp.slug === `product-${cleanId}` ||
+                (extractedId && sp.slug === `product-${extractedId}`) ||
                 String(sp.product_code) === cleanId ||
-                sp.name.toLowerCase() === targetLower
+                (extractedId && String(sp.product_code) === extractedId) ||
+                (sp.name && targetLower.includes(sp.name.toLowerCase().slice(0, 15)))
             );
 
             if (foundSp) {
@@ -562,7 +583,8 @@ export default function ProductDetail() {
         }
 
         // 5. Direct Supplier API Fallback
-        if (cleanId) {
+        const searchId = extractedId || cleanId;
+        if (searchId) {
           try {
             const apiUrl = "/api/mohasagor/api/reseller/product";
             const res = await fetch(apiUrl, {
@@ -575,7 +597,12 @@ export default function ProductDetail() {
             if (res.ok) {
               const responseData = await res.json();
               const rawProducts = responseData.products || (Array.isArray(responseData) ? responseData : []);
-              const found = rawProducts.find((p: any) => p.id == cleanId || p.product_code == cleanId);
+              const found = rawProducts.find((p: any) => 
+                p.id == searchId || 
+                p.product_code == searchId || 
+                p.id == cleanId ||
+                (p.name && targetLower.includes(p.name.toLowerCase().slice(0, 15)))
+              );
               
               if (found) {
                 const mappedImages = mapSupplierImages(found);
