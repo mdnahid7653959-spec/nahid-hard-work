@@ -342,25 +342,39 @@ export default function AdminProducts() {
     });
   }, [products, searchQuery, activeTab]);
 
+  const [displayCount, setDisplayCount] = useState(40);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const pendingCount = useMemo(() => {
     return products.filter(p => p.approval_status === "pending").length;
   }, [products]);
 
-  const totalPages = Math.ceil(filteredProducts.length / pageSize) || 1;
-  
-  const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredProducts.slice(start, start + pageSize);
-  }, [filteredProducts, currentPage, pageSize]);
+  const visibleProducts = useMemo(() => {
+    return filteredProducts.slice(0, displayCount);
+  }, [filteredProducts, displayCount]);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayCount((prev) => (prev < filteredProducts.length ? prev + 40 : prev));
+        }
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [filteredProducts.length]);
 
   const handleTabChange = (val: string) => {
     setActiveTab(val);
-    setCurrentPage(1);
+    setDisplayCount(40);
   };
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
-    setCurrentPage(1);
+    setDisplayCount(40);
   };
 
   return (
@@ -432,12 +446,12 @@ export default function AdminProducts() {
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8">Loading products...</TableCell>
                 </TableRow>
-              ) : paginatedProducts.length === 0 ? (
+              ) : visibleProducts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No products found</TableCell>
                 </TableRow>
               ) : (
-                paginatedProducts.map((product) => (
+                visibleProducts.map((product) => (
                   <TableRow key={product.id} className={product.approval_status === "pending" ? "bg-yellow-500/5" : ""}>
                     <TableCell>
                       <div className="max-w-xs">
