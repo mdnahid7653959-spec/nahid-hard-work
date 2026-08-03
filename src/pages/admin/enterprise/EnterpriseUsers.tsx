@@ -38,32 +38,32 @@ export const EnterpriseUsers: React.FC = () => {
     <EnterpriseAdminLayout>
       <div className="space-y-6">
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
           <div>
-            <h1 className="text-xl font-extrabold text-white flex items-center gap-2">
+            <h1 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               User, Seller & RBAC Role Management
-              <Badge className="bg-orange-500/10 border border-orange-500/30 text-orange-400">FIRESTORE AUTH</Badge>
+              <Badge className="bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-400">FIRESTORE AUTH</Badge>
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Verify seller KYC documents, manage buyer accounts, and assign role-based access control.
             </p>
           </div>
 
-          <Button onClick={loadData} className="bg-slate-800 text-slate-200 text-xs border border-slate-700">
+          <Button onClick={loadData} variant="outline" className="text-xs font-bold border-slate-300 dark:border-slate-700">
             <RefreshCcw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
         </div>
 
         {/* SELLERS TABLE */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-            <Store className="h-4 w-4 text-orange-400" />
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
+          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <Store className="h-4 w-4 text-orange-600 dark:text-orange-400" />
             Verified Marketplace Sellers ({sellers.length})
           </h3>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="p-3">Store Name</th>
                   <th className="p-3">Email / Phone</th>
@@ -72,7 +72,7 @@ export const EnterpriseUsers: React.FC = () => {
                   <th className="p-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-200 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200 font-medium">
                 {sellers.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="p-6 text-center text-slate-500">
@@ -81,17 +81,17 @@ export const EnterpriseUsers: React.FC = () => {
                   </tr>
                 ) : (
                   sellers.map((sel) => (
-                    <tr key={sel.id} className="hover:bg-slate-800/50 transition">
-                      <td className="p-3 font-bold text-white">{sel.storeName || sel.name || "Seller Store"}</td>
-                      <td className="p-3 font-mono text-slate-400">{sel.email || sel.phone || "No contact"}</td>
+                    <tr key={sel.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                      <td className="p-3 font-bold text-slate-900 dark:text-white">{sel.storeName || sel.name || "Seller Store"}</td>
+                      <td className="p-3 font-mono text-slate-500 dark:text-slate-400">{sel.email || sel.phone || "No contact"}</td>
                       <td className="p-3">
-                        <Badge className="bg-emerald-500/10 text-emerald-400 text-[10px]">VERIFIED</Badge>
+                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px]">VERIFIED</Badge>
                       </td>
-                      <td className="p-3 font-black text-emerald-400">
+                      <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">
                         ৳{(sel.walletBalance || 0).toLocaleString("en-BD")}
                       </td>
                       <td className="p-3">
-                        <Badge className="bg-emerald-500/10 text-emerald-400 text-[10px]">ACTIVE</Badge>
+                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px]">ACTIVE</Badge>
                       </td>
                     </tr>
                   ))
@@ -104,3 +104,4 @@ export const EnterpriseUsers: React.FC = () => {
     </EnterpriseAdminLayout>
   );
 };
+

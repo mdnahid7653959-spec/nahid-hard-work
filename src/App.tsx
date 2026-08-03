@@ -122,6 +122,7 @@ import { EnterpriseCampaigns } from "./pages/admin/enterprise/EnterpriseCampaign
 import { EnterpriseShipping } from "./pages/admin/enterprise/EnterpriseShipping";
 import { EnterpriseInventory } from "./pages/admin/enterprise/EnterpriseInventory";
 import { EnterpriseSecurity } from "./pages/admin/enterprise/EnterpriseSecurity";
+import { EnterpriseUserControl } from "./pages/admin/enterprise/EnterpriseUserControl";
 
 // Staff Portal
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
@@ -258,6 +259,7 @@ const App = () => (
                           <Route path="/admin/commissions" element={<AdminProtectedRoute><EnterpriseCommissions /></AdminProtectedRoute>} />
                           <Route path="/admin/shipping" element={<AdminProtectedRoute><EnterpriseShipping /></AdminProtectedRoute>} />
                           <Route path="/admin/users" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
+                          <Route path="/admin/user-control" element={<AdminProtectedRoute><EnterpriseUserControl /></AdminProtectedRoute>} />
                           <Route path="/admin/suppliers" element={<AdminProtectedRoute><EnterpriseSupplierCenter /></AdminProtectedRoute>} />
                           <Route path="/admin/cms-builder" element={<AdminProtectedRoute><EnterpriseCMSBuilder /></AdminProtectedRoute>} />
                           <Route path="/admin/campaigns" element={<AdminProtectedRoute><EnterpriseCampaigns /></AdminProtectedRoute>} />
