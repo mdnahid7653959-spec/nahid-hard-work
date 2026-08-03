@@ -1,5 +1,6 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
+import { supabase } from "@/lib/firebaseAdapter";
 import {
   ISearchEngineAdapter,
   SearchOptions,
@@ -27,13 +28,28 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
   private indexedSellers: { id: string; name: string }[] = [];
   private isLoaded = false;
   private lastFetchTime = 0;
-  private CACHE_TTL = 3 * 60 * 1000; // 3 minutes cache
+  private CACHE_TTL = 1 * 60 * 1000; // 1 minute cache for real-time reactivity
 
   constructor() {
-    // Warm up index in background
+    if (typeof window !== "undefined") {
+      window.addEventListener("admin_products_updated", () => {
+        this.invalidateIndex();
+        this.buildIndex().catch(() => {});
+      });
+      window.addEventListener("mohasagor_products_updated", () => {
+        this.invalidateIndex();
+        this.buildIndex().catch(() => {});
+      });
+    }
+
     setTimeout(() => {
       this.buildIndex().catch(() => {});
     }, 100);
+  }
+
+  public invalidateIndex(): void {
+    this.isLoaded = false;
+    this.lastFetchTime = 0;
   }
 
   public async buildIndex(products?: any[]): Promise<void> {
@@ -48,27 +64,112 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
       if (products && products.length > 0) {
         this.indexedProducts = products;
       } else {
-        let list: any[] = [];
+        const productMap = new Map<string, any>();
 
-        // 1. Fetch from Firestore products collection
+        // 1. Fetch Local Storage Admin Products
+        if (typeof window !== "undefined") {
+          try {
+            const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
+            if (rawLocal) {
+              const localList = JSON.parse(rawLocal);
+              if (Array.isArray(localList)) {
+                localList.forEach((p: any) => {
+                  if (p.id) {
+                    const pid = String(p.id);
+                    productMap.set(pid, {
+                      id: pid,
+                      name: p.name || p.title || "Untitled Product",
+                      slug: p.slug || `product-${pid}`,
+                      regular_price: Number(p.regular_price || p.price || 0),
+                      discount_price: p.discount_price || p.discountPrice || null,
+                      price: Number(p.discount_price || p.discountPrice || p.regular_price || p.price || 0),
+                      category: p.category_name || p.category || "General",
+                      brand: p.brand_name || p.brand || "Generic",
+                      seller_name: p.seller_id || "Admin",
+                      sku: p.sku || `SKU-${pid}`,
+                      image: p.image_url || p.image || (Array.isArray(p.images) ? p.images[0] : null) || defaultImages[0],
+                      product_images: Array.isArray(p.images) ? p.images.map((u: string) => ({ image_url: u })) : [{ image_url: p.image_url || p.image || defaultImages[0] }],
+                      rating_average: Number(p.rating_average || 4.8),
+                      rating_count: Number(p.rating_count || 15),
+                      sold_count: Number(p.sold_count || 45),
+                      in_stock: Number(p.stock_quantity ?? p.stock ?? 50) > 0,
+                      status: p.status || "active",
+                      short_description: p.short_description || p.shortDescription || "",
+                      description: p.description || ""
+                    });
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            console.warn("[FirestoreSearchAdapter] LocalStorage read warning:", e);
+          }
+        }
+
+        // 2. Fetch Supabase DB Products
+        try {
+          const { data: dbProducts } = await supabase
+            .from("products")
+            .select(`*, product_images(*)`);
+          if (dbProducts && dbProducts.length > 0) {
+            dbProducts.forEach((p: any) => {
+              const pid = String(p.id);
+              const imgList = Array.isArray(p.product_images) && p.product_images.length > 0
+                ? p.product_images.map((i: any) => i.image_url).filter(Boolean)
+                : [];
+              const primaryImg = p.product_images?.find((i: any) => i.is_primary)?.image_url || imgList[0] || p.image_url || p.image || defaultImages[0];
+
+              productMap.set(pid, {
+                id: pid,
+                name: p.name,
+                slug: p.slug || `product-${pid}`,
+                regular_price: Number(p.regular_price || 0),
+                discount_price: p.discount_price ? Number(p.discount_price) : null,
+                price: Number(p.discount_price || p.regular_price || 0),
+                category: p.category_id || "General",
+                brand: p.brand_id || "Generic",
+                seller_name: p.seller_id || "Admin",
+                sku: p.sku || `SKU-${pid}`,
+                image: primaryImg,
+                product_images: imgList.length > 0 ? imgList.map((u: string) => ({ image_url: u })) : [{ image_url: primaryImg }],
+                rating_average: Number(p.rating_average || 4.8),
+                rating_count: Number(p.rating_count || 15),
+                sold_count: Number(p.sold_count || 45),
+                in_stock: Number(p.stock_quantity ?? 50) > 0,
+                status: p.status || "active",
+                short_description: p.short_description || "",
+                description: p.description || ""
+              });
+            });
+          }
+        } catch (e) {
+          console.warn("[FirestoreSearchAdapter] Supabase DB read warning:", e);
+        }
+
+        // 3. Fetch Firestore products collection
         try {
           const snap = await getDocs(collection(db, "products"));
           if (!snap.empty) {
-            list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            snap.docs.forEach((d) => {
+              const pData = d.data();
+              const pid = String(d.id);
+              if (!productMap.has(pid)) {
+                productMap.set(pid, { id: pid, ...pData });
+              }
+            });
           }
         } catch (e) {
           console.warn("[FirestoreSearchAdapter] Firestore read warning:", e);
         }
 
-        // 2. Fetch/merge live products from mohasagorCache
+        // 4. Fetch/merge live products from mohasagorCache
         try {
           const cached = await getCachedMohasagorProducts();
           if (cached && cached.length > 0) {
-            const existingIds = new Set(list.map((item) => item.id.toString()));
             cached.forEach((p: any, idx: number) => {
-              const pid = p.id.toString();
-              if (!existingIds.has(pid)) {
-                list.push({
+              const pid = String(p.id);
+              if (!productMap.has(pid)) {
+                productMap.set(pid, {
                   id: pid,
                   name: p.name,
                   slug: p.slug || `product-${pid}`,
@@ -80,12 +181,13 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
                   seller_name: "Durtup Marketplace",
                   sku: p.sku || `SKU-${pid}`,
                   image: p.image,
-                  product_images: [{ image_url: p.image || defaultImages[idx % defaultImages.length] }],
+                  product_images: Array.isArray(p.images) ? p.images.map((u: string) => ({ image_url: u })) : [{ image_url: p.image || defaultImages[idx % defaultImages.length] }],
                   rating_average: p.rating || 4.8,
                   rating_count: p.reviews || 15,
                   sold_count: p.sold || 45,
                   in_stock: true,
-                  status: "active"
+                  status: "active",
+                  description: p.details || p.description || ""
                 });
               }
             });
@@ -94,51 +196,7 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
           console.warn("[FirestoreSearchAdapter] Mohasagor master cache fetch error:", e);
         }
 
-        // 3. Additional API proxy fallback if list is still empty
-        if (list.length === 0) {
-          try {
-            const res = await fetch("/api/mohasagor/api/reseller/product", {
-              headers: {
-                "api-key": "A8niclztH9JtzS4t",
-                "secret-key": "2ff380917a11d3a7c97bcf6dddfb8adf38194c7d6b726ab12c4d0d5fb136fef8"
-              }
-            });
-            if (res.ok) {
-              const data = await res.json();
-              const raw = data.products || (Array.isArray(data) ? data : []);
-              if (Array.isArray(raw) && raw.length > 0) {
-                list = raw.map((p: any, idx: number) => ({
-                  id: p.id.toString(),
-                  name: p.name,
-                  slug: `product-${p.id}`,
-                  regular_price: parseFloat(p.price) || 0,
-                  discount_price: parseFloat(p.sale_price) || null,
-                  category: p.category_name || "General",
-                  brand: p.brand_name || "Generic",
-                  seller_name: "Mohasagor Marketplace",
-                  sku: p.sku || `MOH-${p.id}`,
-                  image: p.thumbnail_img ? `https://mohasagor.com.bd/${p.thumbnail_img}` : defaultImages[idx % defaultImages.length],
-                  product_images: p.product_images
-                    ? p.product_images.map((img: any) => ({
-                        image_url: img.product_image?.startsWith("http")
-                          ? img.product_image
-                          : `https://mohasagor.com.bd/${img.product_image}`
-                      }))
-                    : [{ image_url: p.thumbnail_img ? `https://mohasagor.com.bd/${p.thumbnail_img}` : defaultImages[idx % defaultImages.length] }],
-                  rating_average: 4.8,
-                  rating_count: 18,
-                  sold_count: parseInt(p.sold) || 50,
-                  in_stock: true,
-                  status: "active"
-                }));
-              }
-            }
-          } catch (e) {
-            console.warn("[FirestoreSearchAdapter] Direct API proxy fallback error:", e);
-          }
-        }
-
-        this.indexedProducts = list;
+        this.indexedProducts = Array.from(productMap.values());
       }
 
       // Build categories & brands facets index
