@@ -93,8 +93,6 @@ export default function AdminProducts() {
             is_featured: Boolean(data.isFeatured || data.is_featured),
             created_at: data.createdAt || data.created_at || new Date().toISOString()
           }));
-          setProducts(localAdminProds);
-          setLoading(false);
         }
       }
     } catch {}
@@ -145,6 +143,7 @@ export default function AdminProducts() {
     } catch (suppErr) {
       console.warn("Supplier API fetch warning:", suppErr);
     }
+
 
     // 4. Merge Admin products + DB products + Supplier API products seamlessly
     const mergedMap = new Map<string, Product>();

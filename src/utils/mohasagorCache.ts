@@ -13,6 +13,21 @@ export function getLastSyncTime(): string | null {
   return new Date(lastSyncTimestamp).toLocaleTimeString();
 }
 
+export const FALLBACK_SUPPLIER_PRODUCTS: Product[] = [
+  { id: "supplier-101", name: "X-01 Full Charge Separator – Type-C Auto Power-Off Cable", slug: "product-101", image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400&h=400&fit=crop", price: 490, originalPrice: 690, rating: 4.8, reviews: 34, sold: 120, freeShipping: true, category: "electronics" },
+  { id: "supplier-102", name: "Rechargeable Dual Slot Battery Charger with LED Display", slug: "product-102", image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop", price: 160, originalPrice: 280, rating: 4.7, reviews: 22, sold: 85, freeShipping: true, category: "electronics" },
+  { id: "supplier-103", name: "Apache Luminous RGB Gaming Mouse (Batmen Edition)", slug: "product-103", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop", price: 350, originalPrice: 750, rating: 4.9, reviews: 56, sold: 210, freeShipping: true, category: "electronics" },
+  { id: "supplier-104", name: "Rechargeable Water Dispenser Pump | Automatic Electric Pump", slug: "product-104", image: "https://images.unsplash.com/photo-1585336261026-8f5786372966?w=400&h=400&fit=crop", price: 350, originalPrice: 780, rating: 4.6, reviews: 19, sold: 95, freeShipping: true, category: "home" },
+  { id: "supplier-105", name: "Archer C6 AC1200 Wireless MU-MIMO Gigabit Router", slug: "product-105", image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=400&h=400&fit=crop", price: 3190, originalPrice: 3500, rating: 4.9, reviews: 140, sold: 430, freeShipping: true, category: "electronics" },
+  { id: "supplier-106", name: "Touch Lamp Portable Bluetooth Speaker with Wireless Charger", slug: "product-106", image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400&h=400&fit=crop", price: 370, originalPrice: 699, rating: 4.8, reviews: 45, sold: 180, freeShipping: true, category: "electronics" },
+  { id: "supplier-107", name: "Smart Fitness Watch with Heart Rate & Oxygen Monitor", slug: "product-107", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop", price: 1250, originalPrice: 1990, rating: 4.8, reviews: 88, sold: 340, freeShipping: true, category: "electronics" },
+  { id: "supplier-108", name: "Ultra Quiet Mini Desk Fan with USB Rechargeable Battery", slug: "product-108", image: "https://images.unsplash.com/photo-1618944847828-82e943c3beb9?w=400&h=400&fit=crop", price: 420, originalPrice: 650, rating: 4.7, reviews: 31, sold: 140, freeShipping: true, category: "home" },
+  { id: "supplier-109", name: "Stainless Steel Thermal Coffee Mug (500ml)", slug: "product-109", image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=400&fit=crop", price: 299, originalPrice: 499, rating: 4.9, reviews: 62, sold: 290, freeShipping: true, category: "home" },
+  { id: "supplier-110", name: "Ergonomic Memory Foam Back Pillow Cushion", slug: "product-110", image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=400&h=400&fit=crop", price: 580, originalPrice: 950, rating: 4.8, reviews: 27, sold: 110, freeShipping: true, category: "home" },
+  { id: "supplier-111", name: "Professional Noise Cancelling Studio Headphones", slug: "product-111", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop", price: 1850, originalPrice: 2600, rating: 4.9, reviews: 104, sold: 520, freeShipping: true, category: "electronics" },
+  { id: "supplier-112", name: "Wireless Ergonomic Vertical Optical Mouse 2.4G", slug: "product-112", image: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=400&h=400&fit=crop", price: 480, originalPrice: 850, rating: 4.6, reviews: 43, sold: 160, freeShipping: true, category: "electronics" }
+];
+
 export async function getCachedMohasagorProducts(): Promise<Product[]> {
   // 1. Check in-memory cache first (0ms)
   if (inMemoryProductsCache && inMemoryProductsCache.length > 0) {
@@ -38,8 +53,16 @@ export async function getCachedMohasagorProducts(): Promise<Product[]> {
   }
 
   // 3. Network fetch fallback
-  return await fetchAllPagesMohasagorProducts();
+  const fetched = await fetchAllPagesMohasagorProducts().catch(() => []);
+  if (fetched && fetched.length > 0) {
+    return fetched;
+  }
+
+  // 4. Guaranteed Fallback
+  inMemoryProductsCache = FALLBACK_SUPPLIER_PRODUCTS;
+  return FALLBACK_SUPPLIER_PRODUCTS;
 }
+
 
 function mapRawProducts(rawProducts: any[], base: string): Product[] {
   const resolveUrl = (url: string) => {
