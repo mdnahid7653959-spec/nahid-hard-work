@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Edit, Trash2, Eye, MoreHorizontal, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Ban } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, MoreHorizontal, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Ban, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/firebaseAdapter";
 import { adminDb } from "@/lib/adminDb";
 import { db } from "@/integrations/firebase/client";
@@ -40,7 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdminCacheInvalidation } from "@/hooks/useRealtimeSync";
 import { AdminProductPreviewDialog } from "@/components/admin/AdminProductPreviewDialog";
-import { getCachedMohasagorProducts, fetchAllPagesMohasagorProducts } from "@/utils/mohasagorCache";
+import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
 
 
 interface Product {
@@ -63,6 +63,10 @@ export default function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const lastFetchRef = useRef<number>(0);
+
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; productId: string; action: "reject" | "ban" }>({ open: false, productId: "", action: "reject" });
   const [rejectReason, setRejectReason] = useState("");
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -71,17 +75,23 @@ export default function AdminProducts() {
   const { admin } = useAdminAuth();
   const { invalidateProducts } = useAdminCacheInvalidation();
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastFetchRef.current < 1200) {
+      return;
+    }
+    lastFetchRef.current = now;
+
     let localAdminProds: Product[] = [];
 
-    // 1. Check local admin products
+    // 1. Instant Local Check (0ms latency display)
     try {
       const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
       if (rawLocal) {
         const localList = JSON.parse(rawLocal);
         if (Array.isArray(localList) && localList.length > 0) {
           localAdminProds = localList.map((data: any) => ({
-            id: data.id,
+            id: String(data.id),
             name: data.title || data.name || "Untitled Product",
             slug: data.slug || "",
             regular_price: Number(data.price || data.regular_price || 0),
@@ -97,96 +107,63 @@ export default function AdminProducts() {
       }
     } catch {}
 
-    // 2. Fetch Database products
+    // If local items exist, render instantly
+    if (localAdminProds.length > 0 && products.length === 0) {
+      setProducts(localAdminProds);
+      setLoading(false);
+    }
+
+    // 2. Fetch Database & Supplier products in parallel
+    const [dbResult, supplierResult] = await Promise.allSettled([
+      supabase.from("products").select("*").order("created_at", { ascending: false }),
+      getCachedMohasagorProducts()
+    ]);
+
     let dbProdsList: Product[] = [];
-    try {
-      const { data: dbProds, error: dbErr } = await supabase
-        .from("products")
-        .select(`
-          *,
-          category:categories(name),
-          brand:brands(name),
-          seller:sellers(shop_name)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (!dbErr && dbProds && dbProds.length > 0) {
-        dbProdsList = dbProds as Product[];
-      }
-    } catch (err) {
-      console.warn("Database fetch products warning:", err);
+    if (dbResult.status === "fulfilled" && !dbResult.value.error && dbResult.value.data) {
+      dbProdsList = dbResult.value.data as Product[];
     }
 
-    // 3. Fetch Supplier API Products
     let supplierProdsList: Product[] = [];
-    try {
-      let mohasagorProds = await getCachedMohasagorProducts();
-      if (!mohasagorProds || mohasagorProds.length === 0) {
-        mohasagorProds = await fetchAllPagesMohasagorProducts().catch(() => []);
-      }
-
-      if (mohasagorProds && mohasagorProds.length > 0) {
-        supplierProdsList = mohasagorProds.map((sp: any) => ({
-          id: sp.id,
-          name: sp.name,
-          slug: sp.slug || `product-${sp.id}`,
-          regular_price: Number(sp.originalPrice || sp.price || 0),
-          discount_price: sp.originalPrice ? Number(sp.price) : null,
-          stock_quantity: Number(sp.stock_quantity ?? sp.stock ?? (sp.stock_status === "available" ? 50 : 0)),
-          status: "active",
-          approval_status: "APPROVED",
-          seller_id: "Mohasagor Supplier",
-          is_featured: false,
-          created_at: new Date().toISOString()
-        }));
-      }
-    } catch (suppErr) {
-      console.warn("Supplier API fetch warning:", suppErr);
+    if (supplierResult.status === "fulfilled" && supplierResult.value && supplierResult.value.length > 0) {
+      supplierProdsList = supplierResult.value.map((sp: any) => ({
+        id: String(sp.id),
+        name: sp.name,
+        slug: sp.slug || `product-${sp.id}`,
+        regular_price: Number(sp.originalPrice || sp.price || 0),
+        discount_price: sp.originalPrice ? Number(sp.price) : null,
+        stock_quantity: Number(sp.stock_quantity ?? sp.stock ?? (sp.stock_status === "available" ? 50 : 0)),
+        status: "active",
+        approval_status: "APPROVED",
+        seller_id: "Mohasagor Supplier",
+        is_featured: false,
+        created_at: new Date().toISOString()
+      }));
     }
 
-
-    // 4. Merge Admin products + DB products + Supplier API products seamlessly
+    // 3. Merge Local + DB + Supplier products seamlessly
     const mergedMap = new Map<string, Product>();
-
-    // Add Local Admin products first (highest priority)
     localAdminProds.forEach(p => mergedMap.set(p.id, p));
-
-    // Add Database products
-    dbProdsList.forEach(p => {
-      if (!mergedMap.has(p.id)) {
-        mergedMap.set(p.id, p);
-      }
-    });
-
-    // Add Supplier API products
-    supplierProdsList.forEach(p => {
-      if (!mergedMap.has(p.id)) {
-        mergedMap.set(p.id, p);
-      }
-    });
+    dbProdsList.forEach(p => { if (!mergedMap.has(p.id)) mergedMap.set(p.id, p); });
+    supplierProdsList.forEach(p => { if (!mergedMap.has(p.id)) mergedMap.set(p.id, p); });
 
     const finalCatalog = Array.from(mergedMap.values());
-    if (finalCatalog.length > 0) {
-      setProducts(finalCatalog);
-    }
-
+    setProducts(finalCatalog);
     setLoading(false);
   };
 
-
-
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(true);
 
     const handleSupplierUpdate = () => {
-      fetchProducts();
+      fetchProducts(false);
     };
     window.addEventListener("mohasagor_products_updated", handleSupplierUpdate);
 
     const channel = supabase
       .channel("admin-products-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
-        fetchProducts();
+        fetchProducts(false);
       })
       .subscribe();
 
@@ -196,10 +173,9 @@ export default function AdminProducts() {
     };
   }, []);
 
-
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchProducts();
+    await fetchProducts(true);
     invalidateProducts();
     toast({ title: "Products refreshed", description: "All caches updated" });
     setRefreshing(false);
@@ -352,19 +328,40 @@ export default function AdminProducts() {
     }
   };
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const appStatus = (p.approval_status || p.status || "approved").toLowerCase();
-    if (activeTab === "all") return matchesSearch;
-    if (activeTab === "pending") return matchesSearch && appStatus === "pending";
-    if (activeTab === "approved") return matchesSearch && (appStatus === "approved" || appStatus === "active");
-    if (activeTab === "rejected") return matchesSearch && (appStatus === "rejected" || appStatus === "banned");
-    if (activeTab === "seller") return matchesSearch && p.seller_id !== null;
-    return matchesSearch;
-  });
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return products.filter((p) => {
+      const matchesSearch = !q || p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
+      const appStatus = (p.approval_status || p.status || "approved").toLowerCase();
+      if (activeTab === "all") return matchesSearch;
+      if (activeTab === "pending") return matchesSearch && appStatus === "pending";
+      if (activeTab === "approved") return matchesSearch && (appStatus === "approved" || appStatus === "active");
+      if (activeTab === "rejected") return matchesSearch && (appStatus === "rejected" || appStatus === "banned");
+      if (activeTab === "seller") return matchesSearch && p.seller_id !== null;
+      return matchesSearch;
+    });
+  }, [products, searchQuery, activeTab]);
 
+  const pendingCount = useMemo(() => {
+    return products.filter(p => p.approval_status === "pending").length;
+  }, [products]);
 
-  const pendingCount = products.filter(p => p.approval_status === "pending").length;
+  const totalPages = Math.ceil(filteredProducts.length / pageSize) || 1;
+  
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setCurrentPage(1);
+  };
 
   return (
     <AdminLayout title="Products">
@@ -388,7 +385,7 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="all">All ({products.length})</TabsTrigger>
             <TabsTrigger value="pending" className="relative">
@@ -411,13 +408,13 @@ export default function AdminProducts() {
             <Input
               placeholder="Search products..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
             />
           </div>
         </div>
 
-        <div className="border rounded-lg bg-card">
+        <div className="border rounded-lg bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -433,14 +430,14 @@ export default function AdminProducts() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                  <TableCell colSpan={7} className="text-center py-8">Loading products...</TableCell>
                 </TableRow>
-              ) : filteredProducts.length === 0 ? (
+              ) : paginatedProducts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No products found</TableCell>
                 </TableRow>
               ) : (
-                filteredProducts.map((product) => (
+                paginatedProducts.map((product) => (
                   <TableRow key={product.id} className={product.approval_status === "pending" ? "bg-yellow-500/5" : ""}>
                     <TableCell>
                       <div className="max-w-xs">
@@ -534,6 +531,38 @@ export default function AdminProducts() {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t bg-muted/20">
+              <div className="text-sm text-muted-foreground">
+                Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> to{" "}
+                <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, filteredProducts.length)}</span> of{" "}
+                <span className="font-medium text-foreground">{filteredProducts.length}</span> products
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                </Button>
+                <span className="text-sm font-medium px-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

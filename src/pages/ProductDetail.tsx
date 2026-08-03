@@ -17,6 +17,9 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { RelatedProducts } from "@/components/products/RelatedProducts";
 import { ProductReviews } from "@/components/products/ProductReviews";
 import { StoreDetails } from "@/components/products/StoreDetails";
+import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs } from "firebase/firestore";
 
 interface ProductImage {
   id: string;
@@ -324,16 +327,244 @@ export default function ProductDetail() {
   useEffect(() => {
     async function fetchProduct() {
       if (!slug) return;
-      
+      setLoading(true);
+      const targetSlug = decodeURIComponent(slug).trim();
+      const targetLower = targetSlug.toLowerCase();
+      const cleanId = targetLower.replace('product-', '').replace('supplier-', '');
+
       try {
-        // Check if this is a dynamic API product
-        const isApiProduct = slug.startsWith('product-');
-        const productId = isApiProduct ? slug.replace('product-', '') : null;
-        
-        if (isApiProduct && productId) {
+        // 1. Check Local Storage Admin Products (Instant 0ms)
+        try {
+          const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
+          if (rawLocal) {
+            const list = JSON.parse(rawLocal);
+            if (Array.isArray(list)) {
+              const found = list.find((p: any) => 
+                (p.slug || "").toLowerCase() === targetLower || 
+                (p.id || "").toLowerCase() === targetLower || 
+                String(p.id) === targetSlug ||
+                (p.name || p.title || "").toLowerCase() === targetLower
+              );
+
+              if (found) {
+                const rawImgs = Array.isArray(found.images) && found.images.length > 0
+                  ? found.images
+                  : Array.isArray(found.product_images) && found.product_images.length > 0
+                  ? found.product_images.map((i: any) => i.image_url || i.url)
+                  : [found.image_url || found.image || defaultImages[0]];
+
+                const imgList: ProductImage[] = rawImgs.map((imgUrl: string, idx: number) => ({
+                  id: `img-${idx}`,
+                  image_url: imgUrl,
+                  is_primary: idx === 0,
+                  sort_order: idx
+                }));
+
+                const formattedProduct: Product = {
+                  id: String(found.id || `prod_${Date.now()}`),
+                  name: found.name || found.title || "Product",
+                  slug: found.slug || targetSlug,
+                  short_description: found.short_description || found.shortDescription || null,
+                  description: found.description || "High quality product from store.",
+                  regular_price: Number(found.regular_price || found.price || 0),
+                  discount_price: found.discount_price ? Number(found.discount_price) : null,
+                  stock_quantity: Number(found.stock_quantity || found.stock || 50),
+                  free_shipping: Boolean(found.free_shipping ?? true),
+                  rating_average: Number(found.rating_average || 4.8),
+                  rating_count: Number(found.rating_count || 18),
+                  sold_count: Number(found.sold_count || 45),
+                  is_featured: Boolean(found.is_featured || found.isFeatured),
+                  warranty_info: found.warranty_info || null,
+                  return_policy: found.return_policy || null,
+                  color: found.color || null,
+                  video_url: found.video_url || null,
+                  product_images: imgList,
+                  product_variants: Array.isArray(found.product_variants) ? found.product_variants : [],
+                  category_id: found.category_id || found.category || null,
+                  seller_id: found.seller_id || "Admin"
+                };
+
+                setProduct(formattedProduct);
+                setSelectedImage(0);
+                trackView(formattedProduct.id);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        } catch (localErr) {
+          console.warn("ProductDetail local storage check warning:", localErr);
+        }
+
+        // 2. Query Supabase DB by slug OR id
+        try {
+          const { data, error } = await supabase.from("products").select(`
+              *,
+              product_images (
+                id,
+                image_url,
+                is_primary,
+                sort_order
+              ),
+              product_variants (
+                id,
+                product_id,
+                name,
+                color,
+                size,
+                storage,
+                price,
+                image_url
+              ),
+              supplier_product_mappings (
+                supplier_id,
+                supplier_sku
+              )
+            `).or(`slug.eq.${targetSlug},id.eq.${targetSlug}`).maybeSingle();
+
+          if (data) {
+            const dbVariants: ProductVariant[] = [];
+            if (data.product_variants && Array.isArray(data.product_variants)) {
+              data.product_variants.forEach((v: any, idx: number) => {
+                if (v.size) dbVariants.push({ id: v.id || idx, product_id: data.id, attribute: "Size", variant: v.size });
+                if (v.color) dbVariants.push({ id: v.id || idx + 1000, product_id: data.id, attribute: "Color", variant: v.color });
+                if (v.storage) dbVariants.push({ id: v.id || idx + 2000, product_id: data.id, attribute: "Storage", variant: v.storage });
+                if (!v.size && !v.color && !v.storage && v.name) dbVariants.push({ id: v.id || idx, product_id: data.id, attribute: "Option", variant: v.name });
+              });
+            }
+            data.product_variants = dbVariants;
+
+            const mapping = data.supplier_product_mappings && data.supplier_product_mappings[0];
+            const isMohasagor = data.sku?.startsWith("MOH-") || (mapping && mapping.supplier_sku);
+            if (isMohasagor) {
+              try {
+                const supplierSku = mapping?.supplier_sku || data.sku.replace("MOH-", "");
+                const { data: responseData, error: apiError } = await supabase.functions.invoke("supplier-api", {
+                  body: { 
+                    action: "get-product-details", 
+                    supplierId: mapping?.supplier_id || "da929859-f7fa-4590-a3ad-f7012eac5b8c", 
+                    payload: { productId: supplierSku } 
+                  }
+                });
+
+                if (!apiError && responseData?.success && responseData.data) {
+                  const raw = responseData.data;
+                  let mappedImages = mapSupplierImages(raw);
+                  if (mappedImages.length === 0 && data.product_images && data.product_images.length > 0) {
+                    mappedImages = data.product_images;
+                  }
+                  const mappedProduct = mapSupplierProduct(raw, targetSlug, mappedImages);
+                  mappedProduct.id = data.id;
+                  if (data.seller_id) mappedProduct.seller_id = data.seller_id;
+                  if ((!mappedProduct.product_variants || mappedProduct.product_variants.length === 0) && dbVariants.length > 0) {
+                    mappedProduct.product_variants = dbVariants;
+                  }
+                  setProduct(mappedProduct);
+                  trackView(data.id);
+                  setLoading(false);
+                  return;
+                }
+              } catch (err) {
+                console.warn("Failed to fetch live supplier product details:", err);
+              }
+            }
+
+            setProduct(data as unknown as Product);
+            setSelectedImage(0);
+            if (data.id) trackView(data.id);
+            setLoading(false);
+            return;
+          }
+        } catch (dbErr) {
+          console.warn("Supabase product lookup warning:", dbErr);
+        }
+
+        // 3. Query Firestore DB by slug OR id
+        try {
+          const snap = await getDocs(collection(db, "products"));
+          if (!snap.empty) {
+            const foundDoc = snap.docs.find(d => {
+              const data = d.data();
+              return d.id === targetSlug || data.slug === targetSlug || data.id === targetSlug;
+            });
+            if (foundDoc) {
+              const data = foundDoc.data();
+              const rawImgs = Array.isArray(data.images) && data.images.length > 0
+                ? data.images
+                : [data.image_url || data.image || defaultImages[0]];
+
+              const imgList: ProductImage[] = rawImgs.map((imgUrl: string, idx: number) => ({
+                id: `img-${idx}`,
+                image_url: imgUrl,
+                is_primary: idx === 0,
+                sort_order: idx
+              }));
+
+              const formatted: Product = {
+                id: foundDoc.id,
+                name: data.title || data.name || "Product",
+                slug: data.slug || targetSlug,
+                short_description: data.short_description || data.shortDescription || null,
+                description: data.description || "High quality product.",
+                regular_price: Number(data.regular_price || data.price || 0),
+                discount_price: data.discount_price ? Number(data.discount_price) : null,
+                stock_quantity: Number(data.stock_quantity ?? data.stock ?? 50),
+                free_shipping: true,
+                rating_average: Number(data.rating_average || 4.8),
+                rating_count: Number(data.rating_count || 15),
+                sold_count: Number(data.sold_count || 40),
+                is_featured: Boolean(data.is_featured || data.isFeatured),
+                warranty_info: data.warranty_info || null,
+                return_policy: data.return_policy || null,
+                color: data.color || null,
+                video_url: data.video_url || null,
+                product_images: imgList,
+                product_variants: [],
+                category_id: data.category_id || data.category || null,
+                seller_id: data.seller_id || "Admin"
+              };
+              setProduct(formatted);
+              setSelectedImage(0);
+              trackView(formatted.id);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (fsErr) {
+          console.warn("Firestore product lookup warning:", fsErr);
+        }
+
+        // 4. Query Mohasagor Supplier Master Cache
+        try {
+          const cachedMohasagor = await getCachedMohasagorProducts();
+          if (cachedMohasagor && cachedMohasagor.length > 0) {
+            const foundSp = cachedMohasagor.find(
+              (sp: any) =>
+                String(sp.id) === cleanId ||
+                sp.slug === targetSlug ||
+                sp.slug === `product-${cleanId}` ||
+                String(sp.product_code) === cleanId ||
+                sp.name.toLowerCase() === targetLower
+            );
+
+            if (foundSp) {
+              const mappedImages = mapSupplierImages(foundSp);
+              const mappedProduct = mapSupplierProduct(foundSp, targetSlug, mappedImages);
+              setProduct(mappedProduct);
+              setSelectedImage(0);
+              trackView(mappedProduct.id);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (spErr) {
+          console.warn("Supplier cache lookup warning:", spErr);
+        }
+
+        // 5. Direct Supplier API Fallback
+        if (cleanId) {
           try {
             const apiUrl = "/api/mohasagor/api/reseller/product";
-
             const res = await fetch(apiUrl, {
               headers: {
                 "api-key": "A8niclztH9JtzS4t",
@@ -344,12 +575,11 @@ export default function ProductDetail() {
             if (res.ok) {
               const responseData = await res.json();
               const rawProducts = responseData.products || (Array.isArray(responseData) ? responseData : []);
-              const found = rawProducts.find((p: any) => p.id == productId || p.product_code == productId);
+              const found = rawProducts.find((p: any) => p.id == cleanId || p.product_code == cleanId);
               
               if (found) {
                 const mappedImages = mapSupplierImages(found);
-                const mappedProduct = mapSupplierProduct(found, slug, mappedImages);
-                
+                const mappedProduct = mapSupplierProduct(found, targetSlug, mappedImages);
                 setProduct(mappedProduct);
                 trackView(mappedProduct.id);
                 setLoading(false);
@@ -357,168 +587,7 @@ export default function ProductDetail() {
               }
             }
           } catch (apiErr) {
-            console.error("Error fetching Mohasagor product detail:", apiErr);
-          }
-        }
-
-        // Standard Local DB Fetching with relations
-        const { data, error } = await supabase.from("products").select(`
-            *,
-            product_images (
-              id,
-              image_url,
-              is_primary,
-              sort_order
-            ),
-            product_variants (
-              id,
-              product_id,
-              name,
-              color,
-              size,
-              storage,
-              price,
-              image_url
-            ),
-            supplier_product_mappings (
-              supplier_id,
-              supplier_sku
-            )
-          `).eq("slug", slug).maybeSingle();
-
-        if (error) {
-          console.error("Error fetching product:", error);
-        } else if (data) {
-          // Format local DB variants if present
-          const dbVariants: ProductVariant[] = [];
-          if (data.product_variants && Array.isArray(data.product_variants)) {
-            data.product_variants.forEach((v: any, idx: number) => {
-              if (v.size) {
-                dbVariants.push({ id: v.id || idx, product_id: data.id, attribute: "Size", variant: v.size });
-              }
-              if (v.color) {
-                dbVariants.push({ id: v.id || idx + 1000, product_id: data.id, attribute: "Color", variant: v.color });
-              }
-              if (v.storage) {
-                dbVariants.push({ id: v.id || idx + 2000, product_id: data.id, attribute: "Storage", variant: v.storage });
-              }
-              if (!v.size && !v.color && !v.storage && v.name) {
-                dbVariants.push({ id: v.id || idx, product_id: data.id, attribute: "Option", variant: v.name });
-              }
-            });
-          }
-          data.product_variants = dbVariants;
-
-          // If the product is mapped to a supplier, let's fetch live details
-          const mapping = data.supplier_product_mappings && data.supplier_product_mappings[0];
-          const isMohasagor = data.sku?.startsWith("MOH-") || (mapping && mapping.supplier_sku);
-          if (isMohasagor) {
-            try {
-              const supplierSku = mapping?.supplier_sku || data.sku.replace("MOH-", "");
-              const { data: responseData, error: apiError } = await supabase.functions.invoke("supplier-api", {
-                body: { 
-                  action: "get-product-details", 
-                  supplierId: mapping?.supplier_id || "da929859-f7fa-4590-a3ad-f7012eac5b8c", 
-                  payload: { productId: supplierSku } 
-                }
-              });
-
-              if (!apiError && responseData?.success && responseData.data) {
-                const raw = responseData.data;
-                let mappedImages = mapSupplierImages(raw);
-                
-                // Fallback to local DB images if API returns no images
-                if (mappedImages.length === 0 && data.product_images && data.product_images.length > 0) {
-                  mappedImages = data.product_images;
-                }
-                
-                const mappedProduct = mapSupplierProduct(raw, slug, mappedImages);
-                mappedProduct.id = data.id;
-                if (data.seller_id) {
-                  mappedProduct.seller_id = data.seller_id;
-                }
-                
-                // If API returned no variants, keep local DB variants
-                if ((!mappedProduct.product_variants || mappedProduct.product_variants.length === 0) && dbVariants.length > 0) {
-                  mappedProduct.product_variants = dbVariants;
-                }
-                
-                setProduct(mappedProduct);
-                trackView(data.id);
-                setLoading(false);
-                return;
-              }
-            } catch (err) {
-              console.warn("Failed to fetch live product details, using local DB data:", err);
-            }
-          }
-
-          // Fallback to local DB data
-          setProduct(data as unknown as Product);
-          // Pre-select first image if present
-          setSelectedImage(0);
-          if (data.id) {
-            trackView(data.id);
-          }
-        }
-
-        // Fallback for Admin Uploaded Products or Local Storage Products when DB returns null
-        if (!data) {
-          try {
-            const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
-            if (rawLocal) {
-              const list = JSON.parse(rawLocal);
-              if (Array.isArray(list)) {
-                const targetSlug = slug.toLowerCase();
-                const found = list.find((p: any) => 
-                  (p.slug || "").toLowerCase() === targetSlug || 
-                  (p.id || "").toLowerCase() === targetSlug || 
-                  (p.name || p.title || "").toLowerCase() === targetSlug
-                );
-
-                if (found) {
-                  const rawImgs = Array.isArray(found.images) && found.images.length > 0 ? found.images : [found.image_url || defaultImages[0]];
-                  const imgList: ProductImage[] = rawImgs.map((imgUrl: string, idx: number) => ({
-                    id: `img-${idx}`,
-                    image_url: imgUrl,
-                    is_primary: idx === 0,
-                    sort_order: idx
-                  }));
-
-                  const formattedProduct: Product = {
-                    id: found.id || `prod_${Date.now()}`,
-                    name: found.name || found.title || "Product",
-                    slug: found.slug || slug,
-                    short_description: found.short_description || found.shortDescription || null,
-                    description: found.description || "High quality product from store.",
-                    regular_price: Number(found.regular_price || found.price || 0),
-                    discount_price: found.discount_price ? Number(found.discount_price) : null,
-                    stock_quantity: Number(found.stock_quantity || found.stock || 50),
-                    free_shipping: Boolean(found.free_shipping ?? true),
-                    rating_average: Number(found.rating_average || 4.8),
-                    rating_count: Number(found.rating_count || 18),
-                    sold_count: Number(found.sold_count || 45),
-                    is_featured: Boolean(found.is_featured || found.isFeatured),
-                    warranty_info: found.warranty_info || null,
-                    return_policy: found.return_policy || null,
-                    color: found.color || null,
-                    video_url: found.video_url || null,
-                    product_images: imgList,
-                    product_variants: [],
-                    category_id: found.category_id || found.category || null,
-                    seller_id: found.seller_id || "admin"
-                  };
-
-                  setProduct(formattedProduct);
-                  setSelectedImage(0);
-                  trackView(formattedProduct.id);
-                  setLoading(false);
-                  return;
-                }
-              }
-            }
-          } catch (localErr) {
-            console.warn("ProductDetail local storage fallback warning:", localErr);
+            console.error("Error fetching Mohasagor product detail API fallback:", apiErr);
           }
         }
       } catch (err) {
@@ -526,8 +595,8 @@ export default function ProductDetail() {
       } finally {
         setLoading(false);
       }
-
     }
+
     fetchProduct();
   }, [slug, trackView]);
   const handleAddToCart = async () => {

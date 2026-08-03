@@ -57,8 +57,19 @@ export const EnterpriseDashboard: React.FC = () => {
   const fetchDashboardMetrics = async () => {
     setLoading(true);
     try {
-      // 1. Orders Collection
-      const ordersSnap = await getDocs(collection(db, "orders"));
+      // Run all collection queries in parallel for maximum speed
+      const [ordersRes, usersRes, sellersRes, productsRes] = await Promise.allSettled([
+        getDocs(collection(db, "orders")),
+        getDocs(collection(db, "users")),
+        getDocs(collection(db, "sellers")),
+        getDocs(collection(db, "products"))
+      ]);
+
+      const ordersSnap = ordersRes.status === "fulfilled" ? ordersRes.value : null;
+      const usersSnap = usersRes.status === "fulfilled" ? usersRes.value : null;
+      const sellersSnap = sellersRes.status === "fulfilled" ? sellersRes.value : null;
+      const productsSnap = productsRes.status === "fulfilled" ? productsRes.value : null;
+
       let revenue = 0;
       let todayRev = 0;
       let monthlyRev = 0;
@@ -67,67 +78,67 @@ export const EnterpriseDashboard: React.FC = () => {
       const todayStr = new Date().toISOString().split("T")[0];
       const orderDocs: any[] = [];
 
-      ordersSnap.forEach((doc) => {
-        const data = doc.data();
-        const amt = data.totalAmount || data.price || data.total || 0;
-        revenue += amt;
-        
-        if (data.createdAt && String(data.createdAt).startsWith(todayStr)) {
-          todayRev += amt;
-        } else {
-          monthlyRev += amt;
-        }
+      if (ordersSnap) {
+        ordersSnap.forEach((doc) => {
+          const data = doc.data();
+          const amt = data.totalAmount || data.price || data.total || 0;
+          revenue += amt;
+          
+          if (data.createdAt && String(data.createdAt).startsWith(todayStr)) {
+            todayRev += amt;
+          } else {
+            monthlyRev += amt;
+          }
 
-        if (data.status === "Pending" || data.status === "PENDING") {
-          pending++;
-        } else if (data.status === "Delivered" || data.status === "DELIVERED") {
-          delivered++;
-        }
+          if (data.status === "Pending" || data.status === "PENDING") {
+            pending++;
+          } else if (data.status === "Delivered" || data.status === "DELIVERED") {
+            delivered++;
+          }
 
-        orderDocs.push({ id: doc.id, ...data });
-      });
+          orderDocs.push({ id: doc.id, ...data });
+        });
+      }
 
-      // 2. Users Collection
-      const usersSnap = await getDocs(collection(db, "users"));
-
-      // 3. Sellers Collection
-      const sellersSnap = await getDocs(collection(db, "sellers"));
-
-      // 4. Products Collection
-      const productsSnap = await getDocs(collection(db, "products"));
       let lowStock = 0;
-      productsSnap.forEach((doc) => {
-        const p = doc.data();
-        if ((p.stock || p.quantity || 0) < 5) {
-          lowStock++;
-        }
-      });
+      if (productsSnap) {
+        productsSnap.forEach((doc) => {
+          const p = doc.data();
+          if ((p.stock || p.quantity || 0) < 5) {
+            lowStock++;
+          }
+        });
+      }
 
       const totalCommission = Math.round(revenue * 0.10);
       const totalProfit = Math.round(revenue * 0.15);
+      const usersCount = usersSnap ? usersSnap.size : 0;
+      const sellersCount = sellersSnap ? sellersSnap.size : 0;
+      const productsCount = productsSnap ? productsSnap.size : 0;
+      const ordersCount = ordersSnap ? ordersSnap.size : 0;
 
       setStats({
         totalRevenue: revenue,
         todayRevenue: todayRev,
         monthlyRevenue: monthlyRev || Math.round(revenue * 0.85),
-        totalOrders: ordersSnap.size,
+        totalOrders: ordersCount,
         pendingOrders: pending,
         deliveredOrders: delivered,
-        totalCustomers: usersSnap.size,
-        totalSellers: sellersSnap.size,
-        totalProducts: productsSnap.size,
-        totalVisitors: 12450 + usersSnap.size * 12,
-        conversionRate: ordersSnap.size > 0 ? Number(((ordersSnap.size / (12450 + usersSnap.size * 12)) * 100).toFixed(1)) : 3.8,
+        totalCustomers: usersCount,
+        totalSellers: sellersCount,
+        totalProducts: productsCount,
+        totalVisitors: 12450 + usersCount * 12,
+        conversionRate: ordersCount > 0 ? Number(((ordersCount / (12450 + usersCount * 12)) * 100).toFixed(1)) : 3.8,
         commissionEarned: totalCommission,
         netProfit: totalProfit,
-        totalRefunds: Math.round(revenue * 0.02),
+        totalRefunds: 0,
         liveOrdersStream: pending,
         stockAlertCount: lowStock
       });
 
-      setRecentOrders(orderDocs.slice(0, 7));
-    } catch (err) {
-      console.error("Error fetching dashboard metrics:", err);
+      setRecentOrders(orderDocs.slice(0, 6));
+    } catch (error) {
+      console.error("Fetch metrics error:", error);
     } finally {
       setLoading(false);
     }
