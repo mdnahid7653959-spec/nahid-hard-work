@@ -106,11 +106,12 @@ export function useRelatedProducts(productContext: ProductContext | null, limit:
             return b.sold - a.sold;
           });
 
-          // Filter out low relevance products if category matches are available
+          // Same category matches first, followed by all other categories
           const categoryMatches = scored.filter(p => p.matchScore >= 50);
-          const finalMatches = categoryMatches.length >= 3 ? categoryMatches : scored;
+          const otherCategoryProducts = scored.filter(p => p.matchScore < 50);
+          const finalMatches = [...categoryMatches, ...otherCategoryProducts];
 
-          setProducts(finalMatches.slice(0, limit));
+          setProducts(finalMatches);
           setLoading(false);
           return;
         }
