@@ -441,150 +441,253 @@ export const EnterpriseProducts: React.FC = () => {
           </div>
         </div>
 
-        {/* MODAL: FEATURE-RICH PRODUCT FORM */}
+        {/* MODAL: ULTRA-PROFESSIONAL ICON-FREE PRODUCT FORM */}
         {showModal && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-2xl p-6 space-y-5 shadow-2xl my-8 max-h-[92vh] flex flex-col">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-xl p-6 space-y-6 shadow-2xl my-8 max-h-[92vh] flex flex-col">
               
               {/* MODAL HEADER */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-orange-600" />
-                    {isEditing ? "প্রোডাক্ট এডিট করুন (Full Details)" : "নতুন এন্টারপ্রাইজ প্রোডাক্ট যোগ করুন (Full Details)"}
+                  <h3 className="text-base font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                    {isEditing ? "Edit Product Details" : "Add New Product"}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    প্রোডাক্টের সমস্ত সাধারণ তথ্য, গ্যালাড়ী ছবি, ভ্যারিয়েন্ট, স্পেকস, এবং এসইও মেটাডাটা সেটআপ করুন।
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Configure specifications, inventory, media gallery, variants, and SEO meta information.
                   </p>
                 </div>
-                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg p-1">✕</button>
+                <button 
+                  onClick={() => setShowModal(false)} 
+                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-semibold text-sm px-2 py-1 rounded transition"
+                >
+                  Close ✕
+                </button>
               </div>
 
               {/* MODAL FORM WITH TABS */}
-              <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto pr-1 space-y-5">
+              <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto pr-1 space-y-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   
-                  {/* TAB CONTROLS */}
-                  <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl h-auto mb-4">
-                    <TabsTrigger value="general" className="text-xs font-bold py-2 gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 shadow-sm">
-                      <FileText className="h-3.5 w-3.5" /> সাধারণ তথ্য
+                  {/* TAB CONTROLS (PURE TEXT, ICON-FREE, PROFESSIONAL PILLS) */}
+                  <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-lg h-auto mb-6">
+                    <TabsTrigger 
+                      value="general" 
+                      className="text-xs font-semibold py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white rounded-md transition shadow-xs"
+                    >
+                      General
                     </TabsTrigger>
-                    <TabsTrigger value="pricing" className="text-xs font-bold py-2 gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 shadow-sm">
-                      <DollarSign className="h-3.5 w-3.5" /> মূল্য ও স্টক
+                    <TabsTrigger 
+                      value="pricing" 
+                      className="text-xs font-semibold py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white rounded-md transition shadow-xs"
+                    >
+                      Pricing & Stock
                     </TabsTrigger>
-                    <TabsTrigger value="media" className="text-xs font-bold py-2 gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 shadow-sm">
-                      <ImageIcon className="h-3.5 w-3.5" /> ছবি ও ভিডিও
+                    <TabsTrigger 
+                      value="media" 
+                      className="text-xs font-semibold py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white rounded-md transition shadow-xs"
+                    >
+                      Media & Gallery
                     </TabsTrigger>
-                    <TabsTrigger value="variants" className="text-xs font-bold py-2 gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 shadow-sm">
-                      <Layers className="h-3.5 w-3.5" /> ভ্যারিয়েন্ট
+                    <TabsTrigger 
+                      value="variants" 
+                      className="text-xs font-semibold py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white rounded-md transition shadow-xs"
+                    >
+                      Variants
                     </TabsTrigger>
-                    <TabsTrigger value="shipping" className="text-xs font-bold py-2 gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 shadow-sm">
-                      <Truck className="h-3.5 w-3.5" /> শিপিং ও স্পেকস
+                    <TabsTrigger 
+                      value="shipping" 
+                      className="text-xs font-semibold py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white rounded-md transition shadow-xs"
+                    >
+                      Shipping & Specs
                     </TabsTrigger>
-                    <TabsTrigger value="seo" className="text-xs font-bold py-2 gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-orange-600 shadow-sm">
-                      <Globe className="h-3.5 w-3.5" /> SEO ও ব্যাজ
+                    <TabsTrigger 
+                      value="seo" 
+                      className="text-xs font-semibold py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white rounded-md transition shadow-xs"
+                    >
+                      SEO & Display
                     </TabsTrigger>
                   </TabsList>
 
                   {/* TAB 1: GENERAL INFO */}
-                  <TabsContent value="general" className="space-y-4">
+                  <TabsContent value="general" className="space-y-4 pt-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">প্রোডাক্ট টাইটেল (Title) *</Label>
-                        <Input required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") })} placeholder="e.g. Wireless Bluetooth Headphones" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Product Title *</Label>
+                        <Input 
+                          required 
+                          value={formData.title} 
+                          onChange={(e) => setFormData({ ...formData, title: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") })} 
+                          placeholder="e.g. Wireless Bluetooth Headphones" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">প্রোডাক্ট Slug / Permalinks</Label>
-                        <Input value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="wireless-bluetooth-headphones" className="text-xs mt-1 font-mono" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Product Slug / URL Permalinks</Label>
+                        <Input 
+                          value={formData.slug} 
+                          onChange={(e) => setFormData({ ...formData, slug: e.target.value })} 
+                          placeholder="wireless-bluetooth-headphones" 
+                          className="text-xs mt-1.5 h-9 font-mono bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">ক্যাটাগরি (Category)</Label>
-                        <Input value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="Electronics, Fashion, Mobile..." className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Category</Label>
+                        <Input 
+                          value={formData.category} 
+                          onChange={(e) => setFormData({ ...formData, category: e.target.value })} 
+                          placeholder="Electronics, Fashion, Mobile..." 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">ব্র্যান্ড (Brand)</Label>
-                        <Input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} placeholder="Samsung, Sony, Generic..." className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Brand</Label>
+                        <Input 
+                          value={formData.brand} 
+                          onChange={(e) => setFormData({ ...formData, brand: e.target.value })} 
+                          placeholder="Samsung, Sony, Generic..." 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
 
                     <div>
-                      <Label className="text-xs font-bold">সংক্ষিপ্ত বিবরণ (Short Description)</Label>
-                      <Input value={formData.shortDescription} onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })} placeholder="১-২ লাইনে প্রোডাক্টের প্রধান সুবিধা বা হাইলাইট লিখুন" className="text-xs mt-1" />
+                      <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Short Summary Description</Label>
+                      <Input 
+                        value={formData.shortDescription} 
+                        onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })} 
+                        placeholder="Brief 1-2 sentence overview of product key highlights" 
+                        className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                      />
                     </div>
 
                     <div>
-                      <Label className="text-xs font-bold">বিস্তারিত বিবরণ (Full Description)</Label>
-                      <Textarea rows={5} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="প্রোডাক্টের সম্পুর্ন ফিচার, ব্যবহার বিধি ও সকল তথ্য এখানে লিখুন..." className="text-xs mt-1" />
+                      <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Full Comprehensive Description</Label>
+                      <Textarea 
+                        rows={5} 
+                        value={formData.description} 
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+                        placeholder="Detailed specifications, usage guide, features, and item info..." 
+                        className="text-xs mt-1.5 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                      />
                     </div>
                   </TabsContent>
 
                   {/* TAB 2: PRICING & STOCK */}
-                  <TabsContent value="pricing" className="space-y-4">
+                  <TabsContent value="pricing" className="space-y-4 pt-1">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">বিক্রয় মূল্য / MRP (৳) *</Label>
-                        <Input type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })} className="text-xs mt-1 font-bold text-orange-600" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Selling Price / MRP (৳) *</Label>
+                        <Input 
+                          type="number" 
+                          required 
+                          value={formData.price} 
+                          onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })} 
+                          className="text-xs mt-1.5 h-9 font-bold bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">ছাড় / ডিসকাউন্ট মূল্য (৳)</Label>
-                        <Input type="number" value={formData.discountPrice} onChange={(e) => setFormData({ ...formData, discountPrice: Number(e.target.value) })} className="text-xs mt-1 font-semibold text-emerald-600" placeholder="0 if no discount" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Discount Price (৳)</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.discountPrice} 
+                          onChange={(e) => setFormData({ ...formData, discountPrice: Number(e.target.value) })} 
+                          className="text-xs mt-1.5 h-9 font-semibold bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                          placeholder="0 for no discount" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">ক্রয় মূল্য / খরচ (৳)</Label>
-                        <Input type="number" value={formData.costPrice} onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })} className="text-xs mt-1" placeholder="Cost price for profit analytics" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Cost Price / Expense (৳)</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.costPrice} 
+                          onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })} 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                          placeholder="Internal cost per unit" 
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">স্টক পরিমাণ (Stock Quantity) *</Label>
-                        <Input type="number" required value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })} className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Stock Inventory Quantity *</Label>
+                        <Input 
+                          type="number" 
+                          required 
+                          value={formData.stock} 
+                          onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })} 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">সর্বনিম্ন অর্ডার (Min Order Qty)</Label>
-                        <Input type="number" value={formData.minOrderQuantity} onChange={(e) => setFormData({ ...formData, minOrderQuantity: Number(e.target.value) })} className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Minimum Order Quantity</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.minOrderQuantity} 
+                          onChange={(e) => setFormData({ ...formData, minOrderQuantity: Number(e.target.value) })} 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">সর্বোচ্চ অর্ডার (Max Order Qty)</Label>
-                        <Input type="number" value={formData.maxOrderQuantity} onChange={(e) => setFormData({ ...formData, maxOrderQuantity: Number(e.target.value) })} className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Maximum Order Quantity</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.maxOrderQuantity} 
+                          onChange={(e) => setFormData({ ...formData, maxOrderQuantity: Number(e.target.value) })} 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">SKU কোড</Label>
-                        <Input value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} className="text-xs mt-1 font-mono" placeholder="SKU-10023" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">SKU Code</Label>
+                        <Input 
+                          value={formData.sku} 
+                          onChange={(e) => setFormData({ ...formData, sku: e.target.value })} 
+                          className="text-xs mt-1.5 h-9 font-mono bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                          placeholder="SKU-10023" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">বারকোড (Barcode)</Label>
-                        <Input value={formData.barcode} onChange={(e) => setFormData({ ...formData, barcode: e.target.value })} className="text-xs mt-1 font-mono" placeholder="BC-8839201" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Barcode Identifier</Label>
+                        <Input 
+                          value={formData.barcode} 
+                          onChange={(e) => setFormData({ ...formData, barcode: e.target.value })} 
+                          className="text-xs mt-1.5 h-9 font-mono bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                          placeholder="BC-8839201" 
+                        />
                       </div>
                     </div>
                   </TabsContent>
 
                   {/* TAB 3: MEDIA & VIDEO */}
-                  <TabsContent value="media" className="space-y-4">
+                  <TabsContent value="media" className="space-y-4 pt-1">
                     <div>
-                      <Label className="text-xs font-bold flex items-center gap-1">
-                        <ImageIcon className="h-4 w-4 text-orange-600" />
-                        প্রোডাক্ট ছবি URL সমূহ (Comma Separated URLs)
+                      <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Product Image Gallery URLs (Comma Separated)
                       </Label>
-                      <Textarea rows={3} value={formData.images} onChange={(e) => setFormData({ ...formData, images: e.target.value })} placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg, https://example.com/img3.jpg" className="text-xs mt-1 font-mono" />
-                      <p className="text-[10px] text-slate-400 mt-1">প্রথম ছবিটি প্রধান (Main Cover Image) হিসেবে ব্যবহার করা হবে। কমা (,) দিয়ে একাধিক লিংক যুক্ত করুন।</p>
+                      <Textarea 
+                        rows={3} 
+                        value={formData.images} 
+                        onChange={(e) => setFormData({ ...formData, images: e.target.value })} 
+                        placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg, https://example.com/img3.jpg" 
+                        className="text-xs mt-1.5 font-mono bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">The first image URL will be designated as the primary cover photo.</p>
                     </div>
 
                     {/* LIVE IMAGE PREVIEWS */}
                     {formData.images && (
                       <div>
-                        <Label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">ছবি প্রিভিউ:</Label>
+                        <Label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Gallery Previews:</Label>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {formData.images.split(",").map((s) => s.trim()).filter(Boolean).map((url, idx) => (
-                            <div key={idx} className="relative w-16 h-16 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-950">
+                            <div key={idx} className="relative w-16 h-16 rounded-md border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-950">
                               <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = "https://placehold.co/100x100?text=No+Img"; }} />
-                              {idx === 0 && <span className="absolute top-0 left-0 bg-orange-600 text-white text-[8px] px-1 font-bold">Cover</span>}
+                              {idx === 0 && <span className="absolute top-0 left-0 bg-slate-900 text-white text-[8px] px-1 font-semibold">Cover</span>}
                             </div>
                           ))}
                         </div>
@@ -592,60 +695,84 @@ export const EnterpriseProducts: React.FC = () => {
                     )}
 
                     <div>
-                      <Label className="text-xs font-bold flex items-center gap-1">
-                        <Video className="h-4 w-4 text-orange-600" />
-                        প্রোডাক্ট ভিডিও URL (YouTube Link or Direct MP4)
+                      <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Product Video URL (YouTube or MP4 Direct Link)
                       </Label>
-                      <Input value={formData.videoUrl} onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." className="text-xs mt-1 font-mono" />
+                      <Input 
+                        value={formData.videoUrl} 
+                        onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })} 
+                        placeholder="https://www.youtube.com/watch?v=..." 
+                        className="text-xs mt-1.5 h-9 font-mono bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                      />
                     </div>
                   </TabsContent>
 
                   {/* TAB 4: VARIANTS */}
-                  <TabsContent value="variants" className="space-y-4">
+                  <TabsContent value="variants" className="space-y-4 pt-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">উপলব্ধ কালার (Colors - Comma Separated)</Label>
-                        <Input value={formData.colors} onChange={(e) => setFormData({ ...formData, colors: e.target.value })} placeholder="Black, White, Blue, Red" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Available Colors (Comma Separated)</Label>
+                        <Input 
+                          value={formData.colors} 
+                          onChange={(e) => setFormData({ ...formData, colors: e.target.value })} 
+                          placeholder="Black, White, Blue, Red" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">উপলব্ধ সাইজ (Sizes - Comma Separated)</Label>
-                        <Input value={formData.sizes} onChange={(e) => setFormData({ ...formData, sizes: e.target.value })} placeholder="S, M, L, XL, XXL" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Available Sizes (Comma Separated)</Label>
+                        <Input 
+                          value={formData.sizes} 
+                          onChange={(e) => setFormData({ ...formData, sizes: e.target.value })} 
+                          placeholder="S, M, L, XL, XXL" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
 
                     {/* CUSTOM VARIANT TABLE */}
                     <div className="space-y-2 pt-2">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-bold text-slate-800 dark:text-slate-200">কাস্টম ভ্যারিয়েন্ট লিস্ট (Variations Matrix):</Label>
-                        <Button type="button" size="sm" variant="outline" onClick={addVariantRow} className="text-xs font-bold h-7 gap-1">
-                          <Plus className="h-3.5 w-3.5" /> ভ্যারিয়েন্ট যোগ করুন
+                        <Label className="text-xs font-semibold text-slate-800 dark:text-slate-200">Custom Variations Matrix:</Label>
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={addVariantRow} 
+                          className="text-xs font-semibold h-8 border-slate-300 dark:border-slate-700"
+                        >
+                          + Add Variant Row
                         </Button>
                       </div>
 
-                      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                      <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-100 dark:bg-slate-800 font-bold">
+                          <thead className="bg-slate-100 dark:bg-slate-800/80 font-semibold text-slate-700 dark:text-slate-300">
                             <tr>
-                              <th className="p-2">কালার (Color)</th>
-                              <th className="p-2">সাইজ (Size)</th>
-                              <th className="p-2">মূল্য (Price)</th>
-                              <th className="p-2">SKU</th>
-                              <th className="p-2">স্টক (Stock)</th>
-                              <th className="p-2 text-right">মুছুন</th>
+                              <th className="p-2.5">Color</th>
+                              <th className="p-2.5">Size</th>
+                              <th className="p-2.5">Price (৳)</th>
+                              <th className="p-2.5">SKU</th>
+                              <th className="p-2.5">Stock</th>
+                              <th className="p-2.5 text-right">Remove</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {formData.variants.map((v, i) => (
                               <tr key={i}>
-                                <td className="p-2"><Input value={v.color} onChange={(e) => updateVariantRow(i, "color", e.target.value)} className="h-7 text-xs" /></td>
-                                <td className="p-2"><Input value={v.size} onChange={(e) => updateVariantRow(i, "size", e.target.value)} className="h-7 text-xs" /></td>
-                                <td className="p-2"><Input type="number" value={v.price} onChange={(e) => updateVariantRow(i, "price", Number(e.target.value))} className="h-7 text-xs font-bold" /></td>
-                                <td className="p-2"><Input value={v.sku} onChange={(e) => updateVariantRow(i, "sku", e.target.value)} className="h-7 text-xs font-mono" /></td>
-                                <td className="p-2"><Input type="number" value={v.stock} onChange={(e) => updateVariantRow(i, "stock", Number(e.target.value))} className="h-7 text-xs" /></td>
+                                <td className="p-2"><Input value={v.color} onChange={(e) => updateVariantRow(i, "color", e.target.value)} className="h-8 text-xs bg-slate-50 dark:bg-slate-950" /></td>
+                                <td className="p-2"><Input value={v.size} onChange={(e) => updateVariantRow(i, "size", e.target.value)} className="h-8 text-xs bg-slate-50 dark:bg-slate-950" /></td>
+                                <td className="p-2"><Input type="number" value={v.price} onChange={(e) => updateVariantRow(i, "price", Number(e.target.value))} className="h-8 text-xs font-semibold bg-slate-50 dark:bg-slate-950" /></td>
+                                <td className="p-2"><Input value={v.sku} onChange={(e) => updateVariantRow(i, "sku", e.target.value)} className="h-8 text-xs font-mono bg-slate-50 dark:bg-slate-950" /></td>
+                                <td className="p-2"><Input type="number" value={v.stock} onChange={(e) => updateVariantRow(i, "stock", Number(e.target.value))} className="h-8 text-xs bg-slate-50 dark:bg-slate-950" /></td>
                                 <td className="p-2 text-right">
-                                  <Button type="button" size="sm" variant="ghost" onClick={() => removeVariantRow(i)} className="h-7 w-7 p-0 text-rose-600">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => removeVariantRow(i)} 
+                                    className="text-xs font-semibold text-rose-600 hover:text-rose-800 px-2 py-1 rounded"
+                                  >
+                                    Remove
+                                  </button>
                                 </td>
                               </tr>
                             ))}
@@ -656,88 +783,139 @@ export const EnterpriseProducts: React.FC = () => {
                   </TabsContent>
 
                   {/* TAB 5: SHIPPING & SPECS */}
-                  <TabsContent value="shipping" className="space-y-4">
+                  <TabsContent value="shipping" className="space-y-4 pt-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">ওজন (Weight e.g. 0.5 kg)</Label>
-                        <Input value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder="0.5 kg" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Weight (e.g. 0.5 kg)</Label>
+                        <Input 
+                          value={formData.weight} 
+                          onChange={(e) => setFormData({ ...formData, weight: e.target.value })} 
+                          placeholder="0.5 kg" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">সাইজ / ডাইমেনশন (Dimensions e.g. 10x5x2 cm)</Label>
-                        <Input value={formData.dimensions} onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })} placeholder="10 x 5 x 2 cm" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Dimensions (e.g. 10 x 5 x 2 cm)</Label>
+                        <Input 
+                          value={formData.dimensions} 
+                          onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })} 
+                          placeholder="10 x 5 x 2 cm" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">শিপিং চার্জ (Shipping Cost ৳)</Label>
-                        <Input type="number" value={formData.shippingCost} onChange={(e) => setFormData({ ...formData, shippingCost: Number(e.target.value) })} className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Shipping Fee (৳)</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.shippingCost} 
+                          onChange={(e) => setFormData({ ...formData, shippingCost: Number(e.target.value) })} 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">আনুমানিক ডেলিভারি সময়</Label>
-                        <Input value={formData.estimatedDelivery} onChange={(e) => setFormData({ ...formData, estimatedDelivery: e.target.value })} placeholder="2-5 Days" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Estimated Delivery Time</Label>
+                        <Input 
+                          value={formData.estimatedDelivery} 
+                          onChange={(e) => setFormData({ ...formData, estimatedDelivery: e.target.value })} 
+                          placeholder="2-5 Business Days" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">উৎপাদনকারী দেশ (Origin)</Label>
-                        <Input value={formData.countryOfOrigin} onChange={(e) => setFormData({ ...formData, countryOfOrigin: e.target.value })} placeholder="Bangladesh, China..." className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Country of Origin</Label>
+                        <Input 
+                          value={formData.countryOfOrigin} 
+                          onChange={(e) => setFormData({ ...formData, countryOfOrigin: e.target.value })} 
+                          placeholder="Bangladesh, China..." 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950">
+                    <div className="flex items-center justify-between p-3.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950">
                       <div>
-                        <Label className="text-xs font-bold">ফ্রি শিপিং প্রযোজ্য (Free Shipping)</Label>
-                        <p className="text-[10px] text-slate-400">এই প্রোডাক্টে কি ফ্রী শিপিং দেওয়া হবে?</p>
+                        <Label className="text-xs font-semibold text-slate-800 dark:text-slate-200">Free Shipping Option</Label>
+                        <p className="text-[11px] text-slate-400">Offer free shipping on this specific product item</p>
                       </div>
                       <Switch checked={formData.freeShipping} onCheckedChange={(val) => setFormData({ ...formData, freeShipping: val })} />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-xs font-bold">ওয়ারেন্টি তথ্য (Warranty Info)</Label>
-                        <Input value={formData.warrantyInfo} onChange={(e) => setFormData({ ...formData, warrantyInfo: e.target.value })} placeholder="1 Year Replacement Warranty" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Warranty Policy Terms</Label>
+                        <Input 
+                          value={formData.warrantyInfo} 
+                          onChange={(e) => setFormData({ ...formData, warrantyInfo: e.target.value })} 
+                          placeholder="1 Year Official Brand Warranty" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">রিটার্ন পলিসি (Return Policy)</Label>
-                        <Input value={formData.returnPolicy} onChange={(e) => setFormData({ ...formData, returnPolicy: e.target.value })} placeholder="7 Days Easy Return" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Return Policy Terms</Label>
+                        <Input 
+                          value={formData.returnPolicy} 
+                          onChange={(e) => setFormData({ ...formData, returnPolicy: e.target.value })} 
+                          placeholder="7 Days Easy Return Policy" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
                   </TabsContent>
 
                   {/* TAB 6: SEO & BADGES */}
-                  <TabsContent value="seo" className="space-y-4">
+                  <TabsContent value="seo" className="space-y-4 pt-1">
                     <div className="space-y-3 border-b border-slate-200 dark:border-slate-800 pb-4">
                       <div>
-                        <Label className="text-xs font-bold">Meta Title (SEO)</Label>
-                        <Input value={formData.metaTitle} onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })} placeholder="Google / Search Engine Title" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Meta Title (SEO Header Tag)</Label>
+                        <Input 
+                          value={formData.metaTitle} 
+                          onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })} 
+                          placeholder="Search Engine Result Display Title" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">Meta Description (SEO)</Label>
-                        <Textarea rows={2} value={formData.metaDescription} onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })} placeholder="Search Result Snippet description..." className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Meta Description (SEO Snippet)</Label>
+                        <Textarea 
+                          rows={2} 
+                          value={formData.metaDescription} 
+                          onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })} 
+                          placeholder="Search Result Snippet overview..." 
+                          className="text-xs mt-1.5 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                       <div>
-                        <Label className="text-xs font-bold">Meta Keywords</Label>
-                        <Input value={formData.metaKeywords} onChange={(e) => setFormData({ ...formData, metaKeywords: e.target.value })} placeholder="headphones, bluetooth, wireless" className="text-xs mt-1" />
+                        <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Meta Keywords</Label>
+                        <Input 
+                          value={formData.metaKeywords} 
+                          onChange={(e) => setFormData({ ...formData, metaKeywords: e.target.value })} 
+                          placeholder="headphones, bluetooth, audio" 
+                          className="text-xs mt-1.5 h-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800" 
+                        />
                       </div>
                     </div>
 
                     {/* PROMOTIONAL BADGES TOGGLES */}
                     <div>
-                      <Label className="text-xs font-bold text-slate-800 dark:text-slate-200">প্রোমোশনাল ব্যাজ ও ভিজিবিলিটি (Badges & Display):</Label>
+                      <Label className="text-xs font-semibold text-slate-800 dark:text-slate-200">Catalog Badges & Visibility Options:</Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl">
-                          <Label className="text-xs font-semibold">Featured Product</Label>
+                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950">
+                          <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Featured Product</Label>
                           <Switch checked={formData.isFeatured} onCheckedChange={(val) => setFormData({ ...formData, isFeatured: val })} />
                         </div>
-                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl">
-                          <Label className="text-xs font-semibold">Best Seller</Label>
+                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950">
+                          <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Best Seller</Label>
                           <Switch checked={formData.isBestSeller} onCheckedChange={(val) => setFormData({ ...formData, isBestSeller: val })} />
                         </div>
-                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl">
-                          <Label className="text-xs font-semibold">New Arrival</Label>
+                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950">
+                          <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">New Arrival</Label>
                           <Switch checked={formData.isNewArrival} onCheckedChange={(val) => setFormData({ ...formData, isNewArrival: val })} />
                         </div>
-                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl">
-                          <Label className="text-xs font-semibold">Flash Sale Item</Label>
+                        <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950">
+                          <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Flash Sale Item</Label>
                           <Switch checked={formData.isFlashSale} onCheckedChange={(val) => setFormData({ ...formData, isFlashSale: val })} />
                         </div>
                       </div>
@@ -747,17 +925,24 @@ export const EnterpriseProducts: React.FC = () => {
                 </Tabs>
 
                 {/* MODAL FOOTER */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                   <div className="text-[11px] text-slate-400">
-                    * চিহ্নিত ফিল্ডসমূহ বাধ্যতামূলক
+                    * Mandatory required fields
                   </div>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="text-xs font-bold">
-                      বাতিল
+                  <div className="flex gap-2.5">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setShowModal(false)} 
+                      className="text-xs font-semibold border-slate-300 dark:border-slate-700"
+                    >
+                      Cancel
                     </Button>
-                    <Button type="submit" className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs gap-1.5 px-6">
-                      <Sparkles className="h-4 w-4" />
-                      {isEditing ? "আপডেট করুন" : "সেভ করুন"}
+                    <Button 
+                      type="submit" 
+                      className="bg-slate-900 hover:bg-black dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-semibold text-xs px-6"
+                    >
+                      {isEditing ? "Update Product" : "Save Product"}
                     </Button>
                   </div>
                 </div>
@@ -766,6 +951,11 @@ export const EnterpriseProducts: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
+    </EnterpriseAdminLayout>
+  );
+};
+
       </div>
     </EnterpriseAdminLayout>
   );
