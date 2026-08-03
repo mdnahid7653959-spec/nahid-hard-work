@@ -110,11 +110,7 @@ function ProductCardComponent({
             </span>}
         </div>
 
-        {/* Free Shipping Badge */}
-        {product.freeShipping && <div className="flex items-center gap-1 text-[9px] text-success font-medium mb-2 bg-success/10 px-1.5 py-0.5 rounded w-fit">
-            <Truck className="h-2.5 w-2.5" />
-            <span>Free Shipping</span>
-          </div>}
+
 
         {/* Action Buttons - 44px min height */}
         

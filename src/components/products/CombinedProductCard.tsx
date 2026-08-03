@@ -153,13 +153,7 @@ const CombinedProductCardComponent: React.FC<CombinedProductCardProps> = ({ prod
             )}
           </div>
 
-          {/* Free Shipping Badge */}
-          {product.freeShipping && (
-            <div className="mt-1.5 flex items-center gap-1 text-green-600">
-              <Truck className="h-3 w-3" />
-              <span className="text-[10px] font-medium">Free Shipping</span>
-            </div>
-          )}
+
 
           {/* Action Buttons */}
           <div className="mt-3 flex gap-2">
