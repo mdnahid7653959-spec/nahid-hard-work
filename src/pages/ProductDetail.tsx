@@ -304,9 +304,9 @@ export default function ProductDetail() {
     const rawSalePrice = parseFloat(raw.sale_price) || parseFloat(raw.discount_price) || 0;
     const rawRegularPrice = parseFloat(raw.price) || parseFloat(raw.regular_price) || rawSalePrice;
     
-    // Exact selling price matching card display (no extra markup multiplier)
+    // Exact selling price matching raw API price (no extra markup multiplier)
     const sellingPrice = rawSalePrice > 0 ? rawSalePrice : rawRegularPrice;
-    const regularPrice = rawRegularPrice > sellingPrice ? rawRegularPrice : (sellingPrice > 0 ? Math.round(sellingPrice * 1.25) : 0);
+    const regularPrice = rawRegularPrice > sellingPrice ? rawRegularPrice : sellingPrice;
 
     const variants = (raw.product_variants || []).map((v: any) => ({
       id: parseInt(v.id) || Math.floor(Math.random() * 100000),
