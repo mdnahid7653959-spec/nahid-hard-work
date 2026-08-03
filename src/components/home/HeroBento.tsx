@@ -118,55 +118,42 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             to={heroCfg.link || "/products"}
             className="col-span-2 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-[0_20px_60px_-15px_rgba(108,92,231,0.55)] md:shadow-2xl md:shadow-[#6c5ce7]/30 active:scale-[0.99] transition-transform ring-1 ring-white/10 md:ring-0"
           >
-            {heroCfg.imageUrl ? (
-              <>
-                <img src={heroCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(heroCfg)} />
-                <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((heroCfg.overlay ?? 50)/100, 0.35)}), transparent)` }} />
-              </>
-            ) : (
-              <>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#6c5ce7] via-[#e84393] to-[#ff6b35]" />
-                {/* Mobile-only cinematic aurora + noise */}
-                <div className="md:hidden">
-                  <div className="m-hero-aurora-a" />
-                  <div className="m-hero-aurora-b" />
-                  <div className="m-hero-noise" />
-                </div>
-                <div className="hidden md:block absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-                <div className="hidden md:block absolute -bottom-24 -left-24 w-72 h-72 bg-[#f7931e]/30 rounded-full blur-3xl" />
-              </>
-            )}
+            <img
+              src={heroCfg.imageUrl || "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=800&fit=crop"}
+              alt="Durtup Mega Marketplace Banner"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              style={imgStyle(heroCfg)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
             {/* Mobile-only sheen sweep across hero */}
             <div className="md:hidden m-hero-sheen" />
 
             <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 md:p-12 text-white">
               {heroCfg.badgeVisible !== false && (
-                <span className="inline-flex w-fit items-center gap-1.5 sm:gap-2 m-glass md:bg-white/15 md:backdrop-blur md:border-0 px-2.5 py-1 sm:px-3 rounded-full text-[9px] sm:text-[10px] md:text-xs font-bold tracking-[0.18em] sm:tracking-[0.2em] uppercase mb-2 sm:mb-3 md:mb-6 shadow-lg md:shadow-none">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white m-ring-pulse md:animate-pulse" />
-                  {heroCfg.badge || "Darzo Marketplace"}
+                <span className="inline-flex w-fit items-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur-md border border-white/30 px-3 py-1 rounded-full text-[9px] sm:text-[10px] md:text-xs font-bold tracking-widest uppercase mb-2 sm:mb-3 md:mb-6 shadow-lg">
+                  <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+                  {heroCfg.badge || "Durtup Marketplace"}
                 </span>
               )}
               <h1
-                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-2 sm:mb-3 md:mb-4 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] md:drop-shadow-none"
+                className="font-['Bebas_Neue'] leading-[0.85] tracking-tight uppercase mb-2 sm:mb-3 md:mb-4 text-3xl sm:text-5xl md:text-6xl font-black drop-shadow-lg"
                 style={titleStyle("hero", heroCfg.textStyle)}
               >
-                {heroCfg.title || "The New Standard"}
+                {heroCfg.title || "RTR 160 BIG SALE OFFER"}
               </h1>
-              <p className="font-medium opacity-90 max-w-sm mb-3 sm:mb-4 md:mb-6 line-clamp-2 sm:line-clamp-none" style={subtitleStyle("hero", heroCfg.textStyle)}>
+              <p className="font-medium text-slate-100 opacity-90 max-w-sm mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm line-clamp-2" style={subtitleStyle("hero", heroCfg.textStyle)}>
                 {heroCfg.subtitle || "Bangladesh's curated multi-vendor destination for the bold."}
               </p>
               {heroCfg.ctaText !== "" && (
-                <span className="w-fit inline-flex items-center gap-1.5 bg-white text-[#6c5ce7] px-4 py-2 sm:px-5 sm:py-3 md:px-8 md:py-4 rounded-full font-bold text-[9px] sm:text-[10px] md:text-xs tracking-[0.18em] sm:tracking-[0.2em] uppercase group-hover:scale-105 transition-transform m-cta-glow md:m-cta-glow-none md:shadow-xl">
-                  {heroCfg.ctaText || "Explore Darzo"}
-                  <span className="md:hidden">→</span>
+                <span className="w-fit inline-flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-full font-bold text-[10px] md:text-xs tracking-wider uppercase group-hover:scale-105 transition-transform shadow-xl">
+                  {heroCfg.ctaText || "Explore Durtup"}
+                  <span>→</span>
                 </span>
               )}
             </div>
-
           </Link>
         )}
-
 
         {/* Flash deals */}
         {isVisible("flash") && (
@@ -174,42 +161,34 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             to={flashCfg.link || "/products?filter=flash-sale"}
             className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2rem] bg-card border border-border p-3 sm:p-4 md:p-6 flex items-center justify-between shadow-md md:shadow-xl shadow-black/5 hover:-translate-y-1 active:scale-[0.99] transition-transform overflow-hidden relative"
           >
-            {flashCfg.imageUrl && (
-              <img src={flashCfg.imageUrl} alt="" className="absolute inset-0 w-full h-full opacity-30" style={imgStyle(flashCfg)} />
-            )}
+            <img
+              src={flashCfg.imageUrl || "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&h=400&fit=crop"}
+              alt="Flash Sale Banner"
+              className="absolute inset-0 w-full h-full object-cover opacity-25"
+              style={imgStyle(flashCfg)}
+            />
 
             <div className="flex flex-col min-w-0 relative z-10">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1 md:mb-2">
-                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#e84393] animate-pulse" />
-                <span className="text-[#e84393] font-bold text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.2em] tabular-nums">
+                <span className="w-2 h-2 rounded-full bg-[#e84393] animate-pulse" />
+                <span className="text-[#e84393] font-bold text-[9px] md:text-[10px] uppercase tracking-widest tabular-nums">
                   Ends in {countdown}
                 </span>
               </div>
-              <h2 className="font-['Bebas_Neue'] text-foreground leading-none" style={titleStyle("flash", flashCfg.textStyle)}>
-                {flashCfg.title || "Flash Deals"}
+              <h2 className="font-['Bebas_Neue'] text-2xl sm:text-3xl text-foreground leading-none" style={titleStyle("flash", flashCfg.textStyle)}>
+                {flashCfg.title || "Flash Sale Deals"}
               </h2>
-              <p className="text-muted-foreground font-bold uppercase tracking-wider sm:tracking-widest mt-0.5 sm:mt-1 line-clamp-1" style={subtitleStyle("flash", flashCfg.textStyle)}>
+              <p className="text-muted-foreground font-bold uppercase tracking-wider text-xs mt-0.5" style={subtitleStyle("flash", flashCfg.textStyle)}>
                 {flashCfg.subtitle || "Up to 70% Off"}
               </p>
             </div>
             <div className="flex gap-1.5 sm:gap-2 md:gap-3 shrink-0 relative z-10">
-              {flashItems.length > 0
-                ? flashItems.map((p, i) => (
-                    <div
-                      key={p.id}
-                      className={`w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-muted rounded-xl sm:rounded-2xl overflow-hidden shadow-md sm:shadow-lg transition-transform ${
-                        i === 0 ? "hover:rotate-2" : "-rotate-2 hover:rotate-0 hidden xs:block sm:block"
-                      }`}
-                    >
-                      <img src={p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-                    </div>
-                  ))
-                : (
-                  <>
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e84393] rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg" />
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#6c5ce7] to-[#e84393] rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg -rotate-2 hidden sm:block" />
-                  </>
-                )}
+              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-muted rounded-xl sm:rounded-2xl overflow-hidden shadow-md">
+                <img src={flashItems[0]?.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop"} alt="Flash Item" className="w-full h-full object-cover" />
+              </div>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-muted rounded-xl sm:rounded-2xl overflow-hidden shadow-md hidden sm:block">
+                <img src={flashItems[1]?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&h=200&fit=crop"} alt="Flash Item" className="w-full h-full object-cover" />
+              </div>
             </div>
           </Link>
         )}
@@ -223,68 +202,60 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
               to={c.link || to}
               className={`col-span-1 row-span-1 rounded-[1.25rem] md:rounded-[2rem] ${c.imageUrl ? "" : bg} p-3 sm:p-4 md:p-6 text-white flex flex-col justify-between shadow-md md:shadow-lg ${shadow} group cursor-pointer overflow-hidden relative hover:-translate-y-1 active:scale-[0.98] transition-transform`}
             >
-              {c.imageUrl && (
+              {c.imageUrl ? (
                 <>
                   <img src={c.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(c)} />
-                  <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(c.overlay ?? 40)/100})` }} />
+                  <div className="absolute inset-0 bg-black/40" />
                 </>
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800" />
               )}
 
               <div className="relative z-10">
-                <div className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm mb-2 sm:mb-3 md:mb-4">
-                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
+                <div className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm mb-2 sm:mb-3">
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <h3 className="font-['Bebas_Neue'] leading-none tracking-wide" style={titleStyle("category", c.textStyle)}>
-                  {c.title || name}<br /><span style={subtitleStyle("category", c.textStyle)}>{c.subtitle || sub}</span>
+                <h3 className="font-['Bebas_Neue'] text-lg sm:text-xl leading-none tracking-wide" style={titleStyle("category", c.textStyle)}>
+                  {c.title || name}<br /><span className="text-xs opacity-80" style={subtitleStyle("category", c.textStyle)}>{c.subtitle || sub}</span>
                 </h3>
               </div>
-              {!c.imageUrl && (
-                <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 opacity-15 group-hover:scale-110 transition-transform">
-                  <Icon className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
-                </div>
-              )}
             </Link>
           );
         })}
 
-        {/* For You */}
+        {/* For You Section */}
         {isVisible("foryou") && (
-          <div className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-card border border-border p-4 sm:p-5 md:p-8 shadow-md md:shadow-xl shadow-black/5">
-            <h3 className="font-['Bebas_Neue'] text-foreground mb-3 sm:mb-4 md:mb-6" style={titleStyle("foryou", foryouCfg.textStyle)}>
-              {foryouCfg.title || "For You"}
+          <div className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-card border border-border p-4 sm:p-5 md:p-6 shadow-md shadow-black/5">
+            <h3 className="font-['Bebas_Neue'] text-2xl text-foreground mb-3 sm:mb-4" style={titleStyle("foryou", foryouCfg.textStyle)}>
+              {foryouCfg.title || "FOR YOU"}
             </h3>
-            <div className="space-y-3 sm:space-y-4 md:space-y-6">
-              {forYouItems.length > 0 ? (
-                forYouItems.map((p) => (
-                  <Link
-                    key={p.id}
-                    to={`/product/${p.slug}`}
-                    className="flex items-center gap-3 md:gap-4 group active:opacity-70"
-                  >
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-muted rounded-xl overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
-                      <img src={p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs md:text-sm font-bold text-foreground line-clamp-1 group-hover:text-[#6c5ce7]">
-                        {p.name}
-                      </p>
-                      <p className="text-[11px] md:text-xs text-muted-foreground font-bold">
-                        ৳ {p.price.toLocaleString("en-IN")}
-                      </p>
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                [1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-3 md:gap-4">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-muted rounded-xl shrink-0" />
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-3 bg-muted rounded w-3/4" />
-                      <div className="h-2.5 bg-muted rounded w-1/3" />
-                    </div>
+            <div className="space-y-3">
+              {(forYouItems.length > 0
+                ? forYouItems
+                : [
+                    { id: "fy1", name: "Men's Solid Colour Ban...", price: 350, image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=200&h=200&fit=crop", slug: "mens-shirt" },
+                    { id: "fy2", name: "Wireless Bluetooth Speaker", price: 450, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop", slug: "speaker" },
+                    { id: "fy3", name: "Smart Fitness Tracker Watch", price: 850, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&h=200&fit=crop", slug: "watch" }
+                  ]
+              ).map((p) => (
+                <Link
+                  key={p.id}
+                  to={`/product/${p.slug || p.id}`}
+                  className="flex items-center gap-3 group active:opacity-70"
+                >
+                  <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-border bg-muted">
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                   </div>
-                ))
-              )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-orange-600">
+                      {p.name}
+                    </p>
+                    <p className="text-xs font-black text-orange-600">
+                      ৳ {p.price.toLocaleString("en-BD")}
+                    </p>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         )}
@@ -292,30 +263,27 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {/* Trending product */}
         {isVisible("trending") && (
           <Link
-            to={trendingCfg.link || (trend ? `/product/${trend.slug}` : "/products?sort=trending")}
-            className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-neutral-200 overflow-hidden relative group shadow-md md:shadow-lg active:scale-[0.99] transition-transform"
+            to={trendingCfg.link || (trend ? `/product/${trend.slug}` : "/products")}
+            className="col-span-2 md:col-span-1 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] bg-neutral-900 overflow-hidden relative group shadow-lg active:scale-[0.99] transition-transform"
           >
-            {trendingCfg.imageUrl ? (
-              <img src={trendingCfg.imageUrl} alt="" className="w-full h-full group-hover:scale-110 transition-transform duration-1000" style={imgStyle(trendingCfg)} loading="lazy" />
-            ) : trend ? (
-              <img src={trend.image} alt={trend.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" loading="lazy" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#ff6b35] via-[#e84393] to-[#6c5ce7]" />
-            )}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.max((trendingCfg.overlay ?? 60)/100, 0.4)}), transparent)` }} />
+            <img
+              src={trendingCfg.imageUrl || trend?.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=1000&fit=crop"}
+              alt="Trending Product"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              style={imgStyle(trendingCfg)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-8 text-white">
-              <span className="inline-block font-bold bg-[#ff6b35] px-2.5 py-1 sm:px-3 rounded-full uppercase tracking-wider sm:tracking-widest text-[9px] sm:text-[10px]" style={subtitleStyle("trending", trendingCfg.textStyle)}>
-                {trendingCfg.subtitle || "Trending"}
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-6 text-white">
+              <span className="inline-block font-bold bg-orange-600 text-white px-3 py-1 rounded-full uppercase tracking-wider text-[9px]">
+                {trendingCfg.subtitle || "TRENDING"}
               </span>
-              <h3 className="font-['Bebas_Neue'] mt-1.5 sm:mt-2 md:mt-3 leading-none tracking-wider line-clamp-2" style={titleStyle("trending", trendingCfg.textStyle)}>
-                {trendingCfg.title || trend?.name || "Capture Purity"}
+              <h3 className="font-['Bebas_Neue'] text-2xl sm:text-3xl mt-2 leading-tight tracking-wider line-clamp-2" style={titleStyle("trending", trendingCfg.textStyle)}>
+                {trendingCfg.title || trend?.name || "X1 WIRELESS SPEAKER"}
               </h3>
-              {trend && !trendingCfg.title && (
-                <p className="text-sm sm:text-base md:text-lg font-bold mt-1 sm:mt-1.5 md:mt-2 text-[#f7931e]">
-                  ৳ {trend.price.toLocaleString("en-IN")}
-                </p>
-              )}
+              <p className="text-base sm:text-lg font-black mt-1 text-orange-400">
+                ৳ {(trend?.price || 450).toLocaleString("en-BD")}
+              </p>
             </div>
           </Link>
         )}

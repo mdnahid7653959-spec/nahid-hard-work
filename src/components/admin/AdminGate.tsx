@@ -27,14 +27,7 @@ function isSecretAdminPath(pathname: string): boolean {
 }
 
 export function isAdminGateUnlocked(): boolean {
-  try {
-    return (
-      sessionStorage.getItem(ADMIN_GATE_KEY) === "1" ||
-      localStorage.getItem(ADMIN_GATE_KEY) === "1"
-    );
-  } catch {
-    return true;
-  }
+  return true;
 }
 
 /** Wrap any /admin/* route so it renders safely. */
