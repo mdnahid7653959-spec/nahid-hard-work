@@ -78,6 +78,15 @@ function useCountdown(hours = 4) {
   return `${h}:${m}:${s}`;
 }
 
+function validUrl(url?: string, fallback = ""): string {
+  if (!url || typeof url !== "string") return fallback;
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed;
+  }
+  return fallback;
+}
+
 function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: HeroBentoProps) {
   const countdown = useCountdown(4);
   const isMobile = useIsMobile();
@@ -109,6 +118,8 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
   const trendingCfg = cfg("trending");
   const vendorsCfg = cfg("vendors");
 
+  const heroBgFallback = "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=800&fit=crop";
+
   return (
     <div className="w-full font-['Barlow',sans-serif]">
       <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[128px] sm:auto-rows-[150px] md:auto-rows-[200px] gap-2.5 sm:gap-3 md:gap-5">
@@ -119,10 +130,13 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             className="col-span-2 row-span-2 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden relative group shadow-[0_20px_60px_-15px_rgba(108,92,231,0.55)] md:shadow-2xl md:shadow-[#6c5ce7]/30 active:scale-[0.99] transition-transform ring-1 ring-white/10 md:ring-0"
           >
             <img
-              src={heroCfg.imageUrl || "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=800&fit=crop"}
+              src={validUrl(heroCfg.imageUrl, heroBgFallback)}
               alt="Durtup Mega Marketplace Banner"
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               style={imgStyle(heroCfg)}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = heroBgFallback;
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
@@ -162,10 +176,13 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
             className="col-span-2 row-span-1 rounded-[1.25rem] md:rounded-[2rem] bg-card border border-border p-3 sm:p-4 md:p-6 flex items-center justify-between shadow-md md:shadow-xl shadow-black/5 hover:-translate-y-1 active:scale-[0.99] transition-transform overflow-hidden relative"
           >
             <img
-              src={flashCfg.imageUrl || "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&h=400&fit=crop"}
+              src={validUrl(flashCfg.imageUrl, "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&h=400&fit=crop")}
               alt="Flash Sale Banner"
               className="absolute inset-0 w-full h-full object-cover opacity-25"
               style={imgStyle(flashCfg)}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&h=400&fit=crop";
+              }}
             />
 
             <div className="flex flex-col min-w-0 relative z-10">
@@ -196,15 +213,16 @@ function HeroBentoComponent({ forYou = [], flashSale = [], trending = [] }: Hero
         {/* Category tiles */}
         {CATEGORIES.filter((c) => isVisible(c.id)).map(({ id, name, sub, to, bg, icon: Icon, shadow }) => {
           const c = cfg(id);
+          const tileImg = validUrl(c.imageUrl, "");
           return (
             <Link
               key={id}
               to={c.link || to}
-              className={`col-span-1 row-span-1 rounded-[1.25rem] md:rounded-[2rem] ${c.imageUrl ? "" : bg} p-3 sm:p-4 md:p-6 text-white flex flex-col justify-between shadow-md md:shadow-lg ${shadow} group cursor-pointer overflow-hidden relative hover:-translate-y-1 active:scale-[0.98] transition-transform`}
+              className={`col-span-1 row-span-1 rounded-[1.25rem] md:rounded-[2rem] ${tileImg ? "" : bg} p-3 sm:p-4 md:p-6 text-white flex flex-col justify-between shadow-md md:shadow-lg ${shadow} group cursor-pointer overflow-hidden relative hover:-translate-y-1 active:scale-[0.98] transition-transform`}
             >
-              {c.imageUrl ? (
+              {tileImg ? (
                 <>
-                  <img src={c.imageUrl} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(c)} />
+                  <img src={tileImg} alt="" className="absolute inset-0 w-full h-full" style={imgStyle(c)} />
                   <div className="absolute inset-0 bg-black/40" />
                 </>
               ) : (
