@@ -21,8 +21,11 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/firebaseAdapter";
 import { adminDb } from "@/lib/adminDb";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs } from "firebase/firestore";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,39 +168,93 @@ export default function AdminOrders() {
   const [shippingLabelOpen, setShippingLabelOpen] = useState(false);
 
   const fetchOrders = async () => {
-    if (!admin?.id) {
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
     
+    // Direct DB query first
     try {
-      const { data, error } = await supabase.functions.invoke("admin-orders", {
-        body: { action: "list", adminId: admin.id, data: { limit: 100 } }
-      });
+      const { data: dbOrders, error: dbErr } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
 
-      if (error || data?.error) {
-        // Direct DB fallback if edge function fails
-        const { data: dbOrders, error: dbErr } = await supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(100);
-
-        if (dbErr) {
-          console.error("Fetch orders error:", dbErr);
-          toast({ variant: "destructive", title: "Error", description: "Failed to load orders" });
-        } else {
-          setOrders(dbOrders || []);
-        }
-      } else {
-        setOrders(data?.orders || []);
+      if (!dbErr && dbOrders && dbOrders.length > 0) {
+        setOrders(dbOrders as Order[]);
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      console.error("Fetch orders error:", err);
-      toast({ variant: "destructive", title: "Error", description: "Failed to load orders" });
+    } catch (dbErr) {
+      console.warn("Direct fetch orders error:", dbErr);
     }
+
+    // Try edge function if available
+    if (admin?.id) {
+      try {
+        const { data } = await supabase.functions.invoke("admin-orders", {
+          body: { action: "list", adminId: admin.id, data: { limit: 100 } }
+        });
+        if (data?.orders && data.orders.length > 0) {
+          setOrders(data.orders);
+          setLoading(false);
+          return;
+        }
+      } catch (efErr) {
+        console.warn("Edge function fetch orders error:", efErr);
+      }
+    }
+
+    // Fallback: Firestore 'orders' collection
+    try {
+      const snap = await getDocs(collection(db, "orders"));
+      const list: any[] = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        list.push({
+          id: d.id,
+          order_number: data.order_number || data.orderNumber || d.id,
+          user_id: data.user_id || data.userId || "guest",
+          status: data.status || "pending",
+          payment_status: data.payment_status || data.paymentStatus || "pending",
+          payment_method: data.payment_method || data.paymentMethod || "cod",
+          subtotal: Number(data.subtotal || 0),
+          shipping_cost: Number(data.shipping_cost || data.shippingCost || 0),
+          discount_amount: Number(data.discount_amount || data.discountAmount || 0),
+          tax_amount: Number(data.tax_amount || 0),
+          total: Number(data.total || 0),
+          notes: data.notes || null,
+          shipping_address: data.shipping_address || data.shippingAddress || {},
+          billing_address: data.billing_address || data.billingAddress || {},
+          created_at: data.created_at || data.createdAt || new Date().toISOString(),
+          updated_at: data.updated_at || data.updatedAt || null,
+        });
+      });
+      if (list.length > 0) {
+        setOrders(list as Order[]);
+        setLoading(false);
+        return;
+      }
+    } catch (fsErr) {
+      console.warn("Firestore orders fetch warning:", fsErr);
+    }
+
+    // Fallback: LocalStorage Cache
+    try {
+      const raw = localStorage.getItem("enterprise_admin_orders") || localStorage.getItem("local_orders");
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length > 0) {
+          setOrders(list as Order[]);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (lsErr) {
+      console.warn("Local storage orders fetch warning:", lsErr);
+    }
+
     setLoading(false);
   };
+
 
   useEffect(() => {
     fetchOrders();

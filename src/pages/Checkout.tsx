@@ -13,7 +13,10 @@ import { useCart } from "@/contexts/CartContext";
 import { useCJCart } from "@/hooks/useCJCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/firebaseAdapter";
+import { db } from "@/integrations/firebase/client";
+import { doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+
 
 interface AppliedCoupon {
   code: string;
@@ -229,6 +232,47 @@ export default function Checkout() {
         .single();
 
       if (orderError) throw orderError;
+
+      // Sync order to Firestore and Local Storage so Admin Panel instantly sees the order
+      try {
+        const firestoreOrderDoc = {
+          id: order.id,
+          order_number: orderNumber,
+          orderNumber,
+          user_id: user.id,
+          subtotal,
+          shipping_cost: shipping,
+          tax_amount: tax,
+          discount_amount: couponDiscount,
+          total,
+          status: "pending",
+          payment_status: paymentMethod === "cod" ? "pending" : "pending",
+          payment_method: paymentMethod,
+          shipping_address: {
+            firstName: shippingInfo.firstName,
+            lastName: shippingInfo.lastName,
+            address: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            zipCode: shippingInfo.zipCode,
+            country: shippingInfo.country,
+            phone: shippingInfo.phone
+          },
+          notes: appliedCoupon ? `Coupon: ${appliedCoupon.code}` : null,
+          created_at: new Date().toISOString()
+        };
+        setDoc(doc(db, "orders", order.id), firestoreOrderDoc, { merge: true }).catch(() => {});
+        try {
+          const rawLocal = localStorage.getItem("enterprise_admin_orders") || localStorage.getItem("local_orders") || "[]";
+          const localList = JSON.parse(rawLocal);
+          localList.unshift(firestoreOrderDoc);
+          localStorage.setItem("enterprise_admin_orders", JSON.stringify(localList));
+          localStorage.setItem("local_orders", JSON.stringify(localList));
+        } catch {}
+      } catch (fsErr) {
+        console.warn("Firestore order sync warning:", fsErr);
+      }
+
 
       // Persist phone + full name to profile so admin sees latest details
       const fullNameCombined = `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim();

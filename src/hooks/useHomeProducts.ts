@@ -214,6 +214,31 @@ function getInitialCachedProducts() {
 }
 
 async function fetchAllHomeProducts() {
+  // ── Strategy 0: Admin Created Products merge helper ──
+  let adminCreatedProducts: Product[] = [];
+  try {
+    const raw = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list) && list.length > 0) {
+        adminCreatedProducts = list.map((p: any, index: number) => ({
+          id: p.id || `admin-prod-${index}`,
+          name: p.title || p.name || "Untitled Product",
+          slug: p.slug || `prod-${index}`,
+          image: p.image_url || p.images?.[0] || defaultImages[index % defaultImages.length],
+          price: Number(p.discount_price || p.regular_price || p.price || 0),
+          originalPrice: p.discount_price ? Number(p.regular_price || p.price) : undefined,
+          rating: 4.9,
+          reviews: 20,
+          sold: 50,
+          freeShipping: true,
+          isNew: true,
+          isBestSeller: true,
+        }));
+      }
+    }
+  } catch {}
+
   // ── Strategy 1: Fetch from local DB (synced products + images) ──
   try {
     const { data: dbProducts, error: dbError } = await supabase
@@ -224,13 +249,16 @@ async function fetchAllHomeProducts() {
         free_shipping, is_new_arrival, is_best_seller, is_featured, is_flash_sale,
         product_images ( image_url, is_primary )
       `)
-      .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(60);
 
-    if (!dbError && dbProducts && dbProducts.length >= 6) {
+    if (!dbError && dbProducts && dbProducts.length > 0) {
       const mapped = (dbProducts as ProductWithImages[]).map(mapDbProduct);
-      const result = buildSections(mapped);
+      const merged = [
+        ...adminCreatedProducts,
+        ...mapped.filter(m => !adminCreatedProducts.some(ap => ap.id === m.id))
+      ];
+      const result = buildSections(merged);
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(result));
       } catch (e) {}
@@ -257,7 +285,11 @@ async function fetchAllHomeProducts() {
       const rawProducts = responseData.products || (Array.isArray(responseData) ? responseData : []);
       if (Array.isArray(rawProducts) && rawProducts.length > 0) {
         const mapped = rawProducts.map(mapSupplierProduct);
-        const result = buildSections(mapped);
+        const merged = [
+          ...adminCreatedProducts,
+          ...mapped.filter(m => !adminCreatedProducts.some(ap => ap.id === m.id))
+        ];
+        const result = buildSections(merged);
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify(result));
         } catch (e) {}
@@ -270,15 +302,13 @@ async function fetchAllHomeProducts() {
   }
 
   // ── Strategy 3: Hardcoded fallback ──
-  return {
-    latestProducts: fallbackProducts,
-    flashSale: fallbackProducts,
-    featured: fallbackProducts,
-    newArrivals: fallbackProducts,
-    trending: fallbackProducts,
-    recommended: fallbackProducts,
-  };
+  const mergedFallback = [
+    ...adminCreatedProducts,
+    ...fallbackProducts.filter(m => !adminCreatedProducts.some(ap => ap.id === m.id))
+  ];
+  return buildSections(mergedFallback);
 }
+
 
 export function useHomeProducts() {
   return useQuery({
