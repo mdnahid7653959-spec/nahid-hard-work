@@ -7,16 +7,19 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  reloaded: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  private autoReloadTimer: any = null;
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, reloaded: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, reloaded: false };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -32,13 +35,29 @@ export class ErrorBoundary extends Component<Props, State> {
       const lastReload = sessionStorage.getItem("chunk_reload_timestamp");
       const now = Date.now();
 
-      // Auto-reload immediately if not reloaded in the last 15 seconds
-      if (!lastReload || now - parseInt(lastReload, 10) > 15000) {
+      // Only auto-reload once per 5 seconds to prevent infinite reload loops
+      if (!lastReload || now - parseInt(lastReload, 10) > 5000) {
         sessionStorage.setItem("chunk_reload_timestamp", now.toString());
-        window.location.reload();
+        this.autoReloadTimer = setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      } else {
+        this.setState({ reloaded: true });
       }
     }
   }
+
+  componentWillUnmount() {
+    if (this.autoReloadTimer) {
+      clearTimeout(this.autoReloadTimer);
+    }
+  }
+
+  handleReload = () => {
+    sessionStorage.removeItem("chunk_reload_timestamp");
+    this.setState({ hasError: false, error: null });
+    window.location.href = window.location.pathname;
+  };
 
   render() {
     if (this.state.hasError) {
@@ -48,36 +67,48 @@ export class ErrorBoundary extends Component<Props, State> {
         errorMessage.includes("Importing a module script failed") ||
         errorMessage.includes("Loading chunk");
 
-      if (isChunkError) {
-        // Show lightweight updating spinner while auto-refreshing
+      if (isChunkError && !this.state.reloaded) {
         return (
           <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4" />
             <h3 className="text-base font-semibold text-foreground">Updating to latest version...</h3>
-            <p className="text-xs text-muted-foreground mt-1">Fetching fresh assets from server</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">Fetching fresh assets from server</p>
+            <button
+              onClick={this.handleReload}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition shadow-sm"
+            >
+              Click to Reload Now
+            </button>
           </div>
         );
       }
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <div className="text-center max-w-lg p-6 bg-card border rounded-xl shadow">
-            <h2 className="text-lg font-semibold mb-2 text-destructive">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              An unexpected error occurred:
+          <div className="text-center max-w-lg p-6 bg-card border rounded-xl shadow space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Application Notice</h2>
+            <p className="text-sm text-muted-foreground">
+              A new code update is available or a temporary connection refresh is required.
             </p>
-            <div className="bg-muted text-destructive text-xs font-mono p-3 rounded text-left overflow-auto max-h-48 mb-4">
-              {this.state.error?.message || "Unknown runtime error"}
+            {this.state.error?.message && (
+              <div className="bg-muted text-foreground/80 text-xs font-mono p-3 rounded text-left overflow-auto max-h-32">
+                {this.state.error.message}
+              </div>
+            )}
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                onClick={this.handleReload}
+                className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition shadow-sm"
+              >
+                Reload Application
+              </button>
+              <a
+                href="/"
+                className="px-5 py-2.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/90 transition"
+              >
+                Go to Home
+              </a>
             </div>
-            <button
-              onClick={() => {
-                this.setState({ hasError: false, error: null });
-                window.location.reload();
-              }}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition"
-            >
-              Reload App
-            </button>
           </div>
         </div>
       );
@@ -86,3 +117,4 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
