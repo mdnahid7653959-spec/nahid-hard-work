@@ -142,18 +142,51 @@ export function AdminProductPreviewDialog({
 
   const defaultPlaceholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600' fill='%23f8fafc'><rect width='600' height='600' rx='30'/><g transform='translate(250, 240)' fill='none' stroke='%2394a3b8' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><rect x='10' y='20' width='80' height='70' rx='10'/><circle cx='35' cy='45' r='10'/><path d='M10 75 l25-25 l20 20 l25-25 l10 10'/></g><text x='300' y='360' font-family='sans-serif' font-size='20' font-weight='600' fill='%2364748b' text-anchor='middle'>No Image Uploaded</text></svg>";
 
-  const rawImages = (product?.product_images && product.product_images.length > 0)
-    ? product.product_images.slice().sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
-    : (Array.isArray(product?.images) && product.images.length > 0)
-    ? product.images.map((u: string, idx: number) => ({ id: `img-${idx}`, image_url: u, sort_order: idx }))
-    : (product?.image_url || product?.image)
-    ? [{ id: "img-0", image_url: product.image_url || product.image, sort_order: 0 }]
-    : [];
+  const resolvePreviewImage = (url: any): string => {
+    if (!url || typeof url !== "string") return "";
+    const trimmed = url.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+      return trimmed;
+    }
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    const base = "https://mohasagor.com.bd";
+    return trimmed.startsWith("/") ? `${base}${trimmed}` : `${base}/${trimmed}`;
+  };
 
-  const images = rawImages
-    .map((img: any) => (typeof img === "string" ? img : img?.image_url || img?.url || img?.product_image))
-    .filter(Boolean);
+  const extractImages = (p: any): string[] => {
+    if (!p) return [];
+    const list: string[] = [];
+    const addUrl = (u: any) => {
+      const res = resolvePreviewImage(u);
+      if (res && !list.includes(res)) list.push(res);
+    };
 
+    if (Array.isArray(p.product_images) && p.product_images.length > 0) {
+      p.product_images.forEach((item: any) => {
+        if (typeof item === "string") addUrl(item);
+        else if (item && typeof item === "object") {
+          addUrl(item.image_url || item.url || item.image || item.product_image);
+        }
+      });
+    }
+
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      p.images.forEach((item: any) => {
+        if (typeof item === "string") addUrl(item);
+        else if (item && typeof item === "object") {
+          addUrl(item.image_url || item.url || item.image);
+        }
+      });
+    }
+
+    if (p.image_url) addUrl(p.image_url);
+    if (p.image) addUrl(p.image);
+    if (p.thumbnail_img) addUrl(p.thumbnail_img);
+
+    return list;
+  };
+
+  const images = extractImages(product);
   if (images.length === 0) {
     images.push(defaultPlaceholderSvg);
   }
