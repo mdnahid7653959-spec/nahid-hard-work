@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/lib/firebaseAdapter";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs } from "firebase/firestore";
 
 interface Order {
   id: string;
@@ -48,20 +50,54 @@ export default function Orders() {
   }, [user]);
 
   const fetchOrders = async () => {
+    if (!user) return;
+    setLoadingOrders(true);
+    let orderList: Order[] = [];
+
+    // 1. Query Supabase DB
     try {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .eq("user_id", user?.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setOrders(data || []);
+      if (!error && data && data.length > 0) {
+        orderList = data as Order[];
+      }
     } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoadingOrders(false);
+      console.warn("Error fetching Supabase orders:", error);
     }
+
+    // 2. Query Firestore DB for user orders
+    try {
+      const snap = await getDocs(collection(db, "orders"));
+      if (!snap.empty) {
+        snap.forEach((d) => {
+          const data = d.data();
+          const uid = data.user_id || data.userId;
+          if (uid === user.id || (user.email && uid === user.email)) {
+            const pid = d.id;
+            const orderNum = data.order_number || data.orderNumber || pid.slice(0, 10);
+            if (!orderList.some(o => o.id === pid || o.order_number === orderNum)) {
+              orderList.push({
+                id: pid,
+                order_number: orderNum,
+                status: (data.status || "pending").toLowerCase(),
+                total: Number(data.totalAmount || data.price || data.total || 0),
+                created_at: data.createdAt || data.created_at || new Date().toISOString(),
+                payment_status: (data.payment_status || data.paymentStatus || "pending").toLowerCase()
+              });
+            }
+          }
+        });
+      }
+    } catch (fsErr) {
+      console.warn("Error fetching Firestore orders:", fsErr);
+    }
+
+    setOrders(orderList);
+    setLoadingOrders(false);
   };
 
   const filteredOrders = orders.filter(order =>

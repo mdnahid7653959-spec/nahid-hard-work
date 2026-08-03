@@ -28,12 +28,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface OrderItem {
   id: string;
-  product_id: string | null;
   product_name: string;
+  variant_name: string | null;
   quantity: number;
-  price: number;
-  total: number;
-  variant_name?: string | null;
+  unit_price: number;
+  total_price: number;
+  product_image?: string;
+  total?: number;
+  price?: number;
 }
 
 interface Order {
@@ -86,34 +88,64 @@ export default function OrderDetail() {
   useEffect(() => {
     const fetchOrder = async () => {
       if (!id || !user) return;
+      setIsLoading(true);
 
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("orders")
-          .select(`
-            *,
-            order_items (*)
-          `)
+          .select(`*, order_items (*)`)
           .eq("id", id)
-          .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
-        setOrder(data);
+        if (data) {
+          setOrder(data);
+          setIsLoading(false);
+          return;
+        }
+
+        // Firestore Fallback
+        const docRef = doc(db, "orders", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const raw = docSnap.data();
+          const formatted: Order = {
+            id: docSnap.id,
+            order_number: raw.order_number || raw.orderNumber || docSnap.id.slice(0, 10),
+            status: (raw.status || "pending").toLowerCase(),
+            payment_status: (raw.payment_status || raw.paymentStatus || "pending").toLowerCase(),
+            payment_method: raw.payment_method || raw.paymentMethod || "cod",
+            subtotal: Number(raw.subtotal || raw.totalAmount || 0),
+            shipping_cost: Number(raw.shipping_cost || raw.shippingCost || 0),
+            tax_amount: Number(raw.tax_amount || raw.tax || 0),
+            discount_amount: Number(raw.discount_amount || raw.discount || 0),
+            total: Number(raw.totalAmount || raw.price || raw.total || 0),
+            shipping_address: raw.shipping_address || raw.shippingAddress || {},
+            tracking_number: raw.tracking_number || raw.trackingNumber,
+            courier_name: raw.courier_name || raw.courierName,
+            created_at: raw.createdAt || raw.created_at || new Date().toISOString(),
+            order_items: Array.isArray(raw.items) ? raw.items.map((it: any, idx: number) => ({
+              id: it.id || `item-${idx}`,
+              product_name: it.product?.name || it.name || "Product",
+              variant_name: it.variant_name || null,
+              quantity: Number(it.quantity || 1),
+              unit_price: Number(it.price || it.unit_price || 0),
+              total_price: Number((it.price || it.unit_price || 0) * (it.quantity || 1)),
+              product_image: it.image || it.product?.image
+            })) : []
+          };
+          setOrder(formatted);
+          setIsLoading(false);
+          return;
+        }
       } catch (error) {
-        console.error("Error fetching order:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load order details",
-          variant: "destructive",
-        });
+        console.warn("Error fetching order details:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchOrder();
-  }, [id, user, toast]);
+  }, [id, user]);
 
   const handleCopyTracking = () => {
     if (order?.tracking_number) {
