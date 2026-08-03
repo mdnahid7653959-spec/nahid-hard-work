@@ -40,6 +40,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdminCacheInvalidation } from "@/hooks/useRealtimeSync";
 import { AdminProductPreviewDialog } from "@/components/admin/AdminProductPreviewDialog";
+import { getCachedMohasagorProducts, fetchAllPagesMohasagorProducts } from "@/utils/mohasagorCache";
+
 
 interface Product {
   id: string;
@@ -70,13 +72,15 @@ export default function AdminProducts() {
   const { invalidateProducts } = useAdminCacheInvalidation();
 
   const fetchProducts = async () => {
-    // 0ms Fast Path: Load local storage cache immediately
+    let localAdminProds: Product[] = [];
+
+    // 1. Check local admin products
     try {
       const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
       if (rawLocal) {
         const localList = JSON.parse(rawLocal);
         if (Array.isArray(localList) && localList.length > 0) {
-          const mapped = localList.map((data: any) => ({
+          localAdminProds = localList.map((data: any) => ({
             id: data.id,
             name: data.title || data.name || "Untitled Product",
             slug: data.slug || "",
@@ -85,29 +89,18 @@ export default function AdminProducts() {
             stock_quantity: Number(data.stock || data.stock_quantity || 0),
             status: data.status || "APPROVED",
             approval_status: data.approvalStatus || data.approval_status || "APPROVED",
-            seller_id: data.seller_id || null,
+            seller_id: data.seller_id || "Admin",
             is_featured: Boolean(data.isFeatured || data.is_featured),
             created_at: data.createdAt || data.created_at || new Date().toISOString()
           }));
-          setProducts(mapped as Product[]);
+          setProducts(localAdminProds);
           setLoading(false);
         }
       }
     } catch {}
 
-
-
-    // Ensure Supabase auth session exists if available
-    try {
-      if (typeof (supabase?.auth as any)?.signInAnonymously === "function") {
-        const { data: sessionCheck } = await supabase.auth.getSession();
-        if (!sessionCheck?.session) {
-          await (supabase.auth as any).signInAnonymously().catch(() => {});
-        }
-      }
-    } catch {}
-
-    // Primary: Direct DB query with category/brand/seller joins
+    // 2. Fetch Database products
+    let dbProdsList: Product[] = [];
     try {
       const { data: dbProds, error: dbErr } = await supabase
         .from("products")
@@ -120,142 +113,76 @@ export default function AdminProducts() {
         .order("created_at", { ascending: false });
 
       if (!dbErr && dbProds && dbProds.length > 0) {
-        setProducts(dbProds as Product[]);
-        setLoading(false);
-        return;
+        dbProdsList = dbProds as Product[];
       }
     } catch (err) {
-      console.error("Direct fetch products error with joins:", err);
+      console.warn("Database fetch products warning:", err);
     }
 
-    // Fallback 1: Direct DB query without joins (simple select)
+    // 3. Fetch Supplier API Products
+    let supplierProdsList: Product[] = [];
     try {
-      const { data: simpleProds, error: simpleErr } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!simpleErr && simpleProds && simpleProds.length > 0) {
-        setProducts(simpleProds as Product[]);
-        setLoading(false);
-        return;
+      let mohasagorProds = await getCachedMohasagorProducts();
+      if (!mohasagorProds || mohasagorProds.length === 0) {
+        mohasagorProds = await fetchAllPagesMohasagorProducts().catch(() => []);
       }
-    } catch (err) {
-      console.error("Simple fetch products error:", err);
-    }
 
-    // Fallback 2: adminDb helper (handles Edge Function + retry)
-    try {
-      const { data: adminProds, error: adminErr } = await adminDb.select("products", {
-        orderBy: { col: "created_at", ascending: false },
-        limit: 500,
-      });
-      if (!adminErr && adminProds && adminProds.length > 0) {
-        setProducts(adminProds as Product[]);
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      console.error("AdminDb fetch products error:", err);
-    }
-
-    // Fallback 3: Firestore 'products' collection
-    try {
-      const snap = await getDocs(collection(db, "products"));
-      const list: any[] = [];
-      snap.forEach((d) => {
-        const data = d.data();
-        list.push({
-          id: d.id,
-          name: data.title || data.name || "Untitled Product",
-          slug: data.slug || "",
-          regular_price: Number(data.price || data.regular_price || 0),
-          discount_price: data.discountPrice || data.discount_price || null,
-          stock_quantity: Number(data.stock || data.stock_quantity || 0),
-          status: data.status || "APPROVED",
-          approval_status: data.approvalStatus || data.approval_status || "APPROVED",
-          seller_id: data.seller_id || null,
-          is_featured: Boolean(data.isFeatured || data.is_featured),
-          created_at: data.createdAt || data.created_at || new Date().toISOString()
-        });
-      });
-      if (list.length > 0) {
-        setProducts(list as Product[]);
-        setLoading(false);
-        return;
-      }
-    } catch (fsErr) {
-      console.warn("Firestore products fetch warning:", fsErr);
-    }
-
-    // Fallback 4: Local Storage Cache
-    try {
-      const raw = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
-      if (raw) {
-        const list = JSON.parse(raw);
-        if (Array.isArray(list) && list.length > 0) {
-          const mapped = list.map((data: any) => ({
-            id: data.id,
-            name: data.title || data.name || "Untitled Product",
-            slug: data.slug || "",
-            regular_price: Number(data.price || data.regular_price || 0),
-            discount_price: data.discountPrice || data.discount_price || null,
-            stock_quantity: Number(data.stock || data.stock_quantity || 0),
-            status: data.status || "APPROVED",
-            approval_status: data.approvalStatus || data.approval_status || "APPROVED",
-            seller_id: data.seller_id || null,
-            is_featured: Boolean(data.isFeatured || data.is_featured),
-            created_at: data.createdAt || data.created_at || new Date().toISOString()
-          }));
-          setProducts(mapped as Product[]);
-          setLoading(false);
-          return;
-        }
-      }
-    } catch (localErr) {
-      console.warn("Local storage fallback warning:", localErr);
-    }
-
-    // Fallback 5: Mohasagor Supplier API
-    try {
-      const res = await fetch("/api/mohasagor/api/reseller/product", {
-        headers: {
-          "api-key": "A8niclztH9JtzS4t",
-          "secret-key": "2ff380917a11d3a7c97bcf6dddfb8adf38194c7d6b726ab12c4d0d5fb136fef8"
-        }
-      });
-      if (res.ok) {
-        const responseData = await res.json();
-        const rawProducts = responseData.products || (Array.isArray(responseData) ? responseData : []);
-        if (Array.isArray(rawProducts) && rawProducts.length > 0) {
-          const mapped = rawProducts.map((p: any) => ({
-            id: p.id.toString(),
-            name: p.name,
-            slug: `product-${p.id}`,
-            regular_price: parseFloat(p.price) || parseFloat(p.sale_price) || 0,
-            discount_price: parseFloat(p.sale_price) || null,
-            stock_quantity: parseInt(p.stock || "50", 10),
-            status: "active",
-            approval_status: "APPROVED",
-            seller_id: "mohasagor",
-            is_featured: false,
-            created_at: new Date().toISOString()
-          }));
-          setProducts(mapped as Product[]);
-          setLoading(false);
-          return;
-        }
+      if (mohasagorProds && mohasagorProds.length > 0) {
+        supplierProdsList = mohasagorProds.map((sp: any) => ({
+          id: sp.id,
+          name: sp.name,
+          slug: sp.slug || `product-${sp.id}`,
+          regular_price: Number(sp.originalPrice || sp.price || 0),
+          discount_price: sp.originalPrice ? Number(sp.price) : null,
+          stock_quantity: 50,
+          status: "active",
+          approval_status: "APPROVED",
+          seller_id: "Mohasagor Supplier",
+          is_featured: false,
+          created_at: new Date().toISOString()
+        }));
       }
     } catch (suppErr) {
-      console.warn("Supplier fetch fallback warning:", suppErr);
+      console.warn("Supplier API fetch warning:", suppErr);
+    }
+
+    // 4. Merge Admin products + DB products + Supplier API products seamlessly
+    const mergedMap = new Map<string, Product>();
+
+    // Add Local Admin products first (highest priority)
+    localAdminProds.forEach(p => mergedMap.set(p.id, p));
+
+    // Add Database products
+    dbProdsList.forEach(p => {
+      if (!mergedMap.has(p.id)) {
+        mergedMap.set(p.id, p);
+      }
+    });
+
+    // Add Supplier API products
+    supplierProdsList.forEach(p => {
+      if (!mergedMap.has(p.id)) {
+        mergedMap.set(p.id, p);
+      }
+    });
+
+    const finalCatalog = Array.from(mergedMap.values());
+    if (finalCatalog.length > 0) {
+      setProducts(finalCatalog);
     }
 
     setLoading(false);
   };
 
 
+
   useEffect(() => {
     fetchProducts();
+
+    const handleSupplierUpdate = () => {
+      fetchProducts();
+    };
+    window.addEventListener("mohasagor_products_updated", handleSupplierUpdate);
 
     const channel = supabase
       .channel("admin-products-realtime")
@@ -264,7 +191,10 @@ export default function AdminProducts() {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      window.removeEventListener("mohasagor_products_updated", handleSupplierUpdate);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
 
