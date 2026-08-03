@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, XCircle, Ban, Loader2, Package, Store, Tag } from "lucide-react";
+import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
 
 interface Props {
   productId: string | null;
@@ -74,6 +75,47 @@ export function AdminProductPreviewDialog({
           }
         } catch (localErr) {
           console.warn("Preview local fallback warning:", localErr);
+        }
+      }
+
+      if (!foundData) {
+        try {
+          const mohasagorList = await getCachedMohasagorProducts();
+          if (mohasagorList && mohasagorList.length > 0) {
+            const matched: any = mohasagorList.find((p: any) =>
+              String(p.id) === String(productId) ||
+              p.slug === productId ||
+              p.sku === productId ||
+              String(p.product_code) === String(productId) ||
+              `product-${p.id}` === productId
+            );
+            if (matched) {
+              const rawImgs = Array.isArray(matched.product_images) && matched.product_images.length > 0
+                ? matched.product_images
+                : (Array.isArray(matched.images) && matched.images.length > 0
+                    ? matched.images.map((u: string, i: number) => ({ id: `img-${i}`, image_url: u, sort_order: i }))
+                    : [{ id: "img-0", image_url: matched.image || "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop", sort_order: 0 }]);
+
+              foundData = {
+                id: matched.id,
+                name: matched.name || "API Product",
+                slug: matched.slug || `product-${matched.id}`,
+                regular_price: Number(matched.originalPrice || matched.price || 0),
+                discount_price: matched.originalPrice ? Number(matched.price) : null,
+                short_description: matched.short_description || null,
+                description: matched.details || matched.description || "API Supplier Product",
+                stock_quantity: Number(matched.stock_quantity ?? matched.stock ?? (matched.stock_status === "available" ? 50 : 0)),
+                sku: matched.sku || (matched.product_code ? String(matched.product_code) : `API-${matched.id}`),
+                status: "active",
+                approval_status: "APPROVED",
+                seller_id: "Mohasagor Supplier",
+                product_images: rawImgs,
+                categories: { name: matched.category || "Supplier API", slug: "supplier" }
+              };
+            }
+          }
+        } catch (suppErr) {
+          console.warn("Preview supplier fallback warning:", suppErr);
         }
       }
 
@@ -242,7 +284,17 @@ export function AdminProductPreviewDialog({
                 {product.description && (
                   <div>
                     <h4 className="font-semibold text-sm mb-1">Description</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-line">{product.description}</p>
+                    {/<[a-z][\s\S]*>/i.test(product.description) ? (
+                      <div
+                        className="text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none
+                          [&_img]:max-w-full [&_img]:rounded-lg [&_table]:w-full [&_table]:border-collapse
+                          [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2
+                          [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                        dangerouslySetInnerHTML={{ __html: product.description }}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{product.description}</p>
+                    )}
                   </div>
                 )}
 

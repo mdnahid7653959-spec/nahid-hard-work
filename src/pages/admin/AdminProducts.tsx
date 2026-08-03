@@ -132,7 +132,7 @@ export default function AdminProducts() {
           slug: sp.slug || `product-${sp.id}`,
           regular_price: Number(sp.originalPrice || sp.price || 0),
           discount_price: sp.originalPrice ? Number(sp.price) : null,
-          stock_quantity: 50,
+          stock_quantity: Number(sp.stock_quantity ?? sp.stock ?? (sp.stock_status === "available" ? 50 : 0)),
           status: "active",
           approval_status: "APPROVED",
           seller_id: "Mohasagor Supplier",

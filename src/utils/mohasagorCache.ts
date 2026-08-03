@@ -79,11 +79,27 @@ function mapRawProducts(rawProducts: any[], base: string): Product[] {
     const price = parseFloat(p.sale_price) || parseFloat(p.price) || 0;
     const originalPrice = parseFloat(p.price) || price;
 
+    const allImages = p.product_images && p.product_images.length > 0
+      ? p.product_images.map((imgObj: any) => resolveUrl(imgObj.product_image || imgObj.image || imgObj.url))
+      : [firstImage];
+
+    const formattedImgList = p.product_images && p.product_images.length > 0
+      ? p.product_images.map((imgObj: any, idx: number) => ({
+          id: imgObj.id ? String(imgObj.id) : `img-${idx}`,
+          image_url: resolveUrl(imgObj.product_image || imgObj.image || imgObj.url),
+          sort_order: idx
+        }))
+      : [{ id: "img-0", image_url: firstImage, sort_order: 0 }];
+
+    const rawStock = p.stock_quantity ?? p.stock ?? (p.stock_status === "available" ? 50 : 0);
+
     return {
       id: p.id.toString(),
       name: p.name,
-      slug: `product-${p.id}`,
+      slug: p.slug || `product-${p.id}`,
       image: firstImage,
+      images: allImages,
+      product_images: formattedImgList,
       price,
       originalPrice: originalPrice > price ? originalPrice : undefined,
       rating: 4.8,
@@ -93,7 +109,14 @@ function mapRawProducts(rawProducts: any[], base: string): Product[] {
       isNew: index < 20,
       isBestSeller: index % 4 === 0,
       category: p.category || "",
-    } as Product & { category?: string };
+      description: p.details || p.description || "",
+      short_description: p.short_description || "",
+      stock: Number(rawStock),
+      stock_quantity: Number(rawStock),
+      stock_status: p.stock_status || "available",
+      sku: p.product_code ? String(p.product_code) : (p.sku || ""),
+      product_code: p.product_code
+    } as Product & { [key: string]: any };
   });
 }
 
