@@ -546,35 +546,19 @@ export default function AdminProducts() {
             </TableBody>
           </Table>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t bg-muted/20">
-              <div className="text-sm text-muted-foreground">
-                Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> to{" "}
-                <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, filteredProducts.length)}</span> of{" "}
-                <span className="font-medium text-foreground">{filteredProducts.length}</span> products
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-                </Button>
-                <span className="text-sm font-medium px-2">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
-                >
-                  Next <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
+          {/* Infinite Scroll Sentinel & Counter */}
+          {!loading && filteredProducts.length > 0 && (
+            <div className="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground bg-muted/10">
+              <span>
+                Showing <strong className="text-foreground">1</strong> to <strong className="text-foreground">{Math.min(visibleProducts.length, filteredProducts.length)}</strong> of <strong className="text-foreground">{filteredProducts.length}</strong> products
+              </span>
+              {visibleProducts.length < filteredProducts.length ? (
+                <div ref={sentinelRef} className="text-xs text-primary font-medium flex items-center gap-1.5 py-1">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Scroll down to load more products...
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground font-medium">All {filteredProducts.length} products loaded</span>
+              )}
             </div>
           )}
         </div>
