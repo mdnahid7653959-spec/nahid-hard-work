@@ -23,8 +23,8 @@ interface RelatedProductsProps {
 
 function RelatedProductsComponent({
   product,
-  title = "You May Also Like",
-  subtitle = "Explore same category items & more catalog recommendations",
+  title = "For You",
+  subtitle = "Recommended items for you",
   limit = 24
 }: RelatedProductsProps) {
   const { products, loading } = useRelatedProducts(product, limit);
@@ -73,19 +73,13 @@ function RelatedProductsComponent({
   return (
     <section className="py-8 sm:py-10 lg:py-14 w-full">
       <div className="bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-        {/* Header (Carousel arrows removed completely) */}
+        {/* Header (No icons, title set to For You) */}
         <div className="p-4 sm:p-6 lg:px-8 lg:py-6 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{title}</h2>
-              <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>
-            </div>
+          <div>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{title}</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-xs font-semibold text-muted-foreground w-fit">
-            <Layers className="h-3.5 w-3.5 text-primary" />
             <span>Same Category First • Auto Load On Scroll</span>
           </div>
         </div>

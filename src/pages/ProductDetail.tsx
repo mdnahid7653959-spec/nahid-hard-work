@@ -1198,8 +1198,8 @@ export default function ProductDetail() {
               discount_price: product.discount_price,
               tags: product.tags,
             }}
-            title="You May Also Like"
-            subtitle="Similar products based on your interests"
+            title="For You"
+            subtitle="Recommended items for you"
             limit={12}
           />
         </div>
