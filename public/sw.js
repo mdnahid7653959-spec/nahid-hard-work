@@ -1,6 +1,6 @@
-const CACHE_NAME = 'darzo-v3';
-const STATIC_CACHE = 'darzo-static-v3';
-const DYNAMIC_CACHE = 'darzo-dynamic-v3';
+const CACHE_NAME = 'durtup-v4';
+const STATIC_CACHE = 'durtup-static-v4';
+const DYNAMIC_CACHE = 'durtup-dynamic-v4';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
