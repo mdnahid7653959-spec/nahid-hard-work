@@ -169,6 +169,8 @@ export default function ProductDetail() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
   const {
     addToCart
   } = useCart();
