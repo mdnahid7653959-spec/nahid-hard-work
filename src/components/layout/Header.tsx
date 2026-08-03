@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/firebaseAdapter";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { SmartSearchBar } from "@/components/search/SmartSearchBar";
+import { useCategories } from "@/hooks/useProductSearch";
 
 interface CategoryItem {
   name: string;
@@ -82,8 +83,7 @@ export function Header() {
   const { itemCount: cartCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
   const { toast } = useToast();
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-
+  const { data: categoriesData } = useCategories();
   const { config: headerConfig } = useSiteConfig<HeaderConfig>("header", defaultHeaderConfig);
 
   const logoUrl = headerConfig.logo_url || defaultHeaderConfig.logo_url;
@@ -259,21 +259,36 @@ export function Header() {
         <nav className="border-t border-border/40 bg-card/95 backdrop-blur-md hidden lg:block shadow-xs sticky top-0 z-40">
           <div className="container">
             <ul className="flex items-center gap-2 py-2 text-sm overflow-x-auto scrollbar-none">
-              {[
-                { name: "Home", href: "/" },
-                { name: "Electronics", href: "/category/electronics" },
-                { name: "Fashion", href: "/category/mens-fashion" },
-                { name: "Home & Garden", href: "/category/home-lifestyle" },
-                { name: "Sports", href: "/category/sports" },
-                { name: "Toys & Hobbies", href: "/category/kids-zone" },
-                { name: "Beauty & Health", href: "/category/beauty-health" },
-              ].map(({ name, href }) => (
-                <li key={name}>
+              <li>
+                <Link
+                  to="/"
+                  className="px-4 py-2 text-xs font-bold rounded-xl border border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40 transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95"
+                >
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/products"
+                  className="px-4 py-2 text-xs font-bold rounded-xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95"
+                >
+                  All Products
+                </Link>
+              </li>
+              {(categoriesData && categoriesData.length > 0 ? categoriesData : [
+                { name: "Electronics", slug: "electronics" },
+                { name: "Fashion", slug: "fashion" },
+                { name: "Home & Garden", slug: "home" },
+                { name: "Beauty & Health", slug: "beauty" },
+                { name: "Toys & Hobbies", slug: "kids" },
+                { name: "Watches", slug: "watches" }
+              ]).map((cat) => (
+                <li key={cat.id || cat.slug || cat.name}>
                   <Link
-                    to={href}
+                    to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
                     className="px-4 py-2 text-xs font-bold rounded-xl border border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40 transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95"
                   >
-                    {name}
+                    {cat.name}
                   </Link>
                 </li>
               ))}
