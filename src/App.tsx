@@ -111,13 +111,11 @@ const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotific
 const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
 const AdminSearchManagement = lazy(() => import("./pages/admin/AdminSearchManagement"));
 const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
-// Enterprise Admin Pages
-import { EnterpriseDashboard } from "./pages/admin/enterprise/EnterpriseDashboard";
-import { EnterpriseProducts } from "./pages/admin/enterprise/EnterpriseProducts";
-import { EnterpriseOrders } from "./pages/admin/enterprise/EnterpriseOrders";
-import { EnterprisePayments } from "./pages/admin/enterprise/EnterprisePayments";
-import { EnterpriseCommissions } from "./pages/admin/enterprise/EnterpriseCommissions";
-import { EnterpriseUsers } from "./pages/admin/enterprise/EnterpriseUsers";
+const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+const AdminSellerSupport = lazy(() => import("./pages/admin/AdminSellerSupport"));
+const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
+const AdminVisualEditor = lazy(() => import("./pages/admin/AdminVisualEditor"));
+
 import { EnterpriseSupplierCenter } from "./pages/admin/enterprise/EnterpriseSupplierCenter";
 import { EnterpriseCMSBuilder } from "./pages/admin/enterprise/EnterpriseCMSBuilder";
 import { EnterpriseAIStudio } from "./pages/admin/enterprise/EnterpriseAIStudio";
@@ -254,47 +252,47 @@ const App = () => (
                           <Route path="/admin/login" element={<AdminGate><AdminLogin /></AdminGate>} />
                           
                           
-                          {/* Protected Enterprise Admin Routes (31 Operating System Modules) */}
-                          <Route path="/admin" element={<AdminProtectedRoute><EnterpriseDashboard /></AdminProtectedRoute>} />
-                          <Route path="/admin/dashboard" element={<AdminProtectedRoute><EnterpriseDashboard /></AdminProtectedRoute>} />
-                          <Route path="/admin/analytics" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
-                          <Route path="/admin/reports" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
-                          <Route path="/admin/activity-logs" element={<AdminProtectedRoute><EnterpriseSecurity /></AdminProtectedRoute>} />
-                          
-                          <Route path="/admin/products" element={<AdminProtectedRoute><EnterpriseProducts /></AdminProtectedRoute>} />
+                          {/* Protected Admin Routes */}
+                          <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+                          <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+                          <Route path="/admin/products" element={<AdminProtectedRoute><AdminProducts /></AdminProtectedRoute>} />
+                          <Route path="/admin/products/new" element={<AdminProtectedRoute><ProductForm /></AdminProtectedRoute>} />
+                          <Route path="/admin/products/:id" element={<AdminProtectedRoute><ProductForm /></AdminProtectedRoute>} />
                           <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
                           <Route path="/admin/brands" element={<AdminProtectedRoute><AdminBrands /></AdminProtectedRoute>} />
-                          <Route path="/admin/orders" element={<AdminProtectedRoute><EnterpriseOrders /></AdminProtectedRoute>} />
-                          <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
-                          <Route path="/admin/reviews" element={<AdminProtectedRoute><AdminReviews /></AdminProtectedRoute>} />
-                          
-                          <Route path="/admin/customers" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
-                          <Route path="/admin/sellers" element={<AdminProtectedRoute><AdminSellers /></AdminProtectedRoute>} />
-                          <Route path="/admin/suppliers" element={<AdminProtectedRoute><EnterpriseSupplierCenter /></AdminProtectedRoute>} />
-                          <Route path="/admin/inventory" element={<AdminProtectedRoute><EnterpriseInventory /></AdminProtectedRoute>} />
-                          <Route path="/admin/warehouses" element={<AdminProtectedRoute><AdminWarehouses /></AdminProtectedRoute>} />
-                          
-                          <Route path="/admin/marketing" element={<AdminProtectedRoute><AdminMarketing /></AdminProtectedRoute>} />
+                          <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
+                          <Route path="/admin/payments" element={<AdminProtectedRoute><AdminPayments /></AdminProtectedRoute>} />
+                          <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
+                          <Route path="/admin/customers" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
                           <Route path="/admin/coupons" element={<AdminProtectedRoute><AdminCoupons /></AdminProtectedRoute>} />
-                          <Route path="/admin/flash-sale" element={<AdminProtectedRoute><AdminMarketing /></AdminProtectedRoute>} />
-                          <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
-                          <Route path="/admin/search-management" element={<AdminProtectedRoute><AdminSearchManagement /></AdminProtectedRoute>} />
-                          <Route path="/admin/seo-manager" element={<AdminProtectedRoute><AdminCMS /></AdminProtectedRoute>} />
-                          
-                          <Route path="/admin/cms-builder" element={<AdminProtectedRoute><EnterpriseCMSBuilder /></AdminProtectedRoute>} />
-                          <Route path="/admin/theme-builder" element={<AdminProtectedRoute><EnterpriseThemeBuilder /></AdminProtectedRoute>} />
-                          <Route path="/admin/website-control" element={<AdminProtectedRoute><EnterpriseWebsiteControl /></AdminProtectedRoute>} />
-                          <Route path="/admin/user-control" element={<AdminProtectedRoute><EnterpriseUserControl /></AdminProtectedRoute>} />
-                          
-                          <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
-                          <Route path="/admin/payments" element={<AdminProtectedRoute><EnterprisePayments /></AdminProtectedRoute>} />
-                          <Route path="/admin/commissions" element={<AdminProtectedRoute><EnterpriseCommissions /></AdminProtectedRoute>} />
-                          <Route path="/admin/shipping" element={<AdminProtectedRoute><EnterpriseShipping /></AdminProtectedRoute>} />
-                          <Route path="/admin/ai-studio" element={<AdminProtectedRoute><EnterpriseAIStudio /></AdminProtectedRoute>} />
-                          <Route path="/admin/security" element={<AdminProtectedRoute><EnterpriseSecurity /></AdminProtectedRoute>} />
-                          <Route path="/admin/rbac" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
-                          <Route path="/admin/users" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
+                          <Route path="/admin/reviews" element={<AdminProtectedRoute><AdminReviews /></AdminProtectedRoute>} />
+                          <Route path="/admin/cj-settings" element={<AdminProtectedRoute><AdminCJSettings /></AdminProtectedRoute>} />
+                          <Route path="/admin/supplier-integrations" element={<AdminProtectedRoute><AdminSupplierIntegrations /></AdminProtectedRoute>} />
+                          <Route path="/admin/suppliers" element={<AdminProtectedRoute><AdminSupplierIntegrations /></AdminProtectedRoute>} />
+                          <Route path="/admin/sellers" element={<AdminProtectedRoute><AdminSellers /></AdminProtectedRoute>} />
+                          <Route path="/admin/shipping" element={<AdminProtectedRoute><AdminShipping /></AdminProtectedRoute>} />
+                          <Route path="/admin/commissions" element={<AdminProtectedRoute><AdminCommissions /></AdminProtectedRoute>} />
+                          <Route path="/admin/inventory" element={<AdminProtectedRoute><AdminInventory /></AdminProtectedRoute>} />
+                          <Route path="/admin/marketing" element={<AdminProtectedRoute><AdminMarketing /></AdminProtectedRoute>} />
+                          <Route path="/admin/loyalty" element={<AdminProtectedRoute><AdminLoyalty /></AdminProtectedRoute>} />
+                          <Route path="/admin/free-delivery" element={<AdminProtectedRoute><AdminFreeDelivery /></AdminProtectedRoute>} />
+                          <Route path="/admin/reports" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
+                          <Route path="/admin/analytics" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
+                          <Route path="/admin/security" element={<AdminProtectedRoute><AdminSecurity /></AdminProtectedRoute>} />
+                          <Route path="/admin/activity-logs" element={<AdminProtectedRoute><AdminSecurity /></AdminProtectedRoute>} />
+                          <Route path="/admin/cms" element={<AdminProtectedRoute><AdminCMS /></AdminProtectedRoute>} />
+                          <Route path="/admin/consignments" element={<AdminProtectedRoute><AdminConsignments /></AdminProtectedRoute>} />
+                          <Route path="/admin/warehouses" element={<AdminProtectedRoute><AdminWarehouses /></AdminProtectedRoute>} />
+                          <Route path="/admin/home-bento" element={<AdminProtectedRoute><AdminHomeBento /></AdminProtectedRoute>} />
+                          <Route path="/admin/home-promos" element={<AdminProtectedRoute><AdminHomePromos /></AdminProtectedRoute>} />
+                          <Route path="/admin/push-notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
                           <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
+                          <Route path="/admin/staff" element={<AdminProtectedRoute><AdminStaff /></AdminProtectedRoute>} />
+                          <Route path="/admin/seller-support" element={<AdminProtectedRoute><AdminSellerSupport /></AdminProtectedRoute>} />
+                          <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
+                          <Route path="/admin/wallet" element={<AdminProtectedRoute><AdminWallet /></AdminProtectedRoute>} />
+                          <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
+                          <Route path="/admin/visual-editor" element={<AdminProtectedRoute><AdminVisualEditor /></AdminProtectedRoute>} />
 
                           {/* Staff Portal */}
                           <Route path="/staff/login" element={<StaffLogin />} />
