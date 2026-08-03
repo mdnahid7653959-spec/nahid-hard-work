@@ -18,9 +18,6 @@ window.addEventListener("error", (event) => {
 const rootElement = document.getElementById("root");
 
 if (rootElement) {
-  // Clear any stale root
-  rootElement.innerHTML = "";
-  
   createRoot(rootElement).render(
     <React.StrictMode>
       <App />
