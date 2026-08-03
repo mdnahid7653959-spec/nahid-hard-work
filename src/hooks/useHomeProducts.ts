@@ -174,6 +174,24 @@ function mapSupplierProduct(p: any, index: number): Product {
 }
 
 function buildSections(products: Product[]) {
+  // 10-Minute Time Block Rotation Seed (changes automatically every 600,000ms)
+  const timeBlock = Math.floor(Date.now() / (10 * 60 * 1000));
+  const total = products.length;
+
+  if (total > 0) {
+    const shift = (timeBlock * 12) % total;
+    const rotated = [...products.slice(shift), ...products.slice(0, shift)];
+
+    return {
+      latestProducts: rotated.slice(0, 12),
+      flashSale: rotated.slice(12, 18).map(p => ({ ...p, is_flash_sale: true })),
+      featured: rotated.slice(18, 30).map(p => ({ ...p, is_featured: true })),
+      newArrivals: rotated.slice(30, 42),
+      trending: rotated.slice(42, 48),
+      recommended: rotated.slice(48, 60),
+    };
+  }
+
   return {
     latestProducts: products.slice(0, 12),
     flashSale: products.slice(12, 18).map(p => ({ ...p, is_flash_sale: true })),
@@ -331,11 +349,15 @@ async function fetchAllHomeProducts() {
 
 
 export function useHomeProducts() {
+  const current10MinBlock = Math.floor(Date.now() / (10 * 60 * 1000));
+
   return useQuery({
-    queryKey: ["home-products"],
+    queryKey: ["home-products", current10MinBlock],
     queryFn: fetchAllHomeProducts,
     initialData: getInitialCachedProducts,
     staleTime: 10 * 60 * 1000, // 10 minutes cache
+    refetchInterval: 10 * 60 * 1000, // Auto-rotate and fetch fresh unique products every 10 minutes!
+    refetchIntervalInBackground: true,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

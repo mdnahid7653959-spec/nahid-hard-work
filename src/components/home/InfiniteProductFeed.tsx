@@ -31,6 +31,20 @@ export function InfiniteProductFeed() {
 
     initCatalog();
 
+    // Auto 10-minute product shuffle & refresh timer
+    const autoRotateTimer = setInterval(async () => {
+      const products = await getCachedMohasagorProducts();
+      if (products && products.length > 0) {
+        const timeBlock = Math.floor(Date.now() / (10 * 60 * 1000));
+        const shift = (timeBlock * BATCH_SIZE) % products.length;
+        const rotated = [...products.slice(shift), ...products.slice(0, shift)];
+        setAllCatalog(rotated);
+        setDisplayedProducts(rotated.slice(0, BATCH_SIZE));
+        setPage(1);
+        setHasMore(rotated.length > BATCH_SIZE);
+      }
+    }, 10 * 60 * 1000);
+
     // Listen for background API product updates
     const handleUpdate = async () => {
       const updated = await getCachedMohasagorProducts();
@@ -39,7 +53,10 @@ export function InfiniteProductFeed() {
       }
     };
     window.addEventListener("mohasagor_products_updated", handleUpdate);
-    return () => window.removeEventListener("mohasagor_products_updated", handleUpdate);
+    return () => {
+      clearInterval(autoRotateTimer);
+      window.removeEventListener("mohasagor_products_updated", handleUpdate);
+    };
   }, []);
 
   // Function to load next batch
