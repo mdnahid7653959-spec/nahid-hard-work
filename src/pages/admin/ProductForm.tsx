@@ -133,18 +133,23 @@ export default function ProductFormPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 const defaultCategories: Category[] = [
-  { id: "cat-gadgets", name: "Gadgets & Electronics" },
-  { id: "cat-mens-fashion", name: "Men's Fashion" },
-  { id: "cat-womens-fashion", name: "Women's Fashion" },
-  { id: "cat-home-lifestyle", name: "Home & Lifestyle" },
-  { id: "cat-beauty-health", name: "Beauty & Health" },
-  { id: "cat-sports-outdoors", name: "Sports & Outdoors" },
-  { id: "cat-winter-collection", name: "Winter Collection" },
-  { id: "cat-watches-accessories", name: "Watches & Accessories" },
-  { id: "cat-kids-zone", name: "Kids Zone & Toys" },
-  { id: "cat-foods-grocery", name: "Foods & Grocery" },
-  { id: "cat-automotive-motor", name: "Automotive & Motor" },
+  { id: "electronics", name: "Electronics & Gadgets" },
+  { id: "fashion", name: "Fashion" },
+  { id: "mens-fashion", name: "Men's Fashion" },
+  { id: "womens-fashion", name: "Women's Fashion" },
+  { id: "home-garden", name: "Home & Garden" },
+  { id: "home-lifestyle", name: "Home & Lifestyle" },
+  { id: "sports", name: "Sports & Outdoor" },
+  { id: "toys-hobbies", name: "Toys & Hobbies" },
+  { id: "beauty-health", name: "Beauty & Health" },
+  { id: "automotive", name: "Automotive" },
+  { id: "jewelry", name: "Jewelry & Accessories" },
+  { id: "watch", name: "Watches" },
+  { id: "winter", name: "Winter Collection" },
+  { id: "kids-zone", name: "Kids Zone" },
+  { id: "foods", name: "Foods & Grocery" },
 ];
+
 
 const defaultBrands: Brand[] = [
   { id: "brand-apple", name: "Apple" },
@@ -637,11 +642,19 @@ const defaultBrands: Brand[] = [
     // Sync to Firestore and Local Storage so User Panel and Admin Panel sync 100%
     try {
       const primaryImageUrl = images.find(img => img.isPrimary)?.url || images[0]?.url || "";
+      const selectedCatObj = categories.find(c => c.id === form.category_id);
+      const catName = selectedCatObj?.name || form.category_id || "";
+      const catSlug = form.category_id || selectedCatObj?.id || "";
+
       const firestoreDoc = {
         id: finalId,
         title: productData.name,
         name: productData.name,
         slug: productData.slug,
+        category: catName,
+        category_id: form.category_id || catSlug,
+        category_name: catName,
+        category_slug: catSlug,
         shortDescription: productData.short_description,
         short_description: productData.short_description,
         description: productData.description,
@@ -658,6 +671,7 @@ const defaultBrands: Brand[] = [
         images: images.map(i => i.url),
         status: "APPROVED",
         approvalStatus: "APPROVED",
+
         isFeatured: productData.is_featured,
         is_featured: productData.is_featured,
         isBestSeller: productData.is_best_seller,

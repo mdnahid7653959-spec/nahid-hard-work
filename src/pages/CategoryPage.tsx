@@ -72,6 +72,37 @@ export default function CategoryPage() {
           .eq("slug", slug)
           .maybeSingle();
 
+        // Check local / admin products for this category
+        let localCatProducts: Product[] = [];
+        try {
+          const raw = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              localCatProducts = list
+                .filter((p: any) => {
+                  const pCat = (p.category_id || p.category_slug || p.category || "").toString().toLowerCase();
+                  const targetSlug = (slug || "").toString().toLowerCase();
+                  return pCat.includes(targetSlug) || targetSlug.includes(pCat);
+                })
+                .map((p: any, i: number) => ({
+                  id: p.id,
+                  name: p.title || p.name,
+                  slug: p.slug || `prod-${i}`,
+                  image: p.image_url || p.images?.[0] || "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
+                  price: Number(p.discount_price || p.regular_price || p.price || 0),
+                  originalPrice: p.discount_price ? Number(p.regular_price || p.price) : undefined,
+                  rating: 4.8,
+                  reviews: 18,
+                  sold: 40,
+                  freeShipping: true,
+                  isNew: true,
+                  isBestSeller: true,
+                }));
+            }
+          }
+        } catch {}
+
         if (catData) {
           setCategory(catData);
           const { data: prodData } = await supabase
@@ -82,37 +113,42 @@ export default function CategoryPage() {
               product_images(image_url, is_primary)
             `)
             .eq("category_id", catData.id)
-            .eq("status", "active")
             .order("created_at", { ascending: false })
             .limit(50);
 
-          if (prodData && prodData.length > 0) {
-            const mappedProducts: Product[] = prodData.map(p => {
-              const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
-              const firstImage = p.product_images?.[0]?.image_url;
-              const fallbackImage = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop";
-              
-              return {
-                id: p.id,
-                name: p.name,
-                slug: p.slug,
-                image: primaryImage || firstImage || fallbackImage,
-                price: p.discount_price || p.regular_price,
-                originalPrice: p.discount_price ? p.regular_price : undefined,
-                rating: Number(p.rating_average) || 0,
-                reviews: p.rating_count || 0,
-                sold: p.sold_count || 0,
-                freeShipping: p.free_shipping || false,
-                isNew: p.is_new_arrival || false,
-                isBestSeller: p.is_best_seller || false,
-              };
-            });
-            setProducts(mappedProducts);
-          }
+          const mappedProducts: Product[] = (prodData || []).map(p => {
+            const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
+            const firstImage = p.product_images?.[0]?.image_url;
+            const fallbackImage = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop";
+            
+            return {
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              image: primaryImage || firstImage || fallbackImage,
+              price: p.discount_price || p.regular_price,
+              originalPrice: p.discount_price ? p.regular_price : undefined,
+              rating: Number(p.rating_average) || 0,
+              reviews: p.rating_count || 0,
+              sold: p.sold_count || 0,
+              freeShipping: p.free_shipping || false,
+              isNew: p.is_new_arrival || false,
+              isBestSeller: p.is_best_seller || false,
+            };
+          });
+
+          const finalProducts = [
+            ...localCatProducts,
+            ...mappedProducts.filter(m => !localCatProducts.some(lp => lp.id === m.id))
+          ];
+          setProducts(finalProducts);
+        } else if (localCatProducts.length > 0) {
+          setProducts(localCatProducts);
         }
       } catch (err) {
         console.error("Error in CategoryPage fetchData:", err);
       } finally {
+
         setLoading(false);
       }
     }
