@@ -78,16 +78,19 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Cookies = lazy(() => import("./pages/Cookies"));
 const IntellectualProperty = lazy(() => import("./pages/IntellectualProperty"));
 
-// Admin Pages - lazy load
-const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const ProductForm = lazy(() => import("./pages/admin/ProductForm"));
-const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
-const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
-const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+// Eager load - critical Admin pages (prevents dynamic chunk fetch errors)
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import ProductForm from "./pages/admin/ProductForm";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminBrands from "./pages/admin/AdminBrands";
+import AdminOrders from "./pages/admin/AdminOrders";
+
+// Admin Pages - lazy load for extended modules
 const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));

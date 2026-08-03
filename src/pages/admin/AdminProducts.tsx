@@ -187,6 +187,10 @@ export default function AdminProducts() {
           return;
         }
       }
+    } catch (localErr) {
+      console.warn("Local storage fallback warning:", localErr);
+    }
+
     // Fallback 5: Mohasagor Supplier API
     try {
       const res = await fetch("/api/mohasagor/api/reseller/product", {
