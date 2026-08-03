@@ -181,8 +181,33 @@ export default function ProductDetail() {
   // Enable real-time sync for this product
   useProductRealtimeSync(product?.id);
 
+  // Image URL Resolver & Fallback Helper
+  const resolveImage = (img: any): string => {
+    if (!img) return defaultImages[0];
+    const url = typeof img === "string" ? img : img.image_url || img.url || img.product_image;
+    if (!url || typeof url !== "string") return defaultImages[0];
+    const trimmed = url.trim();
+    if (!trimmed) return defaultImages[0];
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+      return trimmed;
+    }
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    if (trimmed.startsWith("/")) return `https://mohasagor.com.bd${trimmed}`;
+    return `https://mohasagor.com.bd/${trimmed}`;
+  };
+
   // Get images from product or use defaults
-  const images = product?.product_images && product.product_images.length > 0 ? product.product_images.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(img => img.image_url) : defaultImages;
+  const rawImgList = product?.product_images && product.product_images.length > 0
+    ? product.product_images.map(img => typeof img === "string" ? img : img.image_url)
+    : (product as any)?.images && Array.isArray((product as any).images) && (product as any).images.length > 0
+    ? (product as any).images
+    : (product as any)?.image_url || (product as any)?.image
+    ? [(product as any).image_url || (product as any).image]
+    : defaultImages;
+
+  const images = (rawImgList || []).map(resolveImage).filter(Boolean);
+  if (images.length === 0) images.push(defaultImages[0]);
+
 
   // Touch swipe handling for images
   const [touchStart, setTouchStart] = useState(0);
@@ -681,7 +706,8 @@ export default function ProductDetail() {
                     <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-primary/30 rounded-tl-3xl pointer-events-none" />
                     <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-primary/30 rounded-br-3xl pointer-events-none" />
 
-                    {showVideo && product.video_url ? getYouTubeEmbedUrl(product.video_url) ? <iframe src={getYouTubeEmbedUrl(product.video_url) || ''} title="Product Video" className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={product.video_url} controls className="w-full h-full object-contain object-center bg-black/5" playsInline /> : <img src={images[selectedImage]} alt={product.name} className="w-full h-full object-contain object-center p-4 transition-transform duration-500 hover:scale-105" />}
+                    {showVideo && product.video_url ? getYouTubeEmbedUrl(product.video_url) ? <iframe src={getYouTubeEmbedUrl(product.video_url) || ''} title="Product Video" className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={product.video_url} controls className="w-full h-full object-contain object-center bg-black/5" playsInline /> : <img src={images[selectedImage]} alt={product.name} className="w-full h-full object-contain object-center p-4 transition-transform duration-500 hover:scale-105" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop"; }} />}
+
 
                     {/* Featured badge */}
                     {product.is_featured && (
@@ -738,7 +764,8 @@ export default function ProductDetail() {
                     setSelectedImage(i);
                     setShowVideo(false);
                   }} className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 hover:scale-105 ${selectedImage === i && !showVideo ? 'border-primary ring-2 ring-primary/40 shadow-lg shadow-primary/20' : 'border-muted hover:border-primary/50'}`}>
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop"; }} />
+
                   </button>
                 ))}
                 {/* Video thumbnail */}
