@@ -83,6 +83,7 @@ export function Header() {
   const { itemCount: cartCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
   const { toast } = useToast();
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const { data: categoriesData } = useCategories();
   const { config: headerConfig } = useSiteConfig<HeaderConfig>("header", defaultHeaderConfig);
 
