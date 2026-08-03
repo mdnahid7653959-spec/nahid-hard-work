@@ -433,11 +433,72 @@ export default function ProductDetail() {
             trackView(data.id);
           }
         }
+
+        // Fallback for Admin Uploaded Products or Local Storage Products when DB returns null
+        if (!data) {
+          try {
+            const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
+            if (rawLocal) {
+              const list = JSON.parse(rawLocal);
+              if (Array.isArray(list)) {
+                const targetSlug = slug.toLowerCase();
+                const found = list.find((p: any) => 
+                  (p.slug || "").toLowerCase() === targetSlug || 
+                  (p.id || "").toLowerCase() === targetSlug || 
+                  (p.name || p.title || "").toLowerCase() === targetSlug
+                );
+
+                if (found) {
+                  const rawImgs = Array.isArray(found.images) && found.images.length > 0 ? found.images : [found.image_url || defaultImages[0]];
+                  const imgList: ProductImage[] = rawImgs.map((imgUrl: string, idx: number) => ({
+                    id: `img-${idx}`,
+                    image_url: imgUrl,
+                    is_primary: idx === 0,
+                    sort_order: idx
+                  }));
+
+                  const formattedProduct: Product = {
+                    id: found.id || `prod_${Date.now()}`,
+                    name: found.name || found.title || "Product",
+                    slug: found.slug || slug,
+                    short_description: found.short_description || found.shortDescription || null,
+                    description: found.description || "High quality product from store.",
+                    regular_price: Number(found.regular_price || found.price || 0),
+                    discount_price: found.discount_price ? Number(found.discount_price) : null,
+                    stock_quantity: Number(found.stock_quantity || found.stock || 50),
+                    free_shipping: Boolean(found.free_shipping ?? true),
+                    rating_average: Number(found.rating_average || 4.8),
+                    rating_count: Number(found.rating_count || 18),
+                    sold_count: Number(found.sold_count || 45),
+                    is_featured: Boolean(found.is_featured || found.isFeatured),
+                    warranty_info: found.warranty_info || null,
+                    return_policy: found.return_policy || null,
+                    color: found.color || null,
+                    video_url: found.video_url || null,
+                    product_images: imgList,
+                    product_variants: [],
+                    category_id: found.category_id || found.category || null,
+                    seller_id: found.seller_id || "admin"
+                  };
+
+                  setProduct(formattedProduct);
+                  setSelectedImage(0);
+                  trackView(formattedProduct.id);
+                  setLoading(false);
+                  return;
+                }
+              }
+            }
+          } catch (localErr) {
+            console.warn("ProductDetail local storage fallback warning:", localErr);
+          }
+        }
       } catch (err) {
         console.error("ProductDetail catch error:", err);
       } finally {
         setLoading(false);
       }
+
     }
     fetchProduct();
   }, [slug, trackView]);

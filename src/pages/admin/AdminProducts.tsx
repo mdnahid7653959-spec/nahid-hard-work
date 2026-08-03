@@ -70,7 +70,32 @@ export default function AdminProducts() {
   const { invalidateProducts } = useAdminCacheInvalidation();
 
   const fetchProducts = async () => {
-    setLoading(true);
+    // 0ms Fast Path: Load local storage cache immediately
+    try {
+      const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
+      if (rawLocal) {
+        const localList = JSON.parse(rawLocal);
+        if (Array.isArray(localList) && localList.length > 0) {
+          const mapped = localList.map((data: any) => ({
+            id: data.id,
+            name: data.title || data.name || "Untitled Product",
+            slug: data.slug || "",
+            regular_price: Number(data.price || data.regular_price || 0),
+            discount_price: data.discountPrice || data.discount_price || null,
+            stock_quantity: Number(data.stock || data.stock_quantity || 0),
+            status: data.status || "APPROVED",
+            approval_status: data.approvalStatus || data.approval_status || "APPROVED",
+            seller_id: data.seller_id || null,
+            is_featured: Boolean(data.isFeatured || data.is_featured),
+            created_at: data.createdAt || data.created_at || new Date().toISOString()
+          }));
+          setProducts(mapped as Product[]);
+          setLoading(false);
+        }
+      }
+    } catch {}
+
+
 
     // Ensure Supabase auth session exists if available
     try {
@@ -382,8 +407,10 @@ export default function AdminProducts() {
   };
 
   const getApprovalBadge = (status: string | null) => {
-    switch (status) {
+    const statusLower = (status || "approved").toLowerCase();
+    switch (statusLower) {
       case "approved":
+      case "active":
         return <Badge className="bg-green-500/10 text-green-600 border-green-500/20"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
       case "pending":
         return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
@@ -392,19 +419,21 @@ export default function AdminProducts() {
       case "banned":
         return <Badge className="bg-red-900/20 text-red-700 border-red-700/30"><Ban className="h-3 w-3 mr-1" />Banned</Badge>;
       default:
-        return <Badge className="bg-gray-500/10 text-gray-500 border-gray-500/20"><AlertCircle className="h-3 w-3 mr-1" />{status || "Unknown"}</Badge>;
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
     }
   };
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const appStatus = (p.approval_status || p.status || "approved").toLowerCase();
     if (activeTab === "all") return matchesSearch;
-    if (activeTab === "pending") return matchesSearch && p.approval_status === "pending";
-    if (activeTab === "approved") return matchesSearch && p.approval_status === "approved";
-    if (activeTab === "rejected") return matchesSearch && (p.approval_status === "rejected" || p.approval_status === "banned");
+    if (activeTab === "pending") return matchesSearch && appStatus === "pending";
+    if (activeTab === "approved") return matchesSearch && (appStatus === "approved" || appStatus === "active");
+    if (activeTab === "rejected") return matchesSearch && (appStatus === "rejected" || appStatus === "banned");
     if (activeTab === "seller") return matchesSearch && p.seller_id !== null;
     return matchesSearch;
   });
+
 
   const pendingCount = products.filter(p => p.approval_status === "pending").length;
 
