@@ -955,9 +955,3 @@ export const EnterpriseProducts: React.FC = () => {
     </EnterpriseAdminLayout>
   );
 };
-
-      </div>
-    </EnterpriseAdminLayout>
-  );
-};
-
