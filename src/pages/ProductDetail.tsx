@@ -55,7 +55,10 @@ interface Product {
   tags?: string[] | null;
   seller_id?: string | null;
 }
-const defaultImages = ["https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop&sat=-100"];
+const defaultImages = [
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600' fill='%23f8fafc'><rect width='600' height='600' rx='30'/><g transform='translate(250, 240)' fill='none' stroke='%2394a3b8' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><rect x='10' y='20' width='80' height='70' rx='10'/><circle cx='35' cy='45' r='10'/><path d='M10 75 l25-25 l20 20 l25-25 l10 10'/></g><text x='300' y='360' font-family='sans-serif' font-size='20' font-weight='600' fill='%2364748b' text-anchor='middle'>No Image Uploaded</text></svg>"
+];
+
 const getYouTubeEmbedUrl = (url: string): string | null => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -706,7 +709,8 @@ export default function ProductDetail() {
                     <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-primary/30 rounded-tl-3xl pointer-events-none" />
                     <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-primary/30 rounded-br-3xl pointer-events-none" />
 
-                    {showVideo && product.video_url ? getYouTubeEmbedUrl(product.video_url) ? <iframe src={getYouTubeEmbedUrl(product.video_url) || ''} title="Product Video" className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={product.video_url} controls className="w-full h-full object-contain object-center bg-black/5" playsInline /> : <img src={images[selectedImage]} alt={product.name} className="w-full h-full object-contain object-center p-4 transition-transform duration-500 hover:scale-105" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop"; }} />}
+                    {showVideo && product.video_url ? getYouTubeEmbedUrl(product.video_url) ? <iframe src={getYouTubeEmbedUrl(product.video_url) || ''} title="Product Video" className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /> : <video src={product.video_url} controls className="w-full h-full object-contain object-center bg-black/5" playsInline /> : <img src={images[selectedImage]} alt={product.name} className="w-full h-full object-contain object-center p-4 transition-transform duration-500 hover:scale-105" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultImages[0]; }} />}
+
 
 
                     {/* Featured badge */}
@@ -764,7 +768,8 @@ export default function ProductDetail() {
                     setSelectedImage(i);
                     setShowVideo(false);
                   }} className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 hover:scale-105 ${selectedImage === i && !showVideo ? 'border-primary ring-2 ring-primary/40 shadow-lg shadow-primary/20' : 'border-muted hover:border-primary/50'}`}>
-                    <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop"; }} />
+                    <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultImages[0]; }} />
+
 
                   </button>
                 ))}
