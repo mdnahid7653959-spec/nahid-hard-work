@@ -301,7 +301,27 @@ async function fetchAllHomeProducts() {
     console.warn("[useHomeProducts] Error fetching from Mohasagor API:", err);
   }
 
-  // ── Strategy 3: Hardcoded fallback ──
+  // ── Strategy 3: Mohasagor Supplier Master Cache Fallback ──
+  try {
+    const { getCachedMohasagorProducts } = await import("@/utils/mohasagorCache");
+    const cachedMohasagor = await getCachedMohasagorProducts();
+    if (cachedMohasagor && cachedMohasagor.length > 0) {
+      const merged = [
+        ...adminCreatedProducts,
+        ...cachedMohasagor.filter(m => !adminCreatedProducts.some(ap => ap.id === m.id))
+      ];
+      const result = buildSections(merged);
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(result));
+      } catch (e) {}
+      preloadImages(result.latestProducts);
+      return result;
+    }
+  } catch (cachedErr) {
+    console.warn("[useHomeProducts] Supplier cache fallback warning:", cachedErr);
+  }
+
+  // ── Strategy 4: Hardcoded fallback ──
   const mergedFallback = [
     ...adminCreatedProducts,
     ...fallbackProducts.filter(m => !adminCreatedProducts.some(ap => ap.id === m.id))
