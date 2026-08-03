@@ -28,10 +28,28 @@ import {
   X,
   Sliders,
   Sun,
-  Moon
+  Moon,
+  Tags,
+  Store,
+  Warehouse,
+  BarChart3,
+  TrendingUp,
+  FileText,
+  RotateCcw,
+  Star,
+  Zap,
+  Globe,
+  SlidersHorizontal,
+  Settings,
+  Shield,
+  Activity,
+  Layers,
+  SearchCode,
+  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 interface NavItem {
   title: string;
@@ -41,58 +59,77 @@ interface NavItem {
   badge?: string;
 }
 
-const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
+const ENTERPRISE_NAV_GROUPS: { group: string; items: NavItem[] }[] = [
   {
-    group: "OVERVIEW",
+    group: "OVERVIEW & ANALYTICS",
     items: [
-      { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard:view" }
+      { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard:view" },
+      { title: "Analytics", href: "/admin/analytics", icon: BarChart3, permission: "analytics:view", badge: "Live" },
+      { title: "Reports", href: "/admin/reports", icon: FileText, permission: "analytics:view" },
+      { title: "Activity Logs", href: "/admin/activity-logs", icon: Activity, permission: "security:view_logs" }
     ]
   },
   {
-    group: "COMMERCE",
+    group: "CORE COMMERCE",
     items: [
-      { title: "Products Catalog", href: "/admin/products", icon: Package, permission: "products:read" },
-      { title: "Inventory & Warehouses", href: "/admin/inventory", icon: Boxes, permission: "inventory:view" },
-      { title: "Orders Pipeline", href: "/admin/orders", icon: ShoppingCart, permission: "orders:read" },
-      { title: "Payments & Ledger", href: "/admin/payments", icon: PaymentsViewPermissionCheck() },
-      { title: "Dynamic Commissions", href: "/admin/commissions", icon: Percent, permission: "commissions:read" },
-      { title: "Shipping & Couriers", href: "/admin/shipping", icon: Truck, permission: "shipping:manage" }
+      { title: "Products", href: "/admin/products", icon: Package, permission: "products:read" },
+      { title: "Categories", href: "/admin/categories", icon: Layers, permission: "categories:manage" },
+      { title: "Brands", href: "/admin/brands", icon: Tags, permission: "brands:manage" },
+      { title: "Orders", href: "/admin/orders", icon: ShoppingCart, permission: "orders:read" },
+      { title: "Returns", href: "/admin/returns", icon: RotateCcw, permission: "orders:read" },
+      { title: "Reviews", href: "/admin/reviews", icon: Star, permission: "products:read" }
     ]
   },
   {
-    group: "PARTNERS & USERS",
+    group: "SUPPLY CHAIN & PARTNERS",
     items: [
-      { title: "User & Seller Center", href: "/admin/users", icon: Users, permission: "dashboard:view" },
-      { title: "User Panel Control", href: "/admin/user-control", icon: Sliders, permission: "dashboard:view", badge: "Control" },
-      { title: "Supplier API Center", href: "/admin/suppliers", icon: Plug, permission: "suppliers:read", badge: "API" }
+      { title: "Customers", href: "/admin/customers", icon: Users, permission: "dashboard:view" },
+      { title: "Sellers", href: "/admin/sellers", icon: Store, permission: "dashboard:view", badge: "KYC" },
+      { title: "Supplier Center", href: "/admin/suppliers", icon: Plug, permission: "suppliers:read", badge: "API Engine" },
+      { title: "Inventory", href: "/admin/inventory", icon: Boxes, permission: "inventory:view" },
+      { title: "Warehouse", href: "/admin/warehouses", icon: Warehouse, permission: "warehouses:manage" }
     ]
   },
   {
-    group: "MARKETING & CMS",
+    group: "MARKETING & PROMOTIONS",
     items: [
-      { title: "Visual CMS Builder", href: "/admin/cms-builder", icon: Palette, permission: "cms:builder", badge: "Live" },
-      { title: "Campaigns & Coupons", href: "/admin/campaigns", icon: Megaphone, permission: "campaigns:manage" }
+      { title: "Marketing", href: "/admin/marketing", icon: Megaphone, permission: "campaigns:manage" },
+      { title: "Coupons", href: "/admin/coupons", icon: Percent, permission: "coupons:manage" },
+      { title: "Flash Sale", href: "/admin/flash-sale", icon: Zap, permission: "campaigns:manage", badge: "Hot" },
+      { title: "Notifications", href: "/admin/notifications", icon: Bell, permission: "marketing:notifications" },
+      { title: "Search Management", href: "/admin/search-management", icon: SearchCode, permission: "cms:builder" },
+      { title: "SEO Manager", href: "/admin/seo-manager", icon: Globe, permission: "cms:builder" }
     ]
   },
   {
-    group: "INTELLIGENCE & SECURITY",
+    group: "SITE BUILDER & CONTROL",
     items: [
-      { title: "Enterprise AI Studio", href: "/admin/ai-studio", icon: Sparkles, permission: "ai_studio:access", badge: "AI" },
-      { title: "Security & Audit Trail", href: "/admin/security", icon: ShieldCheck, permission: "security:view_logs" }
+      { title: "CMS Builder", href: "/admin/cms-builder", icon: Palette, permission: "cms:builder", badge: "Visual" },
+      { title: "Theme Builder", href: "/admin/theme-builder", icon: SlidersHorizontal, permission: "cms:builder", badge: "NoCode" },
+      { title: "Website Control Center", href: "/admin/website-control", icon: Sliders, permission: "dashboard:view", badge: "Live OS" }
+    ]
+  },
+  {
+    group: "FINANCE & SECURITY",
+    items: [
+      { title: "Finance", href: "/admin/finance", icon: DollarSign, permission: "payments:view" },
+      { title: "Payment Gateway", href: "/admin/payments", icon: CreditCard, permission: "payments:view" },
+      { title: "Shipping", href: "/admin/shipping", icon: Truck, permission: "shipping:manage" },
+      { title: "AI Tools", href: "/admin/ai-studio", icon: Sparkles, permission: "ai_studio:access", badge: "AI OS" },
+      { title: "Security", href: "/admin/security", icon: ShieldCheck, permission: "security:view_logs" },
+      { title: "RBAC", href: "/admin/rbac", icon: Shield, permission: "security:manage_roles" },
+      { title: "Settings", href: "/admin/settings", icon: Settings, permission: "dashboard:view" }
     ]
   }
 ];
-
-function PaymentsViewPermissionCheck(): PermissionAction {
-  return "payments:view" as PermissionAction;
-}
 
 export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { adminUser, adminRole, logout } = useAdminAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [inactivityCountdown, setInactivityCountdown] = useState(900); // 15 minutes
+  const [inactivityCountdown, setInactivityCountdown] = useState(900); // 15 mins
+  const [moduleSearch, setModuleSearch] = useState("");
   const [adminTheme, setAdminTheme] = useState<"light" | "dark">(() => {
     return (localStorage.getItem("admin_theme") as "light" | "dark") || "light";
   });
@@ -160,7 +197,7 @@ export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({
         className={`fixed inset-y-0 left-0 z-40 transition-all duration-300 flex flex-col ${
           sidebarOpen ? "w-64" : "w-20"
         } ${
-          isLight ? "bg-white border-r border-slate-200 text-slate-800 shadow-sm" : "bg-slate-900 border-r border-slate-800 text-slate-100"
+          isLight ? "bg-white border-r border-slate-200 text-slate-800 shadow-md" : "bg-slate-900 border-r border-slate-800 text-slate-100"
         }`}
       >
         {/* LOGO HEADER */}
@@ -169,15 +206,15 @@ export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({
         }`}>
           {sidebarOpen ? (
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-orange-600 flex items-center justify-center font-black text-white shadow-md shadow-orange-600/30">
+              <div className="h-9 w-9 rounded-xl bg-orange-600 flex items-center justify-center font-black text-white shadow-md shadow-orange-600/30 text-base">
                 D
               </div>
               <div className="flex flex-col">
                 <span className={`font-extrabold text-sm tracking-tight ${isLight ? "text-slate-900" : "text-white"}`}>
-                  Durtup Enterprise
+                  Durtup Marketplace OS
                 </span>
-                <span className={`text-[10px] font-semibold ${isLight ? "text-orange-600" : "text-slate-400"}`}>
-                  Control Center v3.0
+                <span className="text-[10px] font-bold text-orange-600">
+                  Enterprise Control v4.0
                 </span>
               </div>
             </div>
@@ -196,37 +233,52 @@ export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({
           </button>
         </div>
 
-        {/* NAVIGATION LINKS */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6 custom-scrollbar">
-          {NAV_GROUPS.map((group) => {
-            const visibleItems = group.items.filter((item) =>
-              AdminRBACService.hasPermission(adminRole as any, item.permission)
+        {/* SIDEBAR SEARCH FILTER */}
+        {sidebarOpen && (
+          <div className="p-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="relative">
+              <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <Input
+                value={moduleSearch}
+                onChange={(e) => setModuleSearch(e.target.value)}
+                placeholder="Search 31 Modules..."
+                className="pl-8 text-xs h-8 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* NAVIGATION LINKS - 31 MODULES */}
+        <div className="flex-1 overflow-y-auto py-3 px-3 space-y-5 custom-scrollbar">
+          {ENTERPRISE_NAV_GROUPS.map((group) => {
+            const filteredItems = group.items.filter((item) =>
+              item.title.toLowerCase().includes(moduleSearch.toLowerCase())
             );
 
-            if (visibleItems.length === 0) return null;
+            if (filteredItems.length === 0) return null;
 
             return (
               <div key={group.group} className="space-y-1">
                 {sidebarOpen && (
-                  <p className={`px-3 text-[10px] font-bold uppercase tracking-wider mb-2 ${
+                  <p className={`px-3 text-[10px] font-black uppercase tracking-wider mb-1.5 ${
                     isLight ? "text-slate-400" : "text-slate-500"
                   }`}>
                     {group.group}
                   </p>
                 )}
-                {visibleItems.map((item) => {
+                {filteredItems.map((item) => {
                   const isActive = location.pathname === item.href || (item.href !== "/admin/dashboard" && location.pathname.startsWith(item.href));
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.href}
                       to={item.href}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                         isActive
-                          ? "bg-orange-600 text-white shadow-md shadow-orange-600/25"
+                          ? "bg-orange-600 text-white shadow-md shadow-orange-600/30"
                           : isLight
-                          ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                          : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
+                          ? "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                          : "text-slate-300 hover:bg-slate-800/80 hover:text-slate-100"
                       }`}
                     >
                       <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : isLight ? "text-slate-500" : "text-slate-400"}`} />
@@ -238,8 +290,8 @@ export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({
                           isActive
                             ? "bg-white/20 text-white border-transparent"
                             : isLight
-                            ? "border-orange-300 text-orange-600 bg-orange-50"
-                            : "border-orange-500/40 text-orange-400"
+                            ? "border-orange-300 text-orange-600 bg-orange-50 font-bold"
+                            : "border-orange-500/40 text-orange-400 font-bold"
                         }`}>
                           {item.badge}
                         </Badge>
@@ -258,15 +310,15 @@ export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({
         }`}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="h-8 w-8 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center font-bold text-xs text-orange-700 shrink-0">
+              <div className="h-8 w-8 rounded-full bg-orange-600 border border-orange-500 flex items-center justify-center font-black text-xs text-white shrink-0 shadow-sm">
                 {adminUser?.email?.[0].toUpperCase() || "A"}
               </div>
               {sidebarOpen && (
                 <div className="min-w-0">
                   <p className={`text-xs font-bold truncate ${isLight ? "text-slate-900" : "text-slate-200"}`}>
-                    {adminUser?.email}
+                    {adminUser?.email || "admin@durtup.shop"}
                   </p>
-                  <p className="text-[10px] text-orange-600 font-bold uppercase">{adminRole || "Admin"}</p>
+                  <p className="text-[10px] text-orange-600 font-extrabold uppercase">{adminRole || "Super Admin"}</p>
                 </div>
               )}
             </div>
@@ -349,7 +401,7 @@ export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({
               isLight ? "bg-emerald-50 border border-emerald-300 text-emerald-700" : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
             }`}>
               <ShieldCheck className="h-3.5 w-3.5" />
-              RBAC PROTECTED
+              ENTERPRISE OS
             </Badge>
 
             <Button
@@ -378,4 +430,5 @@ export const EnterpriseAdminLayout: React.FC<{ children: React.ReactNode }> = ({
     </div>
   );
 };
+
 

@@ -123,6 +123,8 @@ import { EnterpriseShipping } from "./pages/admin/enterprise/EnterpriseShipping"
 import { EnterpriseInventory } from "./pages/admin/enterprise/EnterpriseInventory";
 import { EnterpriseSecurity } from "./pages/admin/enterprise/EnterpriseSecurity";
 import { EnterpriseUserControl } from "./pages/admin/enterprise/EnterpriseUserControl";
+import { EnterpriseWebsiteControl } from "./pages/admin/enterprise/EnterpriseWebsiteControl";
+import { EnterpriseThemeBuilder } from "./pages/admin/enterprise/EnterpriseThemeBuilder";
 
 // Staff Portal
 const StaffLogin = lazy(() => import("./pages/staff/StaffLogin"));
@@ -249,22 +251,47 @@ const App = () => (
                           <Route path="/admin/login" element={<AdminGate><AdminLogin /></AdminGate>} />
                           
                           
-                          {/* Protected Enterprise Admin Routes */}
+                          {/* Protected Enterprise Admin Routes (31 Operating System Modules) */}
                           <Route path="/admin" element={<AdminProtectedRoute><EnterpriseDashboard /></AdminProtectedRoute>} />
                           <Route path="/admin/dashboard" element={<AdminProtectedRoute><EnterpriseDashboard /></AdminProtectedRoute>} />
+                          <Route path="/admin/analytics" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
+                          <Route path="/admin/reports" element={<AdminProtectedRoute><AdminReports /></AdminProtectedRoute>} />
+                          <Route path="/admin/activity-logs" element={<AdminProtectedRoute><EnterpriseSecurity /></AdminProtectedRoute>} />
+                          
                           <Route path="/admin/products" element={<AdminProtectedRoute><EnterpriseProducts /></AdminProtectedRoute>} />
-                          <Route path="/admin/inventory" element={<AdminProtectedRoute><EnterpriseInventory /></AdminProtectedRoute>} />
+                          <Route path="/admin/categories" element={<AdminProtectedRoute><AdminCategories /></AdminProtectedRoute>} />
+                          <Route path="/admin/brands" element={<AdminProtectedRoute><AdminBrands /></AdminProtectedRoute>} />
                           <Route path="/admin/orders" element={<AdminProtectedRoute><EnterpriseOrders /></AdminProtectedRoute>} />
+                          <Route path="/admin/returns" element={<AdminProtectedRoute><AdminReturns /></AdminProtectedRoute>} />
+                          <Route path="/admin/reviews" element={<AdminProtectedRoute><AdminReviews /></AdminProtectedRoute>} />
+                          
+                          <Route path="/admin/customers" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
+                          <Route path="/admin/sellers" element={<AdminProtectedRoute><AdminSellers /></AdminProtectedRoute>} />
+                          <Route path="/admin/suppliers" element={<AdminProtectedRoute><EnterpriseSupplierCenter /></AdminProtectedRoute>} />
+                          <Route path="/admin/inventory" element={<AdminProtectedRoute><EnterpriseInventory /></AdminProtectedRoute>} />
+                          <Route path="/admin/warehouses" element={<AdminProtectedRoute><AdminWarehouses /></AdminProtectedRoute>} />
+                          
+                          <Route path="/admin/marketing" element={<AdminProtectedRoute><AdminMarketing /></AdminProtectedRoute>} />
+                          <Route path="/admin/coupons" element={<AdminProtectedRoute><AdminCoupons /></AdminProtectedRoute>} />
+                          <Route path="/admin/flash-sale" element={<AdminProtectedRoute><AdminMarketing /></AdminProtectedRoute>} />
+                          <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminPushNotifications /></AdminProtectedRoute>} />
+                          <Route path="/admin/search-management" element={<AdminProtectedRoute><AdminSearchManagement /></AdminProtectedRoute>} />
+                          <Route path="/admin/seo-manager" element={<AdminProtectedRoute><AdminCMS /></AdminProtectedRoute>} />
+                          
+                          <Route path="/admin/cms-builder" element={<AdminProtectedRoute><EnterpriseCMSBuilder /></AdminProtectedRoute>} />
+                          <Route path="/admin/theme-builder" element={<AdminProtectedRoute><EnterpriseThemeBuilder /></AdminProtectedRoute>} />
+                          <Route path="/admin/website-control" element={<AdminProtectedRoute><EnterpriseWebsiteControl /></AdminProtectedRoute>} />
+                          <Route path="/admin/user-control" element={<AdminProtectedRoute><EnterpriseUserControl /></AdminProtectedRoute>} />
+                          
+                          <Route path="/admin/finance" element={<AdminProtectedRoute><AdminFinance /></AdminProtectedRoute>} />
                           <Route path="/admin/payments" element={<AdminProtectedRoute><EnterprisePayments /></AdminProtectedRoute>} />
                           <Route path="/admin/commissions" element={<AdminProtectedRoute><EnterpriseCommissions /></AdminProtectedRoute>} />
                           <Route path="/admin/shipping" element={<AdminProtectedRoute><EnterpriseShipping /></AdminProtectedRoute>} />
-                          <Route path="/admin/users" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
-                          <Route path="/admin/user-control" element={<AdminProtectedRoute><EnterpriseUserControl /></AdminProtectedRoute>} />
-                          <Route path="/admin/suppliers" element={<AdminProtectedRoute><EnterpriseSupplierCenter /></AdminProtectedRoute>} />
-                          <Route path="/admin/cms-builder" element={<AdminProtectedRoute><EnterpriseCMSBuilder /></AdminProtectedRoute>} />
-                          <Route path="/admin/campaigns" element={<AdminProtectedRoute><EnterpriseCampaigns /></AdminProtectedRoute>} />
                           <Route path="/admin/ai-studio" element={<AdminProtectedRoute><EnterpriseAIStudio /></AdminProtectedRoute>} />
                           <Route path="/admin/security" element={<AdminProtectedRoute><EnterpriseSecurity /></AdminProtectedRoute>} />
+                          <Route path="/admin/rbac" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
+                          <Route path="/admin/users" element={<AdminProtectedRoute><EnterpriseUsers /></AdminProtectedRoute>} />
+                          <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
 
                           {/* Staff Portal */}
                           <Route path="/staff/login" element={<StaffLogin />} />
