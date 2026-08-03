@@ -108,6 +108,9 @@ const AdminWarehouses = lazy(() => import("./pages/admin/AdminWarehouses"));
 const AdminHomeBento = lazy(() => import("./pages/admin/AdminHomeBento"));
 const AdminHomePromos = lazy(() => import("./pages/admin/AdminHomePromos"));
 const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
+const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
+const AdminSearchManagement = lazy(() => import("./pages/admin/AdminSearchManagement"));
+const AdminFinance = lazy(() => import("./pages/admin/AdminFinance"));
 // Enterprise Admin Pages
 import { EnterpriseDashboard } from "./pages/admin/enterprise/EnterpriseDashboard";
 import { EnterpriseProducts } from "./pages/admin/enterprise/EnterpriseProducts";
