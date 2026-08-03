@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/firebaseAdapter";
+import { firestoreSearchAdapter } from "@/services/search/adapters/FirestoreSearchAdapter";
 import type { Product } from "@/components/products/ProductCard";
 
 const defaultImages = [
@@ -161,21 +162,66 @@ export function useProductSearch(params: SearchParams) {
   });
 }
 
-// Hook to get categories for filters
+// Hook to get categories for filters (merging Supabase DB & Supplier API categories)
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+      let supabaseCats: any[] = [];
+      try {
+        const { data } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        if (data) supabaseCats = data;
+      } catch (e) {}
 
-      if (error) throw error;
-      return data || [];
+      let indexedCats: any[] = [];
+      try {
+        await firestoreSearchAdapter.buildIndex();
+        indexedCats = firestoreSearchAdapter.getIndexedCategories();
+      } catch (e) {}
+
+      const catMap = new Map<string, any>();
+
+      const baseDefaultCategories = [
+        { id: "electronics", name: "Electronics & Gadgets", slug: "electronics", image_url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop" },
+        { id: "home", name: "Home & Kitchen", slug: "home", image_url: "https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=400&h=400&fit=crop" },
+        { id: "fashion", name: "Fashion & Clothing", slug: "fashion", image_url: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&h=400&fit=crop" },
+        { id: "beauty", name: "Health & Beauty", slug: "beauty", image_url: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop" },
+        { id: "kids", name: "Toys & Baby Care", slug: "kids", image_url: "https://images.unsplash.com/photo-1566454825485-49267636c61f?w=400&h=400&fit=crop" },
+        { id: "watches", name: "Watches & Accessories", slug: "watches", image_url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop" },
+        { id: "gadgets", name: "Mobile & Accessories", slug: "gadgets", image_url: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&h=400&fit=crop" }
+      ];
+
+      baseDefaultCategories.forEach(c => catMap.set(c.slug.toLowerCase(), c));
+
+      supabaseCats.forEach(c => {
+        const slugKey = (c.slug || c.name).toLowerCase();
+        catMap.set(slugKey, {
+          id: c.id || slugKey,
+          name: c.name,
+          slug: c.slug || slugKey,
+          image_url: c.image_url || c.image || baseDefaultCategories[0].image_url,
+          icon: c.icon
+        });
+      });
+
+      indexedCats.forEach(c => {
+        const slugKey = c.slug.toLowerCase();
+        if (!catMap.has(slugKey)) {
+          catMap.set(slugKey, {
+            id: c.id || slugKey,
+            name: c.name,
+            slug: c.slug || slugKey,
+            image_url: baseDefaultCategories[catMap.size % baseDefaultCategories.length].image_url
+          });
+        }
+      });
+
+      return Array.from(catMap.values());
     },
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }

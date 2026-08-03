@@ -52,6 +52,10 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
     this.lastFetchTime = 0;
   }
 
+  public getIndexedCategories(): { id: string; name: string; slug: string }[] {
+    return this.indexedCategories;
+  }
+
   public async buildIndex(products?: any[]): Promise<void> {
     const now = Date.now();
     if (this.isLoaded && now - this.lastFetchTime < this.CACHE_TTL && !products) {
