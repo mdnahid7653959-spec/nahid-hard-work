@@ -49,7 +49,7 @@ async function searchLocalProducts(params: SearchParams): Promise<CombinedProduc
         ? "newest"
         : "relevance") as any,
       page: params.page || 1,
-      limit: 40
+      limit: 1000
     };
 
     const searchRes = await smartSearchService.search(params.search || "", searchOptions);

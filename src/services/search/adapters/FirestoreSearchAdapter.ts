@@ -463,9 +463,9 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
       searchAnalytics.logSearch(queryStr, filtered.length);
     }
 
-    // 5. Pagination
+    // 5. Pagination (Default 1000 items to show all catalog products)
     const page = options.page || 1;
-    const limit = options.limit || 20;
+    const limit = options.limit || 1000;
     const startIndex = (page - 1) * limit;
     const paginatedProducts = filtered.slice(startIndex, startIndex + limit);
     const totalPages = Math.ceil(filtered.length / limit) || 1;
