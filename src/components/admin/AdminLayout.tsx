@@ -46,8 +46,8 @@ interface AdminLayoutProps {
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
-  { icon: Search, label: "Smart Search", href: "/admin/search" },
   { icon: Package, label: "Products", href: "/admin/products" },
+
   { icon: Layers, label: "Categories", href: "/admin/categories" },
   { icon: Tag, label: "Brands", href: "/admin/brands" },
   { icon: Warehouse, label: "Inventory", href: "/admin/inventory" },

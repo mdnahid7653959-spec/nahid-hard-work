@@ -4,8 +4,9 @@ import { Save, ArrowLeft, Palette, Loader2, Package, Image as ImageIcon, Video }
 import { supabase } from "@/lib/firebaseAdapter";
 import { adminDb } from "@/lib/adminDb";
 import { db } from "@/integrations/firebase/client";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, getDocs } from "firebase/firestore";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,13 +132,37 @@ export default function ProductFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+const defaultCategories: Category[] = [
+  { id: "cat-gadgets", name: "Gadgets & Electronics" },
+  { id: "cat-mens-fashion", name: "Men's Fashion" },
+  { id: "cat-womens-fashion", name: "Women's Fashion" },
+  { id: "cat-home-lifestyle", name: "Home & Lifestyle" },
+  { id: "cat-beauty-health", name: "Beauty & Health" },
+  { id: "cat-sports-outdoors", name: "Sports & Outdoors" },
+  { id: "cat-winter-collection", name: "Winter Collection" },
+  { id: "cat-watches-accessories", name: "Watches & Accessories" },
+  { id: "cat-kids-zone", name: "Kids Zone & Toys" },
+  { id: "cat-foods-grocery", name: "Foods & Grocery" },
+  { id: "cat-automotive-motor", name: "Automotive & Motor" },
+];
+
+const defaultBrands: Brand[] = [
+  { id: "brand-apple", name: "Apple" },
+  { id: "brand-samsung", name: "Samsung" },
+  { id: "brand-xiaomi", name: "Xiaomi" },
+  { id: "brand-realme", name: "Realme" },
+  { id: "brand-sony", name: "Sony" },
+  { id: "brand-mohasagor", name: "Mohasagor" },
+  { id: "brand-generic", name: "Generic / Unbranded" },
+];
+
   const { admin } = useAdminAuth();
   const [form, setForm] = useState<ProductForm>(initialForm);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [brands, setBrands] = useState<Brand[]>(defaultBrands);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [video, setVideo] = useState<ProductVideo | null>(null);
   const isEdit = !!id;
@@ -151,22 +176,89 @@ export default function ProductFormPage() {
   }, [id]);
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from("categories")
-      .select("id, name")
-      .eq("is_active", true)
-      .order("name");
-    if (data) setCategories(data);
+    try {
+      const { data } = await supabase
+        .from("categories")
+        .select("id, name")
+        .order("name");
+      if (data && data.length > 0) {
+        const merged = [...data];
+        defaultCategories.forEach(def => {
+          if (!merged.some(c => c.name.toLowerCase() === def.name.toLowerCase())) {
+            merged.push(def);
+          }
+        });
+        setCategories(merged);
+        return;
+      }
+    } catch {}
+
+    try {
+      const snap = await getDocs(collection(db, "categories"));
+      const fsList: Category[] = [];
+      snap.forEach((d) => {
+        const cData = d.data();
+        if (cData.name) {
+          fsList.push({ id: d.id, name: cData.name });
+        }
+      });
+      if (fsList.length > 0) {
+        const merged = [...fsList];
+        defaultCategories.forEach(def => {
+          if (!merged.some(c => c.name.toLowerCase() === def.name.toLowerCase())) {
+            merged.push(def);
+          }
+        });
+        setCategories(merged);
+        return;
+      }
+    } catch {}
+
+    setCategories(defaultCategories);
   };
 
   const fetchBrands = async () => {
-    const { data } = await supabase
-      .from("brands")
-      .select("id, name")
-      .eq("is_active", true)
-      .order("name");
-    if (data) setBrands(data);
+    try {
+      const { data } = await supabase
+        .from("brands")
+        .select("id, name")
+        .order("name");
+      if (data && data.length > 0) {
+        const merged = [...data];
+        defaultBrands.forEach(def => {
+          if (!merged.some(b => b.name.toLowerCase() === def.name.toLowerCase())) {
+            merged.push(def);
+          }
+        });
+        setBrands(merged);
+        return;
+      }
+    } catch {}
+
+    try {
+      const snap = await getDocs(collection(db, "brands"));
+      const fsList: Brand[] = [];
+      snap.forEach((d) => {
+        const bData = d.data();
+        if (bData.name) {
+          fsList.push({ id: d.id, name: bData.name });
+        }
+      });
+      if (fsList.length > 0) {
+        const merged = [...fsList];
+        defaultBrands.forEach(def => {
+          if (!merged.some(b => b.name.toLowerCase() === def.name.toLowerCase())) {
+            merged.push(def);
+          }
+        });
+        setBrands(merged);
+        return;
+      }
+    } catch {}
+
+    setBrands(defaultBrands);
   };
+
 
   const fetchProduct = async () => {
     setLoading(true);
