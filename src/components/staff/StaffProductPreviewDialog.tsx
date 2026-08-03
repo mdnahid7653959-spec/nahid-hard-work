@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, XCircle, Ban, Loader2, Package, Store, Tag } from "lucide-react";
 
+import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
+
 interface Props {
   productId: string | null;
   open: boolean;
@@ -33,16 +35,75 @@ export function StaffProductPreviewDialog({
     setLoading(true);
     setSelectedImage(0);
     (async () => {
-      const { data, error } = await supabase.functions.invoke("staff-products", {
-        body: { action: "get", productId },
-      });
-      if (!error && data && !data.error) {
-        setProduct(data.product);
-        setImages(data.images || []);
-        setSeller(data.seller);
-        setCategory(data.category);
-        setBrand(data.brand);
+      let foundProd: any = null;
+      let foundImgs: any[] = [];
+      let foundCat: any = null;
+      let foundBrand: any = null;
+      let foundSeller: any = null;
+
+      try {
+        const { data, error } = await supabase.functions.invoke("staff-products", {
+          body: { action: "get", productId },
+        });
+        if (!error && data && !data.error && data.product) {
+          foundProd = data.product;
+          foundImgs = data.images || [];
+          foundSeller = data.seller;
+          foundCat = data.category;
+          foundBrand = data.brand;
+        }
+      } catch (err) {
+        console.warn("Staff preview edge function warning:", err);
       }
+
+      if (!foundProd) {
+        try {
+          const mohasagorList = await getCachedMohasagorProducts();
+          if (mohasagorList && mohasagorList.length > 0) {
+            const matched: any = mohasagorList.find((p: any) =>
+              String(p.id) === String(productId) ||
+              p.slug === productId ||
+              p.sku === productId ||
+              String(p.product_code) === String(productId) ||
+              `product-${p.id}` === productId
+            );
+            if (matched) {
+              foundProd = {
+                id: matched.id,
+                name: matched.name,
+                slug: matched.slug || `product-${matched.id}`,
+                regular_price: Number(matched.originalPrice || matched.price || 0),
+                discount_price: matched.originalPrice ? Number(matched.price) : null,
+                short_description: matched.short_description || null,
+                description: matched.details || matched.description || "API Supplier Product",
+                stock_quantity: Number(matched.stock_quantity ?? matched.stock ?? (matched.stock_status === "available" ? 50 : 0)),
+                sku: matched.sku || (matched.product_code ? String(matched.product_code) : `API-${matched.id}`),
+                status: "active",
+                approval_status: "APPROVED",
+                seller_id: "Mohasagor Supplier"
+              };
+              foundImgs = (matched.product_images || []).map((img: any, i: number) => ({
+                id: `img-${i}`,
+                image_url: typeof img === "string" ? img : (img.image_url || img.product_image || img.image || matched.image),
+                sort_order: i
+              }));
+              if (foundImgs.length === 0 && matched.image) {
+                foundImgs = [{ id: "img-0", image_url: matched.image, sort_order: 0 }];
+              }
+              foundCat = { name: matched.category || "Supplier API" };
+              foundSeller = { shop_name: "Mohasagor Supplier" };
+            }
+          }
+        } catch (suppErr) {
+          console.warn("Staff preview supplier fallback warning:", suppErr);
+        }
+      }
+
+      setProduct(foundProd);
+      setImages(foundImgs);
+      setSeller(foundSeller);
+      setCategory(foundCat);
+      setBrand(foundBrand);
       setLoading(false);
     })();
   }, [productId, open]);
@@ -194,7 +255,17 @@ export function StaffProductPreviewDialog({
                 {product.description && (
                   <div>
                     <h4 className="font-semibold text-sm mb-1">Description</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-line">{product.description}</p>
+                    {/<[a-z][\s\S]*>/i.test(product.description) ? (
+                      <div
+                        className="text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none
+                          [&_img]:max-w-full [&_img]:rounded-lg [&_table]:w-full [&_table]:border-collapse
+                          [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2
+                          [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                        dangerouslySetInnerHTML={{ __html: product.description }}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{product.description}</p>
+                    )}
                   </div>
                 )}
 
