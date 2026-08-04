@@ -183,8 +183,6 @@ export function useCategories() {
         indexedCats = firestoreSearchAdapter.getIndexedCategories();
       } catch (e) {}
 
-      const catMap = new Map<string, any>();
-
       const baseDefaultCategories = [
         { id: "electronics", name: "Electronics & Gadgets", slug: "electronics", image_url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop" },
         { id: "fashion", name: "Fashion & Clothing", slug: "fashion", image_url: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&h=400&fit=crop" },
