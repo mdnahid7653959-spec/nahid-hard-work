@@ -117,10 +117,13 @@ interface ProductWithImages {
   product_images?: { image_url: string; is_primary: boolean | null }[];
 }
 
+import { getSmartProductImage } from "@/utils/productImageHelper";
+
 function mapDbProduct(p: ProductWithImages, index: number): Product {
   const primaryImage = p.product_images?.find((img) => img.is_primary)?.image_url;
   const firstImage = p.product_images?.[0]?.image_url;
-  const image = primaryImage || firstImage || defaultImages[index % defaultImages.length];
+  const rawImage = primaryImage || firstImage;
+  const image = getSmartProductImage(p.name, rawImage, "", index);
 
   return {
     id: p.id,
@@ -151,7 +154,7 @@ function mapSupplierProduct(p: any, index: number): Product {
     ? resolveUrl(p.product_images[0].product_image)
     : p.thumbnail_img ? resolveUrl(p.thumbnail_img) : null;
 
-  const image = firstImage || defaultImages[index % defaultImages.length];
+  const image = getSmartProductImage(p.name, firstImage || undefined, p.category || "", index);
 
   // Parse prices
   const price = parseFloat(p.sale_price) || parseFloat(p.price) || 0;

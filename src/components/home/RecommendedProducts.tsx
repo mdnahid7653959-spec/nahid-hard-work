@@ -4,6 +4,7 @@ import { supabase } from "@/lib/firebaseAdapter";
 import { ProductCard, type Product } from "@/components/products/ProductCard";
 import { ChevronRight, ThumbsUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSmartProductImage } from "@/utils/productImageHelper";
 
 const LOCAL_STORAGE_KEY = "recently_viewed_products";
 const FALLBACK_IMAGES = [
@@ -33,13 +34,13 @@ type ProductRow = {
 function mapToProduct(p: ProductRow, i: number): Product {
   const primary =
     p.product_images?.find((img) => img.is_primary)?.image_url ||
-    p.product_images?.[0]?.image_url ||
-    FALLBACK_IMAGES[i % FALLBACK_IMAGES.length];
+    p.product_images?.[0]?.image_url;
+  const image = getSmartProductImage(p.name, primary, "", i);
   return {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    image: primary,
+    image,
     price: p.discount_price || p.regular_price,
     originalPrice: p.discount_price ? p.regular_price : undefined,
     rating: Number(p.rating_average) || 4.7,

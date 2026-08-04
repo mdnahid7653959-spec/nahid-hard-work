@@ -18,6 +18,7 @@ import { RelatedProducts } from "@/components/products/RelatedProducts";
 import { ProductReviews } from "@/components/products/ProductReviews";
 import { StoreDetails } from "@/components/products/StoreDetails";
 import { getCachedMohasagorProducts } from "@/utils/mohasagorCache";
+import { getSmartProductImage } from "@/utils/productImageHelper";
 import { db } from "@/integrations/firebase/client";
 import { collection, getDocs } from "firebase/firestore";
 
@@ -191,17 +192,18 @@ export default function ProductDetail() {
 
   // Image URL Resolver & Fallback Helper
   const resolveImage = (img: any): string => {
-    if (!img) return defaultImages[0];
+    if (!img) return getSmartProductImage(product?.name || "", "", product?.category_id || "");
     const url = typeof img === "string" ? img : img.image_url || img.url || img.product_image;
-    if (!url || typeof url !== "string") return defaultImages[0];
+    if (!url || typeof url !== "string") return getSmartProductImage(product?.name || "", "", product?.category_id || "");
     const trimmed = url.trim();
-    if (!trimmed) return defaultImages[0];
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
-      return trimmed;
+    if (!trimmed) return getSmartProductImage(product?.name || "", "", product?.category_id || "");
+    let fullUrl = trimmed;
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:") && !trimmed.startsWith("blob:")) {
+      if (trimmed.startsWith("//")) fullUrl = `https:${trimmed}`;
+      else if (trimmed.startsWith("/")) fullUrl = `https://mohasagor.com.bd${trimmed}`;
+      else fullUrl = `https://mohasagor.com.bd/${trimmed}`;
     }
-    if (trimmed.startsWith("//")) return `https:${trimmed}`;
-    if (trimmed.startsWith("/")) return `https://mohasagor.com.bd${trimmed}`;
-    return `https://mohasagor.com.bd/${trimmed}`;
+    return getSmartProductImage(product?.name || "", fullUrl, product?.category_id || "");
   };
 
   // Get images from product or use defaults
@@ -211,10 +213,10 @@ export default function ProductDetail() {
     ? (product as any).images
     : (product as any)?.image_url || (product as any)?.image
     ? [(product as any).image_url || (product as any).image]
-    : defaultImages;
+    : [getSmartProductImage(product?.name || "", "", product?.category_id || "")];
 
   const images = (rawImgList || []).map(resolveImage).filter(Boolean);
-  if (images.length === 0) images.push(defaultImages[0]);
+  if (images.length === 0) images.push(getSmartProductImage(product?.name || "", "", product?.category_id || ""));
 
 
   // Touch swipe handling for images

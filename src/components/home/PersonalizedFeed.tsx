@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronRight, Heart } from "lucide-react";
 import { supabase } from "@/lib/firebaseAdapter";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSmartProductImage } from "@/utils/productImageHelper";
 import { cn } from "@/lib/utils";
 
 const LOCAL_STORAGE_KEY = "recently_viewed_products";
@@ -45,11 +46,10 @@ const LABELS: Array<{ label: string; tone: Tile["labelTone"] }> = [
 ];
 
 function primaryImage(p: Row): string {
-  return (
+  const primary =
     p.product_images?.find((i) => i.is_primary)?.image_url ||
-    p.product_images?.[0]?.image_url ||
-    FALLBACK_IMG
-  );
+    p.product_images?.[0]?.image_url;
+  return getSmartProductImage(p.name, primary);
 }
 
 export function PersonalizedFeed() {

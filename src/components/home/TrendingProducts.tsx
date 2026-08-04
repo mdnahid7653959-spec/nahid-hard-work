@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/firebaseAdapter";
 import { ProductCard, type Product } from "@/components/products/ProductCard";
+import { getSmartProductImage } from "@/utils/productImageHelper";
 import { ChevronRight, TrendingUp } from "lucide-react";
 
 export function TrendingProducts() {
@@ -35,12 +36,10 @@ export function TrendingProducts() {
       if (error) {
         console.error("Error fetching products:", error);
       } else if (data) {
-        const fallbackImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop";
-
-        const mappedProducts: Product[] = (data as any[]).map((p) => {
+        const mappedProducts: Product[] = (data as any[]).map((p, i) => {
           const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
           const firstImage = p.product_images?.[0]?.image_url;
-          const image = primaryImage || firstImage || fallbackImage;
+          const image = getSmartProductImage(p.name, primaryImage || firstImage, "", i);
 
           return {
             id: p.id,

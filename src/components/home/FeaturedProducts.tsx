@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/firebaseAdapter";
 import { ProductCard, type Product } from "@/components/products/ProductCard";
+import { getSmartProductImage } from "@/utils/productImageHelper";
 import { ChevronRight, Flame, Star, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -108,7 +109,7 @@ export function FeaturedProducts({
             // Use actual product image if available, otherwise fallback
             const primaryImage = p.product_images?.find((img) => img.is_primary)?.image_url;
             const firstImage = p.product_images?.[0]?.image_url;
-            const image = primaryImage || firstImage || defaultImages[i % defaultImages.length];
+            const image = getSmartProductImage(p.name, primaryImage || firstImage, "", i);
 
             return {
               id: p.id,
