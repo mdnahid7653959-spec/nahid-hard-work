@@ -76,14 +76,12 @@ const Categories = () => {
         }));
 
         const defaultMohasagorCats: Category[] = [
-          { id: "cat-gadgets", name: "Gadgets & Electronics", slug: "electronics", image_url: null, parent_id: null },
-          { id: "cat-fashion", name: "Men's Fashion", slug: "mens-fashion", image_url: null, parent_id: null },
-          { id: "cat-women", name: "Women's Fashion", slug: "womens-fashion", image_url: null, parent_id: null },
-          { id: "cat-home", name: "Home & Lifestyle", slug: "home-lifestyle", image_url: null, parent_id: null },
-          { id: "cat-winter", name: "Winter Collection", slug: "winter", image_url: null, parent_id: null },
-          { id: "cat-watch", name: "Watches", slug: "watch", image_url: null, parent_id: null },
-          { id: "cat-kids", name: "Kids Zone", slug: "kids-zone", image_url: null, parent_id: null },
-          { id: "cat-foods", name: "Foods", slug: "foods", image_url: null, parent_id: null },
+          { id: "cat-electronics", name: "Electronics & Gadgets", slug: "electronics", image_url: null, parent_id: null },
+          { id: "cat-fashion", name: "Fashion & Clothing", slug: "fashion", image_url: null, parent_id: null },
+          { id: "cat-home", name: "Home & Kitchen", slug: "home", image_url: null, parent_id: null },
+          { id: "cat-beauty", name: "Health & Beauty", slug: "beauty", image_url: null, parent_id: null },
+          { id: "cat-watches", name: "Watches & Accessories", slug: "watches", image_url: null, parent_id: null },
+          { id: "cat-kids", name: "Toys & Baby Care", slug: "kids", image_url: null, parent_id: null },
         ];
 
         const finalCats = categoriesWithChildren.length > 0 ? categoriesWithChildren : defaultMohasagorCats;
