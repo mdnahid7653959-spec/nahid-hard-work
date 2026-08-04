@@ -159,18 +159,22 @@ class FirebaseQueryBuilder {
           let docId = item.id || item.user_id;
           if (docId) {
             await setDoc(doc(db, this.colName, docId.toString()), {
+              id: docId.toString(),
               ...item,
               created_at: item.created_at || new Date().toISOString(),
               updated_at: new Date().toISOString()
             }, { merge: true });
-            results.push({ id: docId, ...item });
+            results.push({ id: docId.toString(), ...item });
           } else {
-            const docRef = await addDoc(collection(db, this.colName), {
+            const newDocRef = doc(collection(db, this.colName));
+            const generatedId = newDocRef.id;
+            await setDoc(newDocRef, {
+              id: generatedId,
               ...item,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
-            results.push({ id: docRef.id, ...item });
+            results.push({ id: generatedId, ...item });
           }
         }
 

@@ -58,10 +58,13 @@ export default function Checkout() {
     const loadSaved = async () => {
       if (!user) return;
 
-      const [{ data: profile }, { data: address }] = await Promise.all([
+      const [{ data: profile }, { data: addressesData }] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, email").eq("user_id", user.id).maybeSingle(),
-        supabase.from("addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("addresses").select("*").eq("user_id", user.id),
       ]);
+
+      const addresses = Array.isArray(addressesData) ? addressesData : [];
+      const address = addresses.find((a: any) => a.is_default) || addresses[0] || null;
 
       setShippingInfo((prev) => {
         const [first = "", ...rest] = (profile?.full_name || address?.full_name || "").split(" ");
@@ -277,16 +280,19 @@ export default function Checkout() {
       // Persist phone + full name to profile so admin sees latest details
       const fullNameCombined = `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim();
       try {
-        await supabase.from("profiles").update({
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          user_id: user.id,
           full_name: fullNameCombined || undefined,
           phone: shippingInfo.phone || undefined,
           updated_at: new Date().toISOString(),
-        }).eq("user_id", user.id);
+        });
       } catch (e) { console.warn("profile update skipped", e); }
 
       // Save / update default address so it prefills next time
       try {
         const addressPayload = {
+          id: user.id,
           user_id: user.id,
           full_name: fullNameCombined || "Customer",
           phone: shippingInfo.phone,
@@ -296,12 +302,9 @@ export default function Checkout() {
           postal_code: shippingInfo.zipCode,
           country: shippingInfo.country || "Bangladesh",
           is_default: true,
+          updated_at: new Date().toISOString(),
         };
-        if (savedAddressId) {
-          await supabase.from("addresses").update({ ...addressPayload, updated_at: new Date().toISOString() }).eq("id", savedAddressId);
-        } else {
-          await supabase.from("addresses").insert(addressPayload);
-        }
+        await supabase.from("addresses").upsert(addressPayload);
       } catch (e) { console.warn("address save skipped", e); }
 
 
