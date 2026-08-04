@@ -170,6 +170,7 @@ export function AdminProductPreviewDialog({
 
 
   const defaultPlaceholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600' fill='%23f8fafc'><rect width='600' height='600' rx='30'/><g transform='translate(250, 240)' fill='none' stroke='%2394a3b8' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><rect x='10' y='20' width='80' height='70' rx='10'/><circle cx='35' cy='45' r='10'/><path d='M10 75 l25-25 l20 20 l25-25 l10 10'/></g><text x='300' y='360' font-family='sans-serif' font-size='20' font-weight='600' fill='%2364748b' text-anchor='middle'>No Image Uploaded</text></svg>";
+  const defaultFallbackImage = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop";
 
   const resolvePreviewImage = (url: any): string => {
     if (!url || typeof url !== "string") return "";
@@ -220,7 +221,7 @@ export function AdminProductPreviewDialog({
 
   const images = extractImages(product);
   if (images.length === 0) {
-    images.push(defaultPlaceholderSvg);
+    images.push(defaultFallbackImage);
   }
 
   const price = product?.discount_price ?? product?.regular_price;
@@ -264,10 +265,10 @@ export function AdminProductPreviewDialog({
                 <div className="aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center">
                   {images.length > 0 ? (
                     <img
-                      src={images[selectedImage] || defaultPlaceholderSvg}
+                      src={images[selectedImage] || defaultFallbackImage}
                       alt={product.name}
                       className="w-full h-full object-contain p-4"
-                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultPlaceholderSvg; }}
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultFallbackImage; }}
                     />
                   ) : (
                     <div className="text-muted-foreground text-sm">No images uploaded</div>
@@ -284,10 +285,10 @@ export function AdminProductPreviewDialog({
                         }`}
                       >
                         <img
-                          src={img || defaultPlaceholderSvg}
+                          src={img || defaultFallbackImage}
                           alt=""
                           className="w-full h-full object-cover"
-                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultPlaceholderSvg; }}
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultFallbackImage; }}
                         />
                       </button>
                     ))}

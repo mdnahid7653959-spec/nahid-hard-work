@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught error:", error, errorInfo);
 
-    const errorMessage = error?.message || "";
+    const errorMessage = error?.message || String(error) || "";
     const isChunkError =
       errorMessage.includes("Failed to fetch dynamically imported module") ||
       errorMessage.includes("Importing a module script failed") ||
@@ -35,15 +35,12 @@ export class ErrorBoundary extends Component<Props, State> {
       const lastReload = sessionStorage.getItem("chunk_reload_timestamp");
       const now = Date.now();
 
-      // Only auto-reload once per 5 seconds to prevent infinite reload loops
-      if (!lastReload || now - parseInt(lastReload, 10) > 5000) {
+      if (!lastReload || now - parseInt(lastReload, 10) > 3000) {
         sessionStorage.setItem("chunk_reload_timestamp", now.toString());
-        this.autoReloadTimer = setTimeout(() => {
-          window.location.reload();
-        }, 300);
-      } else {
-        this.setState({ reloaded: true });
+        window.location.reload();
+        return;
       }
+      this.setState({ reloaded: true });
     }
   }
 
@@ -55,8 +52,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   handleReload = () => {
     sessionStorage.removeItem("chunk_reload_timestamp");
-    this.setState({ hasError: false, error: null });
-    window.location.href = window.location.pathname;
+    sessionStorage.removeItem("chunk_retry_timestamp");
+    window.location.href = window.location.href;
   };
 
   render() {
