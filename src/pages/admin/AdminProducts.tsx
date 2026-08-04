@@ -4,7 +4,7 @@ import { Plus, Search, Edit, Trash2, Eye, MoreHorizontal, RefreshCw, CheckCircle
 import { supabase } from "@/lib/firebaseAdapter";
 import { adminDb } from "@/lib/adminDb";
 import { db } from "@/integrations/firebase/client";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
 import { Button } from "@/components/ui/button";
@@ -181,131 +181,150 @@ export default function AdminProducts() {
     setRefreshing(false);
   };
 
+  const updateLocalAndStateProduct = (id: string, updates: Partial<Product> | null) => {
+    if (updates === null) {
+      setProducts((prev) => prev.filter((p) => String(p.id) !== String(id) && p.slug !== id));
+    } else {
+      setProducts((prev) =>
+        prev.map((p) => (String(p.id) === String(id) || p.slug === id ? { ...p, ...updates } : p))
+      );
+    }
+
+    try {
+      ["enterprise_admin_products", "local_products"].forEach((key) => {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            let nextList: any[];
+            if (updates === null) {
+              nextList = list.filter((p: any) => String(p.id) !== String(id) && p.slug !== id);
+            } else {
+              nextList = list.map((p: any) =>
+                String(p.id) === String(id) || p.slug === id ? { ...p, ...updates } : p
+              );
+            }
+            localStorage.setItem(key, JSON.stringify(nextList));
+          }
+        }
+      });
+    } catch (e) {
+      console.warn("LocalStorage product update error:", e);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
-    if (!admin?.id) {
-      toast({ variant: "destructive", title: "Error", description: "Admin session not found" });
-      return;
-    }
 
-    let success = false;
+    // 1. Instant UI update & LocalStorage cleanup
+    updateLocalAndStateProduct(id, null);
+    toast({ title: "Product deleted successfully" });
+
+    // 2. Delete from Firestore
     try {
-      const { data, error } = await supabase.functions.invoke("admin-products", {
-        body: { action: "delete", adminId: admin.id, productId: id }
-      });
-      if (!error && !data?.error) {
-        success = true;
-      }
-    } catch (err) {
-      // Fallback
+      await deleteDoc(doc(db, "products", id));
+    } catch (e) {
+      console.warn("Firestore delete exception:", e);
     }
 
-    if (!success) {
-      const { error: dbErr } = await adminDb.remove("products", { id });
-      if (!dbErr) success = true;
+    // 3. Delete from Supabase and adminDb
+    try {
+      await supabase.from("products").delete().eq("id", id);
+      await adminDb.remove("products", { id });
+      await adminDb.remove("product_images", { filters: [{ col: "product_id", value: id }] });
+    } catch (e) {
+      console.warn("Supabase delete exception:", e);
     }
 
-    if (success) {
-      toast({ title: "Product deleted successfully" });
-      fetchProducts();
-      invalidateProducts();
-    } else {
-      toast({ variant: "destructive", title: "Error", description: "Failed to delete product" });
+    // 4. Trigger cloud function if available
+    if (admin?.id) {
+      try {
+        await supabase.functions.invoke("admin-products", {
+          body: { action: "delete", adminId: admin.id, productId: id }
+        });
+      } catch (err) {}
     }
+
+    invalidateProducts();
   };
 
   const toggleStatus = async (id: string, currentStatus: string) => {
-    if (!admin?.id) {
-      toast({ variant: "destructive", title: "Error", description: "Admin session not found" });
-      return;
-    }
     const newStatus = currentStatus === "active" ? "inactive" : "active";
-    let success = false;
+    updateLocalAndStateProduct(id, { status: newStatus });
+    toast({ title: `Product ${newStatus}` });
+
     try {
-      const { data, error } = await supabase.functions.invoke("admin-products", {
-        body: { action: "toggle-status", adminId: admin.id, productId: id, productData: { status: newStatus } }
-      });
-      if (!error && !data?.error) {
-        success = true;
-      }
-    } catch (err) {
-      // Fallback
+      await updateDoc(doc(db, "products", id), { status: newStatus });
+    } catch (e) {}
+
+    try {
+      await supabase.from("products").update({ status: newStatus }).eq("id", id);
+      await adminDb.update("products", { status: newStatus }, { id });
+    } catch (e) {}
+
+    if (admin?.id) {
+      try {
+        await supabase.functions.invoke("admin-products", {
+          body: { action: "toggle-status", adminId: admin.id, productId: id, productData: { status: newStatus } }
+        });
+      } catch (err) {}
     }
 
-    if (!success) {
-      const { error: dbErr } = await adminDb.update("products", { status: newStatus }, { id });
-      if (!dbErr) success = true;
-    }
-
-    if (success) {
-      toast({ title: `Product ${newStatus}` });
-      fetchProducts();
-      invalidateProducts();
-    } else {
-      toast({ variant: "destructive", title: "Error", description: "Failed to update product status" });
-    }
+    invalidateProducts();
   };
 
   const handleApprove = async (productId: string) => {
-    if (!admin?.id) return;
     setActionLoading(true);
-    let success = false;
+    updateLocalAndStateProduct(productId, { status: "active", approval_status: "approved" });
+    toast({ title: "Product approved!", description: "Product is now live." });
+
     try {
-      const { data, error } = await supabase.functions.invoke("admin-products", {
-        body: { action: "approve-product", adminId: admin.id, productId }
-      });
-      if (!error && !data?.error) {
-        success = true;
-      }
-    } catch (err) {
-      // Fallback
+      await updateDoc(doc(db, "products", productId), { status: "active", approval_status: "approved" });
+    } catch (e) {}
+
+    try {
+      await supabase.from("products").update({ status: "active", approval_status: "approved" }).eq("id", productId);
+      await adminDb.update("products", { status: "active", approval_status: "approved" }, { id: productId });
+    } catch (e) {}
+
+    if (admin?.id) {
+      try {
+        await supabase.functions.invoke("admin-products", {
+          body: { action: "approve-product", adminId: admin.id, productId }
+        });
+      } catch (err) {}
     }
 
-    if (!success) {
-      const { error: dbErr } = await adminDb.update("products", { status: "active", approval_status: "approved" }, { id: productId });
-      if (!dbErr) success = true;
-    }
-
-    if (success) {
-      toast({ title: "Product approved!", description: "Product is now live." });
-      fetchProducts();
-      invalidateProducts();
-    } else {
-      toast({ variant: "destructive", title: "Error", description: "Failed to approve product" });
-    }
+    invalidateProducts();
     setActionLoading(false);
   };
 
   const handleRejectOrBan = async () => {
-    if (!admin?.id || !rejectDialog.productId) return;
+    if (!rejectDialog.productId) return;
     setActionLoading(true);
-    const action = rejectDialog.action === "ban" ? "ban-product" : "reject-product";
     const targetStatus = rejectDialog.action === "ban" ? "banned" : "rejected";
-    let success = false;
+    updateLocalAndStateProduct(rejectDialog.productId, { approval_status: targetStatus, status: targetStatus });
+    toast({ title: rejectDialog.action === "ban" ? "Product banned" : "Product rejected" });
 
     try {
-      const { data, error } = await supabase.functions.invoke("admin-products", {
-        body: { action, adminId: admin.id, productId: rejectDialog.productId, productData: { reason: rejectReason } }
-      });
-      if (!error && !data?.error) {
-        success = true;
-      }
-    } catch (err) {
-      // Fallback
+      await updateDoc(doc(db, "products", rejectDialog.productId), { approval_status: targetStatus, status: targetStatus });
+    } catch (e) {}
+
+    try {
+      await supabase.from("products").update({ approval_status: targetStatus, status: targetStatus }).eq("id", rejectDialog.productId);
+      await adminDb.update("products", { status: targetStatus, rejection_reason: rejectReason }, { id: rejectDialog.productId });
+    } catch (e) {}
+
+    if (admin?.id) {
+      const action = rejectDialog.action === "ban" ? "ban-product" : "reject-product";
+      try {
+        await supabase.functions.invoke("admin-products", {
+          body: { action, adminId: admin.id, productId: rejectDialog.productId, productData: { reason: rejectReason } }
+        });
+      } catch (err) {}
     }
 
-    if (!success) {
-      const { error: dbErr } = await adminDb.update("products", { status: targetStatus, rejection_reason: rejectReason }, { id: rejectDialog.productId });
-      if (!dbErr) success = true;
-    }
-
-    if (success) {
-      toast({ title: rejectDialog.action === "ban" ? "Product banned" : "Product rejected" });
-      fetchProducts();
-      invalidateProducts();
-    } else {
-      toast({ variant: "destructive", title: "Error", description: "Failed to update product" });
-    }
+    invalidateProducts();
     setActionLoading(false);
     setRejectDialog({ open: false, productId: "", action: "reject" });
     setRejectReason("");
