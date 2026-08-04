@@ -317,65 +317,71 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
       const pSku = (p.sku || "").toLowerCase();
       const pTags = Array.isArray(p.tags) ? p.tags.map((t: string) => t.toLowerCase()) : [];
 
-      // Check Exact SKU
-      if (queryStr && (pSku === queryStr || pSku.includes(queryStr))) {
-        score += 150;
-        matchType = "sku";
-      }
-
-      // Check Name Matches (exact, startsWith, or includes substring anywhere)
-      if (pName === queryStr) {
-        score += 100;
-        matchType = "exact";
-      } else if (pName.startsWith(queryStr)) {
-        score += 85;
-        matchType = "prefix";
-      } else if (pName.includes(queryStr)) {
-        score += 65;
+      // If no search query, give all products a base score so they appear when browsing/filtering
+      if (!queryStr) {
+        score = 10;
         matchType = "partial";
-      }
-
-      // Check Category / Brand / Description Includes
-      if (pCat.includes(queryStr)) {
-        score += 55;
-        if (matchType === "partial") matchType = "semantic";
-      }
-      if (pBrand.includes(queryStr)) {
-        score += 50;
-      }
-      if (pDesc.includes(queryStr)) {
-        score += 30;
-      }
-
-      // Check Expanded Terms & Synonyms
-      for (const term of expandedTerms) {
-        if (!term) continue;
-        if (pName.includes(term)) {
-          score += 60;
-          if (matchType !== "exact" && matchType !== "sku") matchType = "synonym";
+      } else {
+        // Check Exact SKU
+        if (pSku === queryStr || pSku.includes(queryStr)) {
+          score += 150;
+          matchType = "sku";
         }
-        if (pCat.includes(term)) {
-          score += 45;
-        }
-        if (pBrand.includes(term)) {
-          score += 40;
-        }
-        if (pTags.some((tag: string) => tag.includes(term))) {
-          score += 35;
-        }
-      }
 
-      // Fuzzy Typo Matching for queries >= 3 chars
-      if (score === 0 && queryStr.length >= 3) {
-        const queryTokens = tokenizeText(queryStr);
-        const nameTokens = tokenizeText(pName);
+        // Check Name Matches (exact, startsWith, or includes substring anywhere)
+        if (pName === queryStr) {
+          score += 100;
+          matchType = "exact";
+        } else if (pName.startsWith(queryStr)) {
+          score += 85;
+          matchType = "prefix";
+        } else if (pName.includes(queryStr)) {
+          score += 65;
+          matchType = "partial";
+        }
 
-        for (const qTok of queryTokens) {
-          for (const nTok of nameTokens) {
-            const fuzzy = fuzzyMatchToken(qTok, nTok);
-            if (fuzzy.isMatch) {
-              score += fuzzy.score;
-              matchType = "fuzzy";
+        // Check Category / Brand / Description Includes
+        if (pCat.includes(queryStr)) {
+          score += 55;
+          if (matchType === "partial") matchType = "semantic";
+        }
+        if (pBrand.includes(queryStr)) {
+          score += 50;
+        }
+        if (pDesc.includes(queryStr)) {
+          score += 30;
+        }
+
+        // Check Expanded Terms & Synonyms
+        for (const term of expandedTerms) {
+          if (!term) continue;
+          if (pName.includes(term)) {
+            score += 60;
+            if (matchType !== "exact" && matchType !== "sku") matchType = "synonym";
+          }
+          if (pCat.includes(term)) {
+            score += 45;
+          }
+          if (pBrand.includes(term)) {
+            score += 40;
+          }
+          if (pTags.some((tag: string) => tag.includes(term))) {
+            score += 35;
+          }
+        }
+
+        // Fuzzy Typo Matching for queries >= 3 chars
+        if (score === 0 && queryStr.length >= 3) {
+          const queryTokens = tokenizeText(queryStr);
+          const nameTokens = tokenizeText(pName);
+
+          for (const qTok of queryTokens) {
+            for (const nTok of nameTokens) {
+              const fuzzy = fuzzyMatchToken(qTok, nTok);
+              if (fuzzy.isMatch) {
+                score += fuzzy.score;
+                matchType = "fuzzy";
+              }
             }
           }
         }
@@ -424,8 +430,21 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
     let filtered = scoredProducts;
 
     if (options.category && options.category !== "all") {
-      const c = options.category.toLowerCase();
-      filtered = filtered.filter((p) => p.category?.toLowerCase().includes(c));
+      const c = options.category.toLowerCase().trim();
+      // Slug-to-keywords mapping for category navigation
+      const categorySlugMap: Record<string, string[]> = {
+        "electronics": ["electronics", "gadgets", "mobile", "phone", "laptop", "computer", "tablet", "headphone", "earbuds", "speaker", "camera", "tv", "monitor"],
+        "fashion": ["fashion", "clothing", "shirt", "pant", "dress", "wear", "shoe", "apparel", "jacket", "jeans"],
+        "home": ["home", "kitchen", "furniture", "decor", "garden", "lifestyle", "appliance", "bedding", "curtain"],
+        "beauty": ["beauty", "health", "skincare", "makeup", "cosmetic", "care", "perfume", "fragrance", "grooming"],
+        "watches": ["watch", "watches", "accessories", "jewelry", "bracelet", "sunglasses", "belt", "wallet"],
+        "kids": ["toy", "toys", "baby", "kid", "kids", "children", "infant", "diaper", "stroller"]
+      };
+      const keywords = categorySlugMap[c] || [c];
+      filtered = filtered.filter((p) => {
+        const pCatLower = (p.category || "").toLowerCase();
+        return keywords.some(kw => pCatLower.includes(kw)) || pCatLower.includes(c);
+      });
     }
     if (options.brand && options.brand !== "all") {
       const b = options.brand.toLowerCase();
