@@ -21,6 +21,164 @@ const defaultImages = [
   "https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=600&h=600&fit=crop"
 ];
 
+export function inferProductCategory(name: string, currentCategory?: string): string {
+  const n = (name || "").toLowerCase();
+  const c = (currentCategory || "").toLowerCase();
+
+  // 1. Watches & Accessories
+  if (
+    n.includes("watch") ||
+    n.includes("smartwatch") ||
+    n.includes("luminous") ||
+    n.includes("strap") ||
+    n.includes("bracelet") ||
+    n.includes("jewelry") ||
+    n.includes("sunglasses") ||
+    n.includes("belt") ||
+    n.includes("wallet") ||
+    c.includes("watch")
+  ) {
+    return "watches";
+  }
+
+  // 2. Electronics & Gadgets
+  if (
+    n.includes("mouse") ||
+    n.includes("keyboard") ||
+    n.includes("earbuds") ||
+    n.includes("headphone") ||
+    n.includes("earphone") ||
+    n.includes("charger") ||
+    n.includes("cable") ||
+    n.includes("speaker") ||
+    n.includes("power bank") ||
+    n.includes("router") ||
+    n.includes("bluetooth") ||
+    n.includes("camera") ||
+    n.includes("display") ||
+    n.includes("monitor") ||
+    n.includes("receiver") ||
+    n.includes("mp3") ||
+    c.includes("electronic") ||
+    c.includes("gadget")
+  ) {
+    return "electronics";
+  }
+
+  // 3. Home & Kitchen
+  if (
+    n.includes("water dispenser") ||
+    n.includes("dispenser") ||
+    n.includes("fan") ||
+    n.includes("cup") ||
+    n.includes("mug") ||
+    n.includes("pillow") ||
+    n.includes("cushion") ||
+    n.includes("kitchen") ||
+    n.includes("cooker") ||
+    n.includes("lamp") ||
+    n.includes("bottle") ||
+    n.includes("organizer") ||
+    n.includes("rack") ||
+    n.includes("towel") ||
+    n.includes("bedding") ||
+    n.includes("curtain") ||
+    n.includes("mop") ||
+    n.includes("shelf") ||
+    c.includes("home") ||
+    c.includes("kitchen")
+  ) {
+    return "home";
+  }
+
+  // 4. Fashion & Clothing
+  if (
+    n.includes("shirt") ||
+    n.includes("pant") ||
+    n.includes("t-shirt") ||
+    n.includes("jacket") ||
+    n.includes("jeans") ||
+    n.includes("dress") ||
+    n.includes("shoe") ||
+    n.includes("sneaker") ||
+    n.includes("saree") ||
+    n.includes("kurti") ||
+    n.includes("cloth") ||
+    c.includes("fashion") ||
+    c.includes("clothing")
+  ) {
+    return "fashion";
+  }
+
+  // 5. Health & Beauty
+  if (
+    n.includes("hair dryer") ||
+    n.includes("dryer") ||
+    n.includes("shaver") ||
+    n.includes("trimmer") ||
+    n.includes("serum") ||
+    n.includes("cream") ||
+    n.includes("lotion") ||
+    n.includes("lipstick") ||
+    n.includes("makeup") ||
+    n.includes("soap") ||
+    n.includes("shampoo") ||
+    n.includes("perfume") ||
+    n.includes("gripper") ||
+    n.includes("exercise") ||
+    c.includes("beauty") ||
+    c.includes("health")
+  ) {
+    return "beauty";
+  }
+
+  // 6. Toys & Baby Care
+  if (
+    n.includes("toy") ||
+    n.includes("baby") ||
+    n.includes("kid") ||
+    n.includes("doll") ||
+    n.includes("puzzle") ||
+    n.includes("diaper") ||
+    n.includes("stroller") ||
+    c.includes("kid") ||
+    c.includes("toy")
+  ) {
+    return "kids";
+  }
+
+  return c || "general";
+}
+
+function getSessionSeed(): number {
+  if (typeof window === "undefined") return 12345;
+  let seedStr = sessionStorage.getItem("durtup_user_feed_seed");
+  if (!seedStr) {
+    seedStr = Math.floor(Math.random() * 1000000).toString();
+    sessionStorage.setItem("durtup_user_feed_seed", seedStr);
+  }
+  // Change time bucket every 5 minutes (5 * 60 * 1000 = 300000ms)
+  const timeBucket = Math.floor(Date.now() / 300000);
+  return parseInt(seedStr, 10) + timeBucket * 9973;
+}
+
+function seededShuffle<T>(array: T[], seed: number): T[] {
+  const arr = [...array];
+  let m = arr.length, t, i;
+  let s = seed;
+  const pseudoRandom = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+  while (m) {
+    i = Math.floor(pseudoRandom() * m--);
+    t = arr[m];
+    arr[m] = arr[i];
+    arr[i] = t;
+  }
+  return arr;
+}
+
 export class FirestoreSearchAdapter implements ISearchEngineAdapter {
   private indexedProducts: any[] = [];
   private indexedCategories: { id: string; name: string; slug: string }[] = [];
@@ -431,19 +589,25 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
 
     if (options.category && options.category !== "all") {
       const c = options.category.toLowerCase().trim();
-      // Slug-to-keywords mapping for category navigation
-      const categorySlugMap: Record<string, string[]> = {
-        "electronics": ["electronics", "gadgets", "mobile", "phone", "laptop", "computer", "tablet", "headphone", "earbuds", "speaker", "camera", "tv", "monitor"],
-        "fashion": ["fashion", "clothing", "shirt", "pant", "dress", "wear", "shoe", "apparel", "jacket", "jeans"],
-        "home": ["home", "kitchen", "furniture", "decor", "garden", "lifestyle", "appliance", "bedding", "curtain"],
-        "beauty": ["beauty", "health", "skincare", "makeup", "cosmetic", "care", "perfume", "fragrance", "grooming"],
-        "watches": ["watch", "watches", "accessories", "jewelry", "bracelet", "sunglasses", "belt", "wallet"],
-        "kids": ["toy", "toys", "baby", "kid", "kids", "children", "infant", "diaper", "stroller"]
+      const targetCategoryMap: Record<string, string> = {
+        "electronics": "electronics",
+        "fashion": "fashion",
+        "home": "home",
+        "beauty": "beauty",
+        "watches": "watches",
+        "kids": "kids"
       };
-      const keywords = categorySlugMap[c] || [c];
+      const targetSlug = targetCategoryMap[c] || c;
+
       filtered = filtered.filter((p) => {
-        const pCatLower = (p.category || "").toLowerCase();
-        return keywords.some(kw => pCatLower.includes(kw)) || pCatLower.includes(c);
+        const detected = inferProductCategory(p.name, p.category);
+        if (targetSlug === "watches") return detected === "watches";
+        if (targetSlug === "home") return detected === "home";
+        if (targetSlug === "electronics") return detected === "electronics";
+        if (targetSlug === "fashion") return detected === "fashion";
+        if (targetSlug === "beauty") return detected === "beauty";
+        if (targetSlug === "kids") return detected === "kids";
+        return detected === targetSlug || (p.category || "").toLowerCase().includes(targetSlug);
       });
     }
     if (options.brand && options.brand !== "all") {
@@ -469,17 +633,22 @@ export class FirestoreSearchAdapter implements ISearchEngineAdapter {
       filtered = filtered.filter((p) => p.originalPrice !== undefined && p.originalPrice > p.price);
     }
 
-    // 4. Sort results
+    // 4. Sort results & apply 5-minute user session feed rotation
     const sortBy = options.sortBy || "relevance";
-    filtered.sort((a, b) => {
-      if (sortBy === "relevance") return b.score - a.score;
-      if (sortBy === "popularity") return b.sold - a.sold;
-      if (sortBy === "price_asc") return a.price - b.price;
-      if (sortBy === "price_desc") return b.price - a.price;
-      if (sortBy === "rating") return b.rating - a.rating;
-      if (sortBy === "newest") return b.isNew ? 1 : -1;
-      return b.score - a.score;
-    });
+    if (sortBy === "relevance" && !queryStr) {
+      const seed = getSessionSeed();
+      filtered = seededShuffle(filtered, seed);
+    } else {
+      filtered.sort((a, b) => {
+        if (sortBy === "relevance") return b.score - a.score;
+        if (sortBy === "popularity") return b.sold - a.sold;
+        if (sortBy === "price_asc") return a.price - b.price;
+        if (sortBy === "price_desc") return b.price - a.price;
+        if (sortBy === "rating") return b.rating - a.rating;
+        if (sortBy === "newest") return b.isNew ? 1 : -1;
+        return b.score - a.score;
+      });
+    }
 
     // Log analytics asynchronously
     if (queryStr) {
