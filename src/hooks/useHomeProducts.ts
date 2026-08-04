@@ -156,7 +156,7 @@ function mapSupplierProduct(p: any, index: number): Product {
 
   const image = getSmartProductImage(p.name, firstImage || undefined, p.category || "", index);
 
-  const API_PROFIT_MARGIN = 1.50; // 50% profit margin
+  const API_PROFIT_MARGIN = 1.30; // 30% profit margin
   const rawSalePrice = parseFloat(p.sale_price) || parseFloat(p.discount_price) || 0;
   const rawPrice = parseFloat(p.price) || parseFloat(p.regular_price) || rawSalePrice;
   
@@ -211,7 +211,7 @@ function buildSections(products: Product[]) {
   };
 }
 
-const CACHE_KEY = "mohasagor_cached_home_products_v2";
+const CACHE_KEY = "mohasagor_cached_home_products_v3";
 
 function preloadImages(products: Product[]) {
   if (typeof window === "undefined") return;

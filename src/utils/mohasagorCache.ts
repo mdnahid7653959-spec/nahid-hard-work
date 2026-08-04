@@ -76,7 +76,7 @@ function mapRawProducts(rawProducts: any[], base: string): Product[] {
       ? resolveUrl(p.product_images[0].product_image)
       : p.thumbnail_img ? resolveUrl(p.thumbnail_img) : resolveUrl("");
 
-    const API_PROFIT_MARGIN = 1.50; // 50% profit margin
+    const API_PROFIT_MARGIN = 1.30; // 30% profit margin
     const rawSalePrice = parseFloat(p.sale_price) || parseFloat(p.discount_price) || 0;
     const rawPrice = parseFloat(p.price) || parseFloat(p.regular_price) || rawSalePrice;
     

@@ -35,7 +35,7 @@ interface Pagination {
 
 // BDT conversion
 const USD_TO_BDT = 120;
-const PROFIT_MARGIN = 1.5; // 50% margin requested by user
+const PROFIT_MARGIN = 1.3; // 30% margin
 
 function ProductSkeleton() {
   return (

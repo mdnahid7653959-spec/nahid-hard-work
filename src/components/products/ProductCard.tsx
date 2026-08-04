@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { cn } from "@/lib/utils";
+import { getSmartProductImage } from "@/utils/productImageHelper";
 export interface Product {
   id: string;
   name: string;
@@ -23,9 +24,11 @@ export interface Product {
 interface ProductCardProps {
   product: Product;
 }
+
 function ProductCardComponent({
   product
 }: ProductCardProps) {
+  const displayImage = getSmartProductImage(product.name, product.image);
   const navigate = useNavigate();
   const discount = product.originalPrice ? Math.round((1 - product.price / product.originalPrice) * 100) : 0;
   const {
@@ -74,7 +77,7 @@ function ProductCardComponent({
       {/* Product Image - 1:1 aspect ratio */}
       <Link to={`/product/${product.slug}`} className="block">
         <div className="aspect-square overflow-hidden bg-muted/30">
-          <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" decoding="async" />
+          <img src={displayImage} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" decoding="async" />
         </div>
       </Link>
 

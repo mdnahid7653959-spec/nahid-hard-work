@@ -7,12 +7,14 @@ import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { cn } from "@/lib/utils";
 import type { CombinedProduct } from "@/hooks/useCombinedSearch";
+import { getSmartProductImage } from "@/utils/productImageHelper";
 
 interface CombinedProductCardProps {
   product: CombinedProduct;
 }
 
 const CombinedProductCardComponent: React.FC<CombinedProductCardProps> = ({ product }) => {
+  const displayImage = getSmartProductImage(product.name, product.image);
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { items: wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
@@ -78,12 +80,12 @@ const CombinedProductCardComponent: React.FC<CombinedProductCardProps> = ({ prod
         {/* Image Container */}
         <div className="relative aspect-square overflow-hidden bg-muted">
           <img
-            src={product.image}
+            src={displayImage}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop";
+              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=400&fit=crop";
             }}
           />
 

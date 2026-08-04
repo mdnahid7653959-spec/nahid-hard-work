@@ -71,9 +71,9 @@ export function calculateCJPrice(
   settings: CJSettings | null | undefined
 ): number {
   if (!settings) {
-    // Default fallback (50% margin)
+    // Default fallback (30% margin)
     const bdtPrice = usdPrice * 120;
-    return Math.round(bdtPrice * 1.50);
+    return Math.round(bdtPrice * 1.30);
   }
 
   const bdtPrice = usdPrice * settings.usd_to_bdt_rate;
