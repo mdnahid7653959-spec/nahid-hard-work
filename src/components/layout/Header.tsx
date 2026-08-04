@@ -80,9 +80,11 @@ export function Header() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const currentCategory = searchParams.get("category");
-  const isAllProductsActive = location.pathname === "/products" && !currentCategory;
-  const isHomeActive = location.pathname === "/";
+  const rawCatParam = searchParams.get("category");
+  const currentCategory = (rawCatParam || "").toLowerCase().trim();
+
+  const isHomeActive = location.pathname === "/" && !currentCategory;
+  const isAllProductsActive = (location.pathname === "/products" || location.pathname.startsWith("/product/")) && !currentCategory;
   const { user, profile, signOut } = useAuth();
   const { itemCount: cartCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
@@ -288,19 +290,21 @@ export function Header() {
                   All Products
                 </Link>
               </li>
-              {(categoriesData && categoriesData.length > 0 ? categoriesData : [
+              {[
                 { name: "Electronics & Gadgets", slug: "electronics" },
-                { name: "Fashion & Clothing", slug: "fashion" },
                 { name: "Home & Kitchen", slug: "home" },
+                { name: "Fashion & Clothing", slug: "fashion" },
                 { name: "Health & Beauty", slug: "beauty" },
                 { name: "Watches & Accessories", slug: "watches" },
                 { name: "Toys & Baby Care", slug: "kids" }
-              ]).map((cat) => {
-                const isActive = currentCategory === cat.slug || currentCategory === cat.name;
+              ].map((cat) => {
+                const catSlug = cat.slug.toLowerCase();
+                const catName = cat.name.toLowerCase();
+                const isActive = currentCategory === catSlug || currentCategory === catName;
                 return (
-                  <li key={cat.id || cat.slug || cat.name}>
+                  <li key={cat.slug}>
                     <Link
-                      to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
+                      to={`/products?category=${encodeURIComponent(cat.slug)}`}
                       className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95 ${
                         isActive
                           ? "border-primary/40 bg-primary/10 text-primary"
