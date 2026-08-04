@@ -156,9 +156,15 @@ function mapSupplierProduct(p: any, index: number): Product {
 
   const image = getSmartProductImage(p.name, firstImage || undefined, p.category || "", index);
 
-  // Parse prices
-  const price = parseFloat(p.sale_price) || parseFloat(p.price) || 0;
-  const originalPrice = parseFloat(p.price) || price;
+  const API_PROFIT_MARGIN = 1.50; // 50% profit margin
+  const rawSalePrice = parseFloat(p.sale_price) || parseFloat(p.discount_price) || 0;
+  const rawPrice = parseFloat(p.price) || parseFloat(p.regular_price) || rawSalePrice;
+  
+  const baseSellingPrice = rawSalePrice > 0 ? rawSalePrice : rawPrice;
+  const price = Math.round(baseSellingPrice * API_PROFIT_MARGIN);
+
+  const baseRegularPrice = rawPrice > baseSellingPrice ? rawPrice : Math.round(baseSellingPrice * 1.30);
+  const originalPrice = Math.round(baseRegularPrice * API_PROFIT_MARGIN);
 
   return {
     id: p.id.toString(),

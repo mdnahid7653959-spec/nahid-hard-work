@@ -303,12 +303,15 @@ export default function ProductDetail() {
 
   // Helper to map supplier product to Product interface (Price MUST match card price exactly)
   const mapSupplierProduct = (raw: any, productSlug: string, imagesArr: ProductImage[]): Product => {
+    const API_PROFIT_MARGIN = 1.50; // 50% profit margin
     const rawSalePrice = parseFloat(raw.sale_price) || parseFloat(raw.discount_price) || 0;
     const rawRegularPrice = parseFloat(raw.price) || parseFloat(raw.regular_price) || rawSalePrice;
     
-    // Exact selling price matching raw API price (no extra markup multiplier)
-    const sellingPrice = rawSalePrice > 0 ? rawSalePrice : rawRegularPrice;
-    const regularPrice = rawRegularPrice > sellingPrice ? rawRegularPrice : sellingPrice;
+    const baseSellingPrice = rawSalePrice > 0 ? rawSalePrice : rawRegularPrice;
+    const sellingPrice = Math.round(baseSellingPrice * API_PROFIT_MARGIN);
+
+    const baseRegularPrice = rawRegularPrice > baseSellingPrice ? rawRegularPrice : Math.round(baseSellingPrice * 1.30);
+    const regularPrice = Math.round(baseRegularPrice * API_PROFIT_MARGIN);
 
     const variants = (raw.product_variants || []).map((v: any) => ({
       id: parseInt(v.id) || Math.floor(Math.random() * 100000),

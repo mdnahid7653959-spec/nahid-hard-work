@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RelatedProducts } from "@/components/products/RelatedProducts";
 // BDT conversion rate with profit margin
 const USD_TO_BDT = 120;
-const PROFIT_MARGIN = 1.3; // 30% margin
+const PROFIT_MARGIN = 1.5; // 50% margin requested by user
 
 interface CJProductVariant {
   variantId: string;

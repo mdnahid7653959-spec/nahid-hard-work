@@ -76,8 +76,15 @@ function mapRawProducts(rawProducts: any[], base: string): Product[] {
       ? resolveUrl(p.product_images[0].product_image)
       : p.thumbnail_img ? resolveUrl(p.thumbnail_img) : resolveUrl("");
 
-    const price = parseFloat(p.sale_price) || parseFloat(p.price) || 0;
-    const originalPrice = parseFloat(p.price) || price;
+    const API_PROFIT_MARGIN = 1.50; // 50% profit margin
+    const rawSalePrice = parseFloat(p.sale_price) || parseFloat(p.discount_price) || 0;
+    const rawPrice = parseFloat(p.price) || parseFloat(p.regular_price) || rawSalePrice;
+    
+    const baseSellingPrice = rawSalePrice > 0 ? rawSalePrice : rawPrice;
+    const price = Math.round(baseSellingPrice * API_PROFIT_MARGIN);
+
+    const baseRegularPrice = rawPrice > baseSellingPrice ? rawPrice : Math.round(baseSellingPrice * 1.30);
+    const originalPrice = Math.round(baseRegularPrice * API_PROFIT_MARGIN);
 
     const allImages = p.product_images && p.product_images.length > 0
       ? p.product_images.map((imgObj: any) => resolveUrl(imgObj.product_image || imgObj.image || imgObj.url))
