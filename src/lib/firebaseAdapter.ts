@@ -155,8 +155,12 @@ class FirebaseQueryBuilder {
         const items = Array.isArray(data) ? data : [data];
         const results: any[] = [];
 
+        const useUserIdAsDocId = ["profiles", "sellers", "carts", "addresses"].includes(this.colName);
         for (const item of items) {
-          let docId = item.id || item.user_id;
+          let docId = item.id;
+          if (!docId && useUserIdAsDocId) {
+            docId = item.user_id;
+          }
           if (docId) {
             await setDoc(doc(db, this.colName, docId.toString()), {
               id: docId.toString(),
