@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Search, Heart, User, Menu, X, ChevronDown, Truck, HelpCircle, Package, Store, ChevronRight, LogOut, Home, Zap, Smartphone, Shirt, Home as HomeIcon, Dumbbell, Gamepad2, Sparkles, Car, Gem, LucideIcon, MessageCircle, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,11 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCategories, setShowCategories] = useState(false);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const currentCategory = searchParams.get("category");
+  const isAllProductsActive = location.pathname === "/products" && !currentCategory;
+  const isHomeActive = location.pathname === "/";
   const { user, profile, signOut } = useAuth();
   const { itemCount: cartCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
@@ -263,7 +267,11 @@ export function Header() {
               <li>
                 <Link
                   to="/"
-                  className="px-4 py-2 text-xs font-bold rounded-xl border border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40 transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95"
+                  className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95 ${
+                    isHomeActive
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40"
+                  }`}
                 >
                   Home
                 </Link>
@@ -271,28 +279,39 @@ export function Header() {
               <li>
                 <Link
                   to="/products"
-                  className="px-4 py-2 text-xs font-bold rounded-xl border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95"
+                  className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95 ${
+                    isAllProductsActive
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40"
+                  }`}
                 >
                   All Products
                 </Link>
               </li>
               {(categoriesData && categoriesData.length > 0 ? categoriesData : [
-                { name: "Electronics", slug: "electronics" },
-                { name: "Fashion", slug: "fashion" },
-                { name: "Home & Garden", slug: "home" },
-                { name: "Beauty & Health", slug: "beauty" },
-                { name: "Toys & Hobbies", slug: "kids" },
-                { name: "Watches", slug: "watches" }
-              ]).map((cat) => (
-                <li key={cat.id || cat.slug || cat.name}>
-                  <Link
-                    to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
-                    className="px-4 py-2 text-xs font-bold rounded-xl border border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40 transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95"
-                  >
-                    {cat.name}
-                  </Link>
-                </li>
-              ))}
+                { name: "Electronics & Gadgets", slug: "electronics" },
+                { name: "Fashion & Clothing", slug: "fashion" },
+                { name: "Home & Kitchen", slug: "home" },
+                { name: "Health & Beauty", slug: "beauty" },
+                { name: "Watches & Accessories", slug: "watches" },
+                { name: "Toys & Baby Care", slug: "kids" }
+              ]).map((cat) => {
+                const isActive = currentCategory === cat.slug || currentCategory === cat.name;
+                return (
+                  <li key={cat.id || cat.slug || cat.name}>
+                    <Link
+                      to={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
+                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 whitespace-nowrap flex items-center justify-center h-9 shadow-2xs hover:shadow-sm active:scale-95 ${
+                        isActive
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "border-border/60 bg-muted/40 text-foreground/85 hover:text-primary hover:bg-primary/10 hover:border-primary/40"
+                      }`}
+                    >
+                      {cat.name}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </nav>
