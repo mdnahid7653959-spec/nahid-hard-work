@@ -42,6 +42,8 @@ class FirebaseQueryBuilder {
   private isMaybeSingle = false;
   private updateData: any = null;
   private isDelete = false;
+  private isInsert = false;
+  private insertData: any = null;
 
   constructor(colName: string) {
     this.colName = colName;
@@ -126,40 +128,16 @@ class FirebaseQueryBuilder {
     return this;
   }
 
-  async insert(data: any | any[]) {
-    try {
-      const items = Array.isArray(data) ? data : [data];
-      const results: any[] = [];
-
-      for (const item of items) {
-        let docId = item.id || item.user_id;
-        if (docId) {
-          await setDoc(doc(db, this.colName, docId.toString()), {
-            ...item,
-            created_at: item.created_at || new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }, { merge: true });
-          results.push({ id: docId, ...item });
-        } else {
-          const docRef = await addDoc(collection(db, this.colName), {
-            ...item,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-          results.push({ id: docRef.id, ...item });
-        }
-      }
-
-      const returned = Array.isArray(data) ? results : results[0];
-      return { data: returned, error: null };
-    } catch (err: any) {
-      console.error(`Firebase insert error on [${this.colName}]:`, err);
-      return { data: null, error: err };
-    }
+  insert(data: any | any[]) {
+    this.isInsert = true;
+    this.insertData = data;
+    return this;
   }
 
-  async upsert(data: any | any[]) {
-    return this.insert(data);
+  upsert(data: any | any[]) {
+    this.isInsert = true;
+    this.insertData = data;
+    return this;
   }
 
   private async executeFetch() {
@@ -172,6 +150,40 @@ class FirebaseQueryBuilder {
 
   async then(resolve: (res: { data: any; error: any; count?: number }) => void, reject?: (reason: any) => void) {
     try {
+      if (this.isInsert) {
+        const data = this.insertData;
+        const items = Array.isArray(data) ? data : [data];
+        const results: any[] = [];
+
+        for (const item of items) {
+          let docId = item.id || item.user_id;
+          if (docId) {
+            await setDoc(doc(db, this.colName, docId.toString()), {
+              ...item,
+              created_at: item.created_at || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, { merge: true });
+            results.push({ id: docId, ...item });
+          } else {
+            const docRef = await addDoc(collection(db, this.colName), {
+              ...item,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            results.push({ id: docRef.id, ...item });
+          }
+        }
+
+        const returned = Array.isArray(data) ? results : results[0];
+        let resolvedData = returned;
+        if (this.isSingle || this.isMaybeSingle) {
+          resolvedData = Array.isArray(returned) ? (returned.length > 0 ? returned[0] : null) : returned;
+        }
+
+        resolve({ data: resolvedData, error: null });
+        return;
+      }
+
       if (this.updateData) {
         const snapshot = await this.executeFetch();
         for (const d of snapshot.docs) {

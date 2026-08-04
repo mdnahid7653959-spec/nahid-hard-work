@@ -183,31 +183,65 @@ function mapSupplierProduct(p: any, index: number): Product {
 }
 
 function buildSections(products: Product[]) {
-  // 10-Minute Time Block Rotation Seed (changes automatically every 600,000ms)
-  const timeBlock = Math.floor(Date.now() / (10 * 60 * 1000));
+  // 5-Minute Time Block Rotation Seed (changes automatically every 300,000ms)
+  const timeBlock = Math.floor(Date.now() / (5 * 60 * 1000));
   const total = products.length;
 
   if (total > 0) {
-    const shift = (timeBlock * 12) % total;
+    const shift = (timeBlock * 6) % total;
     const rotated = [...products.slice(shift), ...products.slice(0, shift)];
 
+    // Deduplicate so that once a product is assigned to a section, it is excluded from others
+    const assignedIds = new Set<string>();
+    const getUniqueSlice = (count: number): Product[] => {
+      const slice: Product[] = [];
+      for (const p of rotated) {
+        if (slice.length >= count) break;
+        if (!assignedIds.has(p.id)) {
+          assignedIds.add(p.id);
+          slice.push(p);
+        }
+      }
+      return slice;
+    };
+
+    const latestProducts = getUniqueSlice(12);
+    const flashSale = getUniqueSlice(6).map(p => ({ ...p, is_flash_sale: true }));
+    const featured = getUniqueSlice(12).map(p => ({ ...p, is_featured: true }));
+    const newArrivals = getUniqueSlice(12);
+    const trending = getUniqueSlice(6);
+    const recommended = getUniqueSlice(12);
+
     return {
-      latestProducts: rotated.slice(0, 12),
-      flashSale: rotated.slice(12, 18).map(p => ({ ...p, is_flash_sale: true })),
-      featured: rotated.slice(18, 30).map(p => ({ ...p, is_featured: true })),
-      newArrivals: rotated.slice(30, 42),
-      trending: rotated.slice(42, 48),
-      recommended: rotated.slice(48, 60),
+      latestProducts,
+      flashSale,
+      featured,
+      newArrivals,
+      trending,
+      recommended,
     };
   }
 
+  const assignedIds = new Set<string>();
+  const getUniqueSlice = (arr: Product[], count: number): Product[] => {
+    const slice: Product[] = [];
+    for (const p of arr) {
+      if (slice.length >= count) break;
+      if (!assignedIds.has(p.id)) {
+        assignedIds.add(p.id);
+        slice.push(p);
+      }
+    }
+    return slice;
+  };
+
   return {
-    latestProducts: products.slice(0, 12),
-    flashSale: products.slice(12, 18).map(p => ({ ...p, is_flash_sale: true })),
-    featured: products.slice(18, 30).map(p => ({ ...p, is_featured: true })),
-    newArrivals: products.slice(30, 42),
-    trending: products.slice(42, 48),
-    recommended: products.slice(48, 60),
+    latestProducts: getUniqueSlice(products, 12),
+    flashSale: getUniqueSlice(products, 6).map(p => ({ ...p, is_flash_sale: true })),
+    featured: getUniqueSlice(products, 12).map(p => ({ ...p, is_featured: true })),
+    newArrivals: getUniqueSlice(products, 12),
+    trending: getUniqueSlice(products, 6),
+    recommended: getUniqueSlice(products, 12),
   };
 }
 
