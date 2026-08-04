@@ -342,7 +342,13 @@ export const firebaseDb: any = {
       }
     },
     signInWithOAuth: async () => {
-      return { data: null, error: new Error("OAuth sign-in delegated to Firebase Auth") };
+      try {
+        const { signInWithGoogle } = await import("@/integrations/firebase/client");
+        const res = await signInWithGoogle();
+        return { data: { user: res.user, session: { user: res.user } }, error: null };
+      } catch (err: any) {
+        return { data: null, error: err };
+      }
     },
     signOut: async () => {
       try {

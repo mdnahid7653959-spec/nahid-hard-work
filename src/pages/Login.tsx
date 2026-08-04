@@ -52,8 +52,8 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const { signInWithGoogle } = await import("@/integrations/firebase/client");
+      await signInWithGoogle();
       toast({
         title: "Signed in with Google!",
         description: "Welcome back!"

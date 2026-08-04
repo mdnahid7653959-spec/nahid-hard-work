@@ -69,8 +69,8 @@ export default function Register() {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const { signInWithGoogle } = await import("@/integrations/firebase/client");
+      await signInWithGoogle();
       toast({
         title: "Signed up with Google!",
         description: "Welcome to Darzo.com!"

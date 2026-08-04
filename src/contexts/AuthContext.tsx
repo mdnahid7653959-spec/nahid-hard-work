@@ -26,6 +26,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isSeller: boolean;
@@ -138,6 +139,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === "admin";
   const isSeller = profile?.role === "seller" || isAdmin;
 
+  const handleGoogleSignIn = useCallback(async () => {
+    const { signInWithGoogle } = await import("@/integrations/firebase/client");
+    await signInWithGoogle();
+  }, []);
+
   const value = useMemo(() => ({
     user: userWithId,
     session: userWithId ? { user: userWithId } : null,
@@ -145,10 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signUp,
     signIn,
+    signInWithGoogle: handleGoogleSignIn,
     signOut,
     isAdmin,
     isSeller
-  }), [userWithId, profile, loading, signUp, signIn, signOut, isAdmin, isSeller]);
+  }), [userWithId, profile, loading, signUp, signIn, handleGoogleSignIn, signOut, isAdmin, isSeller]);
 
   return (
     <AuthContext.Provider value={value}>

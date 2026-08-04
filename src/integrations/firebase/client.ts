@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { getStorage } from "firebase/storage";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getDataConnect } from "firebase/data-connect";
 import { connectorConfig } from "./dataconnect";
 
@@ -22,3 +22,27 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const db = getFirestore(app);
 export const dataConnect = getDataConnect(app, connectorConfig);
+
+// Google Auth Setup
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+export const signInWithGoogle = async () => {
+  const result = await signInWithPopup(auth, googleProvider);
+  if (result.user) {
+    const userDoc = doc(db, "profiles", result.user.uid);
+    const userSnap = await getDoc(userDoc);
+    if (!userSnap.exists()) {
+      await setDoc(userDoc, {
+        id: result.user.uid,
+        user_id: result.user.uid,
+        email: result.user.email || "",
+        full_name: result.user.displayName || "Google User",
+        avatar_url: result.user.photoURL || null,
+        role: "customer",
+        created_at: new Date().toISOString()
+      }, { merge: true });
+    }
+  }
+  return result;
+};
