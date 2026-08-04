@@ -1,4 +1,5 @@
-import { auth, db } from "@/integrations/firebase/client";
+import { auth, db, storage as firebaseStorage } from "@/integrations/firebase/client";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { 
   collection, 
   doc, 
@@ -20,6 +21,17 @@ import {
   onAuthStateChanged,
   updateProfile
 } from "firebase/auth";
+
+const storageUrlCache = new Map<string, string>();
+
+const adapterFileToDataUrl = (file: Blob | File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve((reader.result as string) || "");
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+};
 
 class FirebaseQueryBuilder {
   private colName: string;
@@ -206,9 +218,43 @@ export const firebaseDb: any = {
   from: (colName: string) => new FirebaseQueryBuilder(colName),
   storage: {
     from: (bucket: string) => ({
-      createSignedUrl: async (path: string) => ({ data: { signedUrl: path }, error: null }),
-      getPublicUrl: (path: string) => ({ data: { publicUrl: path } }),
-      upload: async () => ({ data: null, error: null })
+      createSignedUrl: async (path: string) => {
+        const cached = storageUrlCache.get(`${bucket}/${path}`) || storageUrlCache.get(path) || path;
+        return { data: { signedUrl: cached }, error: null };
+      },
+      getPublicUrl: (path: string) => {
+        if (!path) return { data: { publicUrl: "" } };
+        if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:") || path.startsWith("blob:")) {
+          return { data: { publicUrl: path } };
+        }
+        const cached = storageUrlCache.get(`${bucket}/${path}`) || storageUrlCache.get(path);
+        return { data: { publicUrl: cached || path } };
+      },
+      upload: async (path: string, file: any) => {
+        try {
+          if (file instanceof Blob || file instanceof File) {
+            try {
+              const storageRef = ref(firebaseStorage, `${bucket}/${path}`);
+              await uploadBytes(storageRef, file);
+              const downloadUrl = await getDownloadURL(storageRef);
+              storageUrlCache.set(`${bucket}/${path}`, downloadUrl);
+              storageUrlCache.set(path, downloadUrl);
+              return { data: { path, fullPath: `${bucket}/${path}`, publicUrl: downloadUrl }, error: null };
+            } catch (fsErr) {
+              console.warn("Firebase Storage upload fallback to Data URL:", fsErr);
+              const dataUrl = await adapterFileToDataUrl(file);
+              if (dataUrl) {
+                storageUrlCache.set(`${bucket}/${path}`, dataUrl);
+                storageUrlCache.set(path, dataUrl);
+                return { data: { path, fullPath: `${bucket}/${path}`, publicUrl: dataUrl }, error: null };
+              }
+            }
+          }
+          return { data: { path }, error: null };
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      }
     })
   },
   functions: {

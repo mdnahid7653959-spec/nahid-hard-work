@@ -347,37 +347,49 @@ export default function SellerProductForm() {
     }
   };
 
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string) || "");
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Upload new images to storage via seller-media edge function
   const uploadNewImages = async (): Promise<ProductImage[]> => {
     const uploadedImages: ProductImage[] = [];
     
     for (const image of images) {
       if (image.isNew && image.file) {
-        const formData = new FormData();
-        formData.append("action", "upload");
-        formData.append("file", image.file);
-        formData.append("productId", isEdit ? id! : "temp");
-        formData.append("mediaType", "image");
-
+        let finalUrl = "";
         try {
+          const formData = new FormData();
+          formData.append("action", "upload");
+          formData.append("file", image.file);
+          formData.append("productId", isEdit ? id! : "temp");
+          formData.append("mediaType", "image");
+
           const { data, error } = await supabase.functions.invoke("seller-media", {
             body: formData,
           });
 
-          if (error || data?.error) {
-            console.error("Upload error:", error || data?.error);
-            uploadedImages.push({ ...image, url: '' });
-          } else {
-            uploadedImages.push({
-              ...image,
-              url: data.url,
-              isNew: false,
-            });
+          if (!error && data?.url) {
+            finalUrl = data.url;
           }
         } catch (err) {
           console.error("Upload exception:", err);
-          uploadedImages.push({ ...image, url: '' });
         }
+
+        if ((!finalUrl || (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://") && !finalUrl.startsWith("data:") && !finalUrl.startsWith("blob:"))) && image.file) {
+          finalUrl = await fileToDataUrl(image.file);
+        }
+
+        uploadedImages.push({
+          ...image,
+          url: finalUrl || image.url,
+          isNew: false,
+        });
       } else {
         uploadedImages.push(image);
       }

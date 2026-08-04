@@ -401,13 +401,13 @@ const defaultBrands: Brand[] = [
           finalUrl = await fileToDataUrl(image.file);
         }
 
-        if (!finalUrl && image.file) {
+        if ((!finalUrl || (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://") && !finalUrl.startsWith("data:") && !finalUrl.startsWith("blob:"))) && image.file) {
           finalUrl = await fileToDataUrl(image.file);
         }
 
         uploadedImages.push({
           ...image,
-          url: finalUrl,
+          url: finalUrl || image.url,
           isNew: false,
         });
       } else {

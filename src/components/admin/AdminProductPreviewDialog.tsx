@@ -46,6 +46,27 @@ export function AdminProductPreviewDialog({
         console.warn("Preview fetch error:", err);
       }
 
+      if (foundData) {
+        // If Supabase returned product without images, check local storage for images
+        const hasImgs = (Array.isArray(foundData.product_images) && foundData.product_images.length > 0) || foundData.image_url || foundData.image;
+        if (!hasImgs) {
+          try {
+            const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
+            if (rawLocal) {
+              const list = JSON.parse(rawLocal);
+              if (Array.isArray(list)) {
+                const matched = list.find((p: any) => p.id === productId || p.slug === productId);
+                if (matched && (matched.images || matched.product_images || matched.image_url || matched.image)) {
+                  foundData.product_images = matched.product_images || matched.images || [];
+                  foundData.image_url = matched.image_url || matched.image || foundData.image_url;
+                  foundData.images = matched.images || foundData.images;
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
       if (!foundData) {
         try {
           const rawLocal = localStorage.getItem("enterprise_admin_products") || localStorage.getItem("local_products");
@@ -54,7 +75,11 @@ export function AdminProductPreviewDialog({
             if (Array.isArray(list)) {
               const matched = list.find((p: any) => p.id === productId || p.slug === productId);
               if (matched) {
-                const rawImgs = Array.isArray(matched.images) && matched.images.length > 0 ? matched.images : [matched.image_url || "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop"];
+                const rawImgs = Array.isArray(matched.images) && matched.images.length > 0
+                  ? matched.images
+                  : (Array.isArray(matched.product_images) && matched.product_images.length > 0
+                      ? matched.product_images
+                      : [matched.image_url || matched.image || "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop"]);
                 foundData = {
                   id: matched.id,
                   name: matched.name || matched.title || "Product Preview",
@@ -67,7 +92,11 @@ export function AdminProductPreviewDialog({
                   status: matched.status || "APPROVED",
                   approval_status: matched.approval_status || matched.approvalStatus || "APPROVED",
                   seller_id: matched.seller_id || "admin",
-                  product_images: rawImgs.map((u: string, i: number) => ({ id: `img-${i}`, image_url: u, sort_order: i })),
+                  product_images: rawImgs.map((u: any, i: number) => ({
+                    id: `img-${i}`,
+                    image_url: typeof u === "string" ? u : (u?.image_url || u?.url || u?.image || u?.product_image || ""),
+                    sort_order: i
+                  })),
                   categories: { name: matched.category_name || matched.category || "General", slug: matched.category_slug || "general" }
                 };
               }
@@ -149,6 +178,9 @@ export function AdminProductPreviewDialog({
       return trimmed;
     }
     if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    if (trimmed.includes("prod_") || (!trimmed.startsWith("/") && !trimmed.startsWith("assets/"))) {
+      return "";
+    }
     const base = "https://mohasagor.com.bd";
     return trimmed.startsWith("/") ? `${base}${trimmed}` : `${base}/${trimmed}`;
   };
