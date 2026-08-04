@@ -18,7 +18,21 @@ export function FlashSale() {
     async function fetchFlashSaleProducts() {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(`
+          id,
+          name,
+          slug,
+          regular_price,
+          discount_price,
+          rating_average,
+          rating_count,
+          sold_count,
+          free_shipping,
+          product_images (
+            image_url,
+            is_primary
+          )
+        `)
         .eq("status", "active")
         .eq("is_flash_sale", true)
         .order("created_at", { ascending: false })
@@ -27,27 +41,26 @@ export function FlashSale() {
       if (error) {
         console.error("Error fetching flash sale products:", error);
       } else if (data) {
-        const defaultImages = [
-          "https://images.unsplash.com/photo-1507582020474-9a35b7d455d9?w=400&h=400&fit=crop",
-          "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop",
-          "https://images.unsplash.com/photo-1598618443855-232ee0f819f6?w=400&h=400&fit=crop",
-          "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-          "https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=400&h=400&fit=crop",
-          "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=400&fit=crop",
-        ];
+        const fallbackImage = "https://images.unsplash.com/photo-1507582020474-9a35b7d455d9?w=400&h=400&fit=crop";
 
-        const mappedProducts: Product[] = data.map((p, i) => ({
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
-          image: defaultImages[i % defaultImages.length],
-          price: p.discount_price || p.regular_price,
-          originalPrice: p.discount_price ? p.regular_price : undefined,
-          rating: Number(p.rating_average) || 0,
-          reviews: p.rating_count || 0,
-          sold: p.sold_count || 0,
-          freeShipping: p.free_shipping || false,
-        }));
+        const mappedProducts: Product[] = (data as any[]).map((p) => {
+          const primaryImage = p.product_images?.find((img: any) => img.is_primary)?.image_url;
+          const firstImage = p.product_images?.[0]?.image_url;
+          const image = primaryImage || firstImage || fallbackImage;
+
+          return {
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            image,
+            price: p.discount_price || p.regular_price,
+            originalPrice: p.discount_price ? p.regular_price : undefined,
+            rating: Number(p.rating_average) || 0,
+            reviews: p.rating_count || 0,
+            sold: p.sold_count || 0,
+            freeShipping: p.free_shipping || false,
+          };
+        });
         setProducts(mappedProducts);
       }
       setLoading(false);
