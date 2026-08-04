@@ -1,4 +1,18 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Durtup.shop",
+        "supportEmail": "support@durtup.shop",
+        "authorizedRedirectUris": [
+          "https://www.durtup.shop",
+          "https://durtup.shop",
+          "http://localhost"
+        ]
+      }
+    }
+  },
   "hosting": {
     "public": "dist",
     "ignore": [

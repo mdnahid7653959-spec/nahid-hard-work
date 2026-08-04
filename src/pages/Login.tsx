@@ -60,10 +60,13 @@ export default function Login() {
       });
       navigate(from, { replace: true });
     } catch (error: any) {
+      const isUnauthDomain = error?.code === "auth/unauthorized-domain" || error?.message?.includes("unauthorized-domain");
       toast({
         variant: "destructive",
         title: "Google sign in failed",
-        description: error.message
+        description: isUnauthDomain
+          ? "Domain 'durtup.shop' must be added to Firebase Console -> Authentication -> Settings -> Authorized Domains."
+          : error.message
       });
     } finally {
       setGoogleLoading(false);
