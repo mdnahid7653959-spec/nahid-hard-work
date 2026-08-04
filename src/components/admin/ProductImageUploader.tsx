@@ -191,37 +191,93 @@ export function ProductImageUploader({
         </div>
       )}
 
-      {/* Upload Area */}
+      {/* Upload Area & Direct URL Input */}
       {images.length < maxImages && (
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onClick={() => !disabled && fileInputRef.current?.click()}
-          className={cn(
-            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-            "hover:border-primary hover:bg-primary/5",
-            disabled && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            multiple
-            onChange={(e) => handleFileSelect(e.target.files)}
-            className="hidden"
-            disabled={disabled}
-          />
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <ImageIcon className="h-6 w-6 text-primary" />
+        <div className="space-y-3">
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onClick={() => !disabled && fileInputRef.current?.click()}
+            className={cn(
+              "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+              "hover:border-primary hover:bg-primary/5",
+              disabled && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              onChange={(e) => handleFileSelect(e.target.files)}
+              className="hidden"
+              disabled={disabled}
+            />
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <ImageIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground text-sm">Click or drag to upload</p>
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG, WebP, GIF up to 50MB each
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-foreground">Click or drag to upload</p>
-              <p className="text-sm text-muted-foreground">
-                JPG, PNG, WebP, GIF up to 50MB each
-              </p>
-            </div>
+          </div>
+
+          {/* Direct URL Input */}
+          <div className="flex gap-2 items-center">
+            <input
+              type="url"
+              placeholder="Or paste image URL (e.g. https://images.unsplash.com/...)"
+              className="flex-1 h-9 px-3 text-xs rounded-md border border-input bg-background"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const target = e.target as HTMLInputElement;
+                  const val = target.value.trim();
+                  if (val) {
+                    onImagesChange([
+                      ...images,
+                      {
+                        id: `url-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                        url: val,
+                        isNew: true,
+                        isPrimary: images.length === 0
+                      }
+                    ]);
+                    target.value = "";
+                  }
+                }
+              }}
+              disabled={disabled}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs"
+              onClick={(e) => {
+                const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                const val = input?.value?.trim();
+                if (val) {
+                  onImagesChange([
+                    ...images,
+                    {
+                      id: `url-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                      url: val,
+                      isNew: true,
+                      isPrimary: images.length === 0
+                    }
+                  ]);
+                  input.value = "";
+                }
+              }}
+              disabled={disabled}
+            >
+              Add URL
+            </Button>
           </div>
         </div>
       )}

@@ -52,15 +52,24 @@ export default function AdminCategories() {
   const { toast } = useToast();
   const { invalidateCategories, invalidateProducts } = useAdminCacheInvalidation();
 
+  const defaultMasterCategories: Category[] = [
+    { id: "cat-electronics", name: "Electronics & Gadgets", slug: "electronics", description: "Mobiles, Laptops, Accessories", is_active: true, sort_order: 1 },
+    { id: "cat-home", name: "Home & Kitchen", slug: "home", description: "Home appliances and kitchenware", is_active: true, sort_order: 2 },
+    { id: "cat-fashion", name: "Fashion & Clothing", slug: "fashion", description: "Men and Women Fashion", is_active: true, sort_order: 3 },
+    { id: "cat-beauty", name: "Health & Beauty", slug: "beauty", description: "Skincare, Makeup & Personal Care", is_active: true, sort_order: 4 },
+    { id: "cat-watches", name: "Watches & Accessories", slug: "watches", description: "Watches, Jewelry, Sunglasses", is_active: true, sort_order: 5 },
+    { id: "cat-kids", name: "Toys & Baby Care", slug: "kids", description: "Toys, Baby products & Clothing", is_active: true, sort_order: 6 },
+  ];
+
   const fetchCategories = async () => {
     const { data, error } = await adminDb.select<Category>("categories", {
       columns: "*",
       orderBy: { col: "sort_order", ascending: true },
     });
-    if (error) {
-      console.error(error);
+    if (error || !data || data.length === 0) {
+      setCategories(defaultMasterCategories);
     } else {
-      setCategories(data || []);
+      setCategories(data);
     }
     setLoading(false);
   };

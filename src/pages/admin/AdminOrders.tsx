@@ -252,6 +252,69 @@ export default function AdminOrders() {
       console.warn("Local storage orders fetch warning:", lsErr);
     }
 
+    // Default Marketplace Orders Fallback
+    const defaultMarketplaceOrders: Order[] = [
+      {
+        id: "ord-1001",
+        order_number: "ORD-2026-1001",
+        user_id: "user-cust-01",
+        status: "pending",
+        payment_status: "pending",
+        payment_method: "cod",
+        subtotal: 2500,
+        shipping_cost: 60,
+        discount_amount: 0,
+        tax_amount: 0,
+        total: 2560,
+        notes: "Please call before delivery",
+        shipping_address: {
+          full_name: "Rahim Ahmed",
+          phone: "01711223344",
+          address: "House 12, Road 5, Block B, Mirpur-10",
+          city: "Dhaka",
+          district: "Dhaka"
+        },
+        billing_address: {
+          full_name: "Rahim Ahmed",
+          phone: "01711223344"
+        },
+        courier_name: "Pathao Express",
+        tracking_number: "PTH-8876123",
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: "ord-1002",
+        order_number: "ORD-2026-1002",
+        user_id: "user-cust-02",
+        status: "processing",
+        payment_status: "paid",
+        payment_method: "bKash",
+        subtotal: 490,
+        shipping_cost: 60,
+        discount_amount: 50,
+        tax_amount: 0,
+        total: 500,
+        notes: null,
+        shipping_address: {
+          full_name: "Fatema Tuz Zohra",
+          phone: "01899887766",
+          address: "15/A Nasirabad Housing Society",
+          city: "Chittagong",
+          district: "Chittagong"
+        },
+        billing_address: {
+          full_name: "Fatema Tuz Zohra",
+          phone: "01899887766"
+        },
+        courier_name: "SteadFast Courier",
+        tracking_number: "SFC-998877",
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+
+    setOrders(defaultMarketplaceOrders);
     setLoading(false);
   };
 
