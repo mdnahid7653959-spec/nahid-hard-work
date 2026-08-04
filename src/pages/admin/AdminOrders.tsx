@@ -351,6 +351,19 @@ export default function AdminOrders() {
     try {
       const nowIso = new Date().toISOString();
 
+      // Optimistically update React state and LocalStorage immediately
+      setOrders((prevOrders) => {
+        const updated = prevOrders.map((o) => (o.id === id ? { ...o, status: newStatus, updated_at: nowIso } : o));
+        try {
+          localStorage.setItem("enterprise_admin_orders", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+
+      if (selectedOrder && selectedOrder.id === id) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
+      }
+
       // 1. Invoke function or fallback to DB update
       if (admin?.id) {
         const { data, error } = await supabase.functions.invoke("admin-orders", {
@@ -381,12 +394,7 @@ export default function AdminOrders() {
       }
 
       toast({ title: "Order status updated", description: `Changed status to ${newStatus}` });
-      fetchOrders();
       invalidateOrders();
-
-      if (selectedOrder && selectedOrder.id === id) {
-        setSelectedOrder({ ...selectedOrder, status: newStatus });
-      }
     } catch (err: any) {
       console.error("Status update error:", err);
       toast({ variant: "destructive", title: "Error", description: err.message || "Failed to update status" });
@@ -396,6 +404,19 @@ export default function AdminOrders() {
   const updatePaymentStatus = async (id: string, payment_status: string) => {
     try {
       const nowIso = new Date().toISOString();
+
+      setOrders((prevOrders) => {
+        const updated = prevOrders.map((o) => (o.id === id ? { ...o, payment_status, updated_at: nowIso } : o));
+        try {
+          localStorage.setItem("enterprise_admin_orders", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+
+      if (selectedOrder && selectedOrder.id === id) {
+        setSelectedOrder({ ...selectedOrder, payment_status });
+      }
+
       if (admin?.id) {
         const { data, error } = await supabase.functions.invoke("admin-orders", {
           body: { action: "update-payment", adminId: admin.id, orderId: id, data: { payment_status } }
@@ -410,10 +431,6 @@ export default function AdminOrders() {
       }
 
       toast({ title: "Payment status updated", description: `Payment status changed to ${payment_status}` });
-      fetchOrders();
-      if (selectedOrder && selectedOrder.id === id) {
-        setSelectedOrder({ ...selectedOrder, payment_status });
-      }
     } catch (err: any) {
       console.error("Payment status update error:", err);
       toast({ variant: "destructive", title: "Error", description: err.message || "Failed to update payment status" });
