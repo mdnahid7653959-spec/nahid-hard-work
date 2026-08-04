@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Edit, MoreHorizontal, Eye, Ban, CheckCircle, Mail, Phone, Calendar, Search, UserX, UserCheck, RefreshCw, MapPin } from "lucide-react";
+import { Edit, MoreHorizontal, Eye, Ban, CheckCircle, Mail, Phone, Calendar, Search, UserX, UserCheck, RefreshCw, MapPin, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/firebaseAdapter";
 import { adminDb } from "@/lib/adminDb";
 import { useAdminCacheInvalidation } from "@/hooks/useRealtimeSync";
@@ -109,65 +109,54 @@ export default function AdminUsers() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
 
-  const defaultMasterUsers: Profile[] = [
-    {
-      id: "3d0aed73-3d4d-4f0a-ad90-fddbb05eab81",
-      user_id: "3d0aed73-3d4d-4f0a-ad90-fddbb05eab81",
-      email: "admin@durtup.shop",
-      full_name: "HI Admin (Super Admin)",
-      phone: "+8801700000000",
-      avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop",
-      role: "admin",
-      is_active: true,
-      created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: "user-cust-01",
-      user_id: "user-cust-01",
-      email: "rahim.ahmed@gmail.com",
-      full_name: "Rahim Ahmed",
-      phone: "+8801711223344",
-      avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
-      role: "customer",
-      is_active: true,
-      created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: "user-cust-02",
-      user_id: "user-cust-02",
-      email: "fatema.zohra@yahoo.com",
-      full_name: "Fatema Tuz Zohra",
-      phone: "+8801899887766",
-      avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
-      role: "seller",
-      is_active: true,
-      created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ];
+  const masterAdminUser: Profile = {
+    id: "3d0aed73-3d4d-4f0a-ad90-fddbb05eab81",
+    user_id: "3d0aed73-3d4d-4f0a-ad90-fddbb05eab81",
+    email: "admin@durtup.shop",
+    full_name: "HI Admin (Super Admin)",
+    phone: "+8801700000000",
+    avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop",
+    role: "admin",
+    is_active: true,
+    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
+    updated_at: new Date().toISOString()
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await adminDb.select<Profile>("profiles", {
+    const { data: dbData } = await adminDb.select<Profile>("profiles", {
       columns: "*",
       orderBy: { col: "created_at", ascending: false },
       limit: 100,
-      useCache: true,
+      useCache: false,
     });
 
-    if (error || !data || data.length === 0) {
-      setUsers(defaultMasterUsers);
-    } else {
-      // Ensure master admin is included if missing
-      const hasAdmin = data.some(u => u.role === "admin" || u.email?.includes("admin"));
-      if (!hasAdmin) {
-        setUsers([defaultMasterUsers[0], ...data]);
-      } else {
-        setUsers(data);
-      }
+    let localRegistered: Profile[] = [];
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("durtup_registered_users");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) localRegistered = parsed;
+        }
+      } catch (e) {}
     }
+
+    const mergedMap = new Map<string, Profile>();
+    mergedMap.set(masterAdminUser.id, masterAdminUser);
+
+    (dbData || []).forEach((u) => {
+      if (u.id) mergedMap.set(u.id, u);
+    });
+
+    localRegistered.forEach((u) => {
+      if (u.id && !mergedMap.has(u.id)) {
+        mergedMap.set(u.id, u);
+      }
+    });
+
+    const userList = Array.from(mergedMap.values());
+    setUsers(userList);
     setLoading(false);
   };
 
@@ -229,6 +218,27 @@ export default function AdminUsers() {
       title: newStatus ? "User activated" : "User deactivated",
       description: `User account has been ${newStatus ? 'activated' : 'deactivated'}`
     });
+    invalidateUsers();
+  };
+
+  const deleteUser = async (id: string) => {
+    if (id === masterAdminUser.id) {
+      toast({ variant: "destructive", title: "Action restricted", description: "Super Admin account cannot be deleted." });
+      return;
+    }
+    setUsers(prev => prev.filter(u => u.id !== id));
+    try {
+      const raw = localStorage.getItem("durtup_registered_users");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const updated = parsed.filter((u: any) => u.id !== id);
+          localStorage.setItem("durtup_registered_users", JSON.stringify(updated));
+        }
+      }
+    } catch (e) {}
+    await adminDb.delete("profiles", { id });
+    toast({ title: "User deleted", description: "User account has been permanently removed" });
     invalidateUsers();
   };
 
@@ -513,12 +523,12 @@ export default function AdminUsers() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => toggleUserStatus(user.id, user.is_active)}
-                            className={user.is_active ? "text-destructive" : "text-green-600"}
+                            className={user.is_active ? "text-amber-600" : "text-green-600"}
                           >
                             {user.is_active ? (
                               <>
                                 <UserX className="h-4 w-4 mr-2" />
-                                Deactivate
+                                Deactivate / Ban
                               </>
                             ) : (
                               <>
@@ -526,6 +536,14 @@ export default function AdminUsers() {
                                 Activate
                               </>
                             )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => deleteUser(user.id)}
+                            className="text-destructive font-medium"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete User
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

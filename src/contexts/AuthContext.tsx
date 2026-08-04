@@ -105,6 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar_url: null
       };
 
+      const { registerUserLocally } = await import("@/integrations/firebase/client");
+      registerUserLocally(newProf);
+
       try {
         await setDoc(doc(db, "profiles", firebaseUser.uid), newProf, { merge: true });
         profileCache.set(firebaseUser.uid, newProf);
