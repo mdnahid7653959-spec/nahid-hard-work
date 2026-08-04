@@ -228,7 +228,7 @@ class FirebaseQueryBuilder {
       }
     } catch (err: any) {
       console.warn(`Firebase query fallback on [${this.colName}]:`, err?.message);
-      resolve({ data: this.isSingle || this.isMaybeSingle ? null : [], error: null, count: 0 });
+      resolve({ data: this.isSingle || this.isMaybeSingle ? null : [], error: err, count: 0 });
     }
   }
 }
