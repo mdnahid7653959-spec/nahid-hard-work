@@ -211,7 +211,7 @@ export function Header() {
                   ) : (
                     <>
                       <div className="p-3 border-b">
-                        <p className="text-sm font-medium">Welcome to Darzo.com!</p>
+                        <p className="text-sm font-medium">Welcome to Durtup.shop!</p>
                         <div className="flex gap-2 mt-2">
                           <Button asChild size="sm" className="flex-1"><Link to="/login">Sign In</Link></Button>
                           <Button asChild variant="outline" size="sm" className="flex-1"><Link to="/register">Register</Link></Button>

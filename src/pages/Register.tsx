@@ -52,7 +52,7 @@ export default function Register() {
       await signUp(email, password, fullName);
       toast({
         title: "Account created!",
-        description: "Welcome to Darzo.com! You can now start shopping."
+        description: "Welcome to Durtup.shop! You can now start shopping."
       });
       navigate(nextPath || "/");
     } catch (error: any) {
@@ -73,7 +73,7 @@ export default function Register() {
       await signInWithGoogle();
       toast({
         title: "Signed up with Google!",
-        description: "Welcome to Darzo.com!"
+        description: "Welcome to Durtup.shop!"
       });
       navigate(nextPath || "/");
     } catch (error: any) {
@@ -98,7 +98,7 @@ export default function Register() {
           <div className="bg-card rounded-2xl shadow-lg border p-8">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
-              <p className="text-muted-foreground mt-2">Join Darzo.com and start shopping</p>
+              <p className="text-muted-foreground mt-2">Join Durtup.shop and start shopping</p>
             </div>
 
             <Button
