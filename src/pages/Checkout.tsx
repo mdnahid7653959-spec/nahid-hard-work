@@ -89,7 +89,9 @@ export default function Checkout() {
   // Combined items and totals
   const totalItems = regularItems.length + cjItems.length;
   const subtotal = regularSubtotal + cjSubtotal;
-  const shipping = subtotal >= 3500 ? 0 : 150; // BDT values
+  const totalQuantity = regularItems.reduce((acc, item) => acc + item.quantity, 0) + 
+                        cjItems.reduce((acc, item) => acc + item.quantity, 0);
+  const shipping = totalQuantity * 120;
   const tax = Math.round(subtotal * 0.05);
 
   // Calculate coupon discount (handles both "percentage" and "flat" types)

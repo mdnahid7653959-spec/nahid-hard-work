@@ -20,7 +20,9 @@ export default function Cart() {
   const loading = regularLoading || cjLoading;
   const totalItems = regularItems.length + cjItems.length;
   const subtotal = regularSubtotal + cjSubtotal;
-  const shipping = subtotal >= 35 ? 0 : 5.99;
+  const totalQuantity = regularItems.reduce((acc, item) => acc + item.quantity, 0) + 
+                        cjItems.reduce((acc, item) => acc + item.quantity, 0);
+  const shipping = totalQuantity * 120;
   const total = subtotal + shipping;
 
   const handleApplyCoupon = () => {
@@ -218,15 +220,10 @@ export default function Cart() {
                       {shipping === 0 ? (
                         <span className="text-success">FREE</span>
                       ) : (
-                        `$${shipping.toFixed(2)}`
+                        `৳${shipping.toLocaleString()}`
                       )}
                     </span>
                   </div>
-                  {shipping > 0 && (
-                    <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
-                      Add ${(35 - subtotal).toFixed(2)} more for free shipping
-                    </p>
-                  )}
                 </div>
 
                 <div className="border-t my-4" />
@@ -279,8 +276,8 @@ export default function Cart() {
               <div>
                 <p className="text-sm text-muted-foreground">Total ({totalItems} items)</p>
                 <p className="text-xl font-bold text-primary">৳{total.toLocaleString()}</p>
-                {shipping === 0 && (
-                  <span className="text-xs text-success">Free Shipping</span>
+                {shipping > 0 && (
+                  <span className="text-xs text-muted-foreground">+ ৳{shipping.toLocaleString()} Delivery</span>
                 )}
               </div>
               <Link to="/checkout">
