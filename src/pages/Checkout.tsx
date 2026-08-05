@@ -92,7 +92,7 @@ export default function Checkout() {
   const totalQuantity = regularItems.reduce((acc, item) => acc + item.quantity, 0) + 
                         cjItems.reduce((acc, item) => acc + item.quantity, 0);
   const shipping = totalQuantity * 120;
-  const tax = Math.round(subtotal * 0.05);
+  const tax = 0; // Tax is removed
 
   // Calculate coupon discount (handles both "percentage" and "flat" types)
   const couponDiscount = useMemo(() => {
@@ -514,10 +514,6 @@ export default function Checkout() {
                     <span className="text-muted-foreground">Shipping</span>
                     <span>{shipping === 0 ? <span className="text-success">FREE</span> : `৳${shipping}`}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax (5%)</span>
-                    <span>৳{tax.toLocaleString()}</span>
-                  </div>
                   {couponDiscount > 0 && (
                     <div className="flex justify-between text-success">
                       <span>Coupon Discount</span>
@@ -792,10 +788,6 @@ export default function Checkout() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Shipping</span>
                         <span>{shipping === 0 ? <span className="text-success">FREE</span> : `৳${shipping}`}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tax (5%)</span>
-                        <span>৳{tax.toLocaleString()}</span>
                       </div>
                       {couponDiscount > 0 && (
                         <div className="flex justify-between text-success font-medium">
