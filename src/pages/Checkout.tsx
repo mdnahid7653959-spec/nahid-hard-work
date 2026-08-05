@@ -334,17 +334,19 @@ export default function Checkout() {
         quantity: item.quantity,
         price: item.product.discount_price || item.product.regular_price,
         total: (item.product.discount_price || item.product.regular_price) * item.quantity,
-        variant_id: item.variant_id || null
+        variant_id: item.variant_id || null,
+        product_image: item.image || null
       }));
 
-      // Add CJ order items (no product_id since they're external)
+      // Add CJ order items
       const cjOrderItems = cjItems.map(item => ({
         order_id: order.id,
-        product_id: null, // CJ products don't have local product IDs
+        product_id: item.id || null, // Store CJ product ID from API
         product_name: `[CJ] ${item.name}${item.variant ? ` - ${item.variant}` : ''}`,
         quantity: item.quantity,
         price: item.price,
-        total: item.price * item.quantity
+        total: item.price * item.quantity,
+        product_image: item.image || null
       }));
 
       const allOrderItems = [...regularOrderItems, ...cjOrderItems];

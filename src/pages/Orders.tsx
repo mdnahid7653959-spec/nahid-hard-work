@@ -195,8 +195,10 @@ export default function Orders() {
                           </p>
                           <div className="flex items-center justify-between pt-2 border-t">
                             <p className="font-bold text-lg">৳{order.total.toFixed(2)}</p>
-                            <Button variant="ghost" size="sm">
-                              View Details <ChevronRight className="w-4 h-4 ml-1" />
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link to={`/orders/${order.id}`}>
+                                View Details <ChevronRight className="w-4 h-4 ml-1" />
+                              </Link>
                             </Button>
                           </div>
                         </div>
@@ -237,8 +239,10 @@ export default function Orders() {
                               </p>
                               <div className="flex items-center justify-between pt-2 border-t">
                                 <p className="font-bold text-lg">৳{order.total.toFixed(2)}</p>
-                                <Button variant="ghost" size="sm">
-                                  View Details <ChevronRight className="w-4 h-4 ml-1" />
+                                <Button variant="ghost" size="sm" asChild>
+                                  <Link to={`/orders/${order.id}`}>
+                                    View Details <ChevronRight className="w-4 h-4 ml-1" />
+                                  </Link>
                                 </Button>
                               </div>
                             </div>

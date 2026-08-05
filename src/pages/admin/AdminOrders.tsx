@@ -551,7 +551,48 @@ export default function AdminOrders() {
           .from("order_items")
           .select("*")
           .eq("order_id", order.id);
-        setOrderItems(directItems || []);
+        
+        const items = directItems || [];
+        const itemsWithDetails = await Promise.all(
+          items.map(async (item: any) => {
+            let product_image = item.product_image || item.image || null;
+            let product_category = null;
+
+            if (!product_image && item.product_id) {
+              const { data: images } = await supabase
+                .from("product_images")
+                .select("image_url, is_primary")
+                .eq("product_id", item.product_id);
+
+              if (images && images.length > 0) {
+                const primaryImage = images.find((img: any) => img.is_primary);
+                product_image = primaryImage?.image_url || images[0]?.image_url || null;
+              }
+            }
+
+            if (item.product_id) {
+              try {
+                const { data: product } = await supabase
+                  .from("products_public")
+                  .select("category_id")
+                  .eq("id", item.product_id)
+                  .single();
+
+                if (product?.category_id) {
+                  const { data: category } = await supabase
+                    .from("categories")
+                    .select("name")
+                    .eq("id", product.category_id)
+                    .single();
+                  product_category = category?.name || null;
+                }
+              } catch {}
+            }
+
+            return { ...item, product_image, product_category };
+          })
+        );
+        setOrderItems(itemsWithDetails);
       }
 
       // Fetch linked consignment from consignments table
@@ -1073,6 +1114,11 @@ export default function AdminOrders() {
                               <Badge variant="secondary" className="text-xs mt-1">
                                 {item.product_category}
                               </Badge>
+                            )}
+                            {item.product_id && (
+                              <p className="text-[10px] text-muted-foreground font-mono mt-1 select-all">
+                                ID: {item.product_id}
+                              </p>
                             )}
                             {item.variant_name && (
                               <p className="text-xs text-muted-foreground mt-1">Variant: {item.variant_name}</p>

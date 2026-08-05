@@ -91,14 +91,52 @@ export default function OrderDetail() {
       setIsLoading(true);
 
       try {
-        const { data } = await supabase
+        const { data: orderData } = await supabase
           .from("orders")
-          .select(`*, order_items (*)`)
+          .select("*")
           .eq("id", id)
           .maybeSingle();
 
-        if (data) {
-          setOrder(data);
+        if (orderData) {
+          const { data: itemsData } = await supabase
+            .from("order_items")
+            .select("*")
+            .eq("order_id", id);
+            
+          const formattedItems = await Promise.all((itemsData || []).map(async (it: any) => {
+            let product_image = it.product_image || it.image || null;
+            
+            // Try fetching image from product_images if it's missing (for older orders)
+            if (!product_image && it.product_id) {
+              try {
+                const { data: images } = await supabase
+                  .from("product_images")
+                  .select("image_url, is_primary")
+                  .eq("product_id", it.product_id);
+
+                if (images && images.length > 0) {
+                  const primaryImage = images.find((img: any) => img.is_primary);
+                  product_image = primaryImage?.image_url || images[0]?.image_url || null;
+                }
+              } catch {}
+            }
+
+            return {
+              id: it.id,
+              product_name: it.product_name || "Product",
+              variant_name: it.variant_name || null,
+              quantity: Number(it.quantity || 1),
+              unit_price: Number(it.price || it.unit_price || 0),
+              total_price: Number(it.total || (it.price || it.unit_price || 0) * (it.quantity || 1)),
+              product_image: product_image,
+              product_id: it.product_id || null
+            };
+          }));
+
+          setOrder({
+            ...orderData,
+            order_items: formattedItems
+          });
           setIsLoading(false);
           return;
         }
@@ -274,8 +312,16 @@ export default function OrderDetail() {
             <CardContent className="space-y-3">
               {order.order_items.map((item) => (
                 <div key={item.id} className="flex gap-3 p-3 bg-muted/50 rounded-lg">
-                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                    <Package className="h-6 w-6 text-muted-foreground" />
+                  <div className="w-16 h-16 bg-muted rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {item.product_image ? (
+                      <img 
+                        src={item.product_image} 
+                        alt={item.product_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="h-6 w-6 text-muted-foreground" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm line-clamp-2">{item.product_name}</p>
@@ -285,8 +331,8 @@ export default function OrderDetail() {
                     <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-primary">৳{item.total.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">৳{item.price.toLocaleString()} each</p>
+                    <p className="font-bold text-primary">৳{(item.total || item.total_price || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">৳{(item.price || item.unit_price || 0).toLocaleString()} each</p>
                   </div>
                 </div>
               ))}
