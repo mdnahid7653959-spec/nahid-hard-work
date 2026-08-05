@@ -487,56 +487,65 @@ export default function AdminOrders() {
     setLoadingDetails(true);
 
     try {
-      if (!admin?.id) return;
-      
-      const { data, error } = await supabase.functions.invoke("admin-orders", {
-        body: { action: "get", adminId: admin.id, orderId: order.id }
-      });
+      let fetchedOrderDetails = false;
 
-      if (!error && data?.order) {
-        const fetchedOrder = data.order;
-        const items = fetchedOrder.order_items || [];
-        const itemsWithDetails = await Promise.all(
-          items.map(async (item: any) => {
-            let product_image = null;
-            let product_category = null;
+      if (admin?.id) {
+        try {
+          const { data, error } = await supabase.functions.invoke("admin-orders", {
+            body: { action: "get", adminId: admin.id, orderId: order.id }
+          });
 
-            if (item.product_id) {
-              const { data: images } = await supabase
-                .from("product_images")
-                .select("image_url, is_primary")
-                .eq("product_id", item.product_id);
+          if (!error && data?.order) {
+            const fetchedOrder = data.order;
+            const items = fetchedOrder.order_items || [];
+            const itemsWithDetails = await Promise.all(
+              items.map(async (item: any) => {
+                let product_image = null;
+                let product_category = null;
 
-              if (images && images.length > 0) {
-                const primaryImage = images.find((img: any) => img.is_primary);
-                product_image = primaryImage?.image_url || images[0]?.image_url || null;
-              }
+                if (item.product_id) {
+                  const { data: images } = await supabase
+                    .from("product_images")
+                    .select("image_url, is_primary")
+                    .eq("product_id", item.product_id);
 
-              const { data: product } = await supabase
-                .from("products_public")
-                .select("category_id")
-                .eq("id", item.product_id)
-                .single();
+                  if (images && images.length > 0) {
+                    const primaryImage = images.find((img: any) => img.is_primary);
+                    product_image = primaryImage?.image_url || images[0]?.image_url || null;
+                  }
 
-              if (product?.category_id) {
-                const { data: category } = await supabase
-                  .from("categories")
-                  .select("name")
-                  .eq("id", product.category_id)
-                  .single();
-                product_category = category?.name || null;
-              }
+                  const { data: product } = await supabase
+                    .from("products_public")
+                    .select("category_id")
+                    .eq("id", item.product_id)
+                    .single();
+
+                  if (product?.category_id) {
+                    const { data: category } = await supabase
+                      .from("categories")
+                      .select("name")
+                      .eq("id", product.category_id)
+                      .single();
+                    product_category = category?.name || null;
+                  }
+                }
+
+                return { ...item, product_image, product_category };
+              })
+            );
+            setOrderItems(itemsWithDetails);
+
+            if (fetchedOrder.customer) {
+              setCustomerInfo(fetchedOrder.customer);
             }
-
-            return { ...item, product_image, product_category };
-          })
-        );
-        setOrderItems(itemsWithDetails);
-
-        if (fetchedOrder.customer) {
-          setCustomerInfo(fetchedOrder.customer);
+            fetchedOrderDetails = true;
+          }
+        } catch (efErr) {
+          console.warn("admin-orders get edge function error:", efErr);
         }
-      } else {
+      }
+
+      if (!fetchedOrderDetails) {
         // Direct query fallback for items
         const { data: directItems } = await supabase
           .from("order_items")
@@ -550,7 +559,7 @@ export default function AdminOrders() {
         .from("consignments")
         .select("id, consignment_number, courier, tracking_number, status, shipped_at, delivered_at")
         .eq("order_id", order.id)
-        .single();
+        .maybeSingle();
       
       if (consData) {
         setLinkedConsignment(consData as LinkedConsignment);
